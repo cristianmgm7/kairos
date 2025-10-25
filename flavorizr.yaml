@@ -1,0 +1,39 @@
+app:
+  android:
+    flavorDimensions: "flavor-type"
+  ios:
+    buildSettings:
+      ENABLE_BITCODE: false
+
+flavors:
+  dev:
+    app:
+      name: "Blueprint Dev"
+    android:
+      applicationId: "com.blueprint.app.dev"
+      icon: "assets/icons/icon_dev.png"
+    ios:
+      bundleId: "com.blueprint.app.dev"
+      icon: "assets/icons/icon_dev.png"
+
+  staging:
+    app:
+      name: "Blueprint Staging"
+    android:
+      applicationId: "com.blueprint.app.staging"
+      icon: "assets/icons/icon_staging.png"
+    ios:
+      bundleId: "com.blueprint.app.staging"
+      icon: "assets/icons/icon_staging.png"
+
+  prod:
+    app:
+      name: "Blueprint"
+    android:
+      applicationId: "com.blueprint.app"
+      icon: "assets/icons/icon_prod.png"
+    ios:
+      bundleId: "com.blueprint.app"
+      icon: "assets/icons/icon_prod.png"
+
+ide: "vscode"

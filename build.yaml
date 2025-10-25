@@ -1,0 +1,14 @@
+targets:
+  $default:
+    builders:
+      injectable_generator:injectable_builder:
+        enabled: true
+        options:
+          auto_register: true
+        generate_for:
+          include:
+            - lib/core/di/**.dart
+            - lib/core/network/**.dart
+            - lib/features/**/data/datasources/**.dart
+            - lib/features/**/data/repositories/**.dart
+            - lib/features/**/domain/usecases/**.dart

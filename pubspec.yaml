@@ -1,0 +1,59 @@
+name: blueprint_app
+description: A production-ready Flutter blueprint template
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Utilities
+  flutter_dotenv: ^5.1.0
+
+  # Dependency Injection
+  get_it: ^8.2.0
+  injectable: ^2.5.2
+
+  # Utilities
+  logger: ^2.5.0
+  equatable: ^2.0.5
+
+  # Network
+  dio: ^5.7.0
+  pretty_dio_logger: ^1.4.0
+  connectivity_plus: ^6.0.0
+
+  # Routing
+  go_router: ^14.6.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Flavors
+  flutter_flavorizr: ^2.4.1
+
+  # Linting
+  very_good_analysis: ^5.1.0
+
+  # Code Generation
+  build_runner: ^2.4.0
+  injectable_generator: ^2.6.2
+
+  # Testing
+  mockito: ^5.4.0
+  bloc_test: ^9.1.0
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env.dev
+    - .env.staging
+    - .env.prod
