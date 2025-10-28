@@ -1,8 +1,9 @@
 import 'package:blueprint_app/core/errors/exceptions.dart';
 import 'package:dio/dio.dart';
-import 'package:injectable/injectable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-@lazySingleton
+import 'package:blueprint_app/core/providers/core_providers.dart';
+
 class ApiClient {
   ApiClient(this._dio);
 
@@ -120,3 +121,9 @@ class ApiClient {
     }
   }
 }
+
+/// ApiClient provider
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final dio = ref.watch(dioProvider);
+  return ApiClient(dio);
+});

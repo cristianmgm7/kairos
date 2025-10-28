@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:blueprint_app/core/di/injection.dart';
+import 'package:blueprint_app/core/providers/core_providers.dart';
+import 'package:blueprint_app/features/auth/data/repositories/firebase_auth_repository.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 
-/// Provider for AuthRepository (bridging GetIt to Riverpod)
+/// AuthRepository provider (direct Riverpod, no GetIt bridging)
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return getIt<AuthRepository>();
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  final googleSignIn = ref.watch(googleSignInProvider);
+  return FirebaseAuthRepository(firebaseAuth, googleSignIn);
 });
 
 /// Stream provider for authentication state
