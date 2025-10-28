@@ -46,7 +46,7 @@
 		</data>
 		<key>Frameworks/App.framework/App</key>
 		<data>
-		5qAXa3JhB3QH8ZXoowTAV7em0PM=
+		0LsKI4wPGxaRBaz60enijxXe+bU=
 		</data>
 		<key>Frameworks/App.framework/Info.plist</key>
 		<data>
@@ -54,7 +54,7 @@
 		</data>
 		<key>Frameworks/App.framework/_CodeSignature/CodeResources</key>
 		<data>
-		m6rlx/sbHx00jR/wesXawDAiTuw=
+		/bXxsNoFl4nTBG78UPtzVPvBEaY=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/.env.dev</key>
 		<data>
@@ -98,7 +98,7 @@
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/kernel_blob.bin</key>
 		<data>
-		cFtai2FKiiVgoLJJz9c/QuXiZOg=
+		/KvPyRKyhoYt6ocHhUNwdlbXbJM=
 		</data>
 		<key>Frameworks/App.framework/flutter_assets/shaders/ink_sparkle.frag</key>
 		<data>
@@ -850,9 +850,13 @@
 		<data>
 		aZ4HRFDAux9sfTN5oFIkjh0XGE0=
 		</data>
+		<key>GoogleService-Info.plist</key>
+		<data>
+		Y3sxGd1cq5Kp7VQPjFnwSp/Ejss=
+		</data>
 		<key>Info.plist</key>
 		<data>
-		zkC44b8VRu7nsYFneyHTaqn9NS8=
+		1MQJGLPMtESprAem64vKPiX9PXY=
 		</data>
 		<key>PkgInfo</key>
 		<data>
@@ -951,7 +955,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			WH4fUKveiJLjysXFnCVQoxdKSvilG0Bh+Etehj85D4k=
+			vtJ1QJuruMYL/Znn+Rzm1NoNxG/UILhdg8Ow2Hx+Y0E=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/Info.plist</key>
@@ -965,7 +969,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			5Dw0xG+NatiuelT/Nt5Rdj/RnNaNKuCuHJdBK5gb61Q=
+			JIoxNuKaJdmz1jlx+HdcDTuJDltYx0PZbrlMFwjMDH0=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/.env.dev</key>
@@ -1042,7 +1046,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			p5eG7NjKwg1f7YXD3cRd2hbPunbd+5nBiU8k0ZcgpqY=
+			wO12wCMy66wYwqZYN8LOx+CKPSoHs896eZY2Z68+edY=
 			</data>
 		</dict>
 		<key>Frameworks/App.framework/flutter_assets/shaders/ink_sparkle.frag</key>
@@ -2099,6 +2103,13 @@
 			<key>hash2</key>
 			<data>
 			xLPwCiwmdR7TsVpWSUfWy0mspR11kDQF6XA1EOtDkbE=
+			</data>
+		</dict>
+		<key>GoogleService-Info.plist</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			rczqzb63ME3NREsGwS8wXXerMLjsc0n3JWYUnxZgGZc=
 			</data>
 		</dict>
 		<key>Runner.debug.dylib</key>
