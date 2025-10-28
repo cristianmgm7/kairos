@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
-import 'package:injectable/injectable.dart';
 
 import 'package:blueprint_app/core/config/firebase_options_dev.dart' as dev;
 import 'package:blueprint_app/core/config/firebase_options_prod.dart' as prod;
@@ -8,7 +7,6 @@ import 'package:blueprint_app/core/config/firebase_options_staging.dart'
     as staging;
 import 'package:blueprint_app/core/config/flavor_config.dart';
 
-@lazySingleton
 class FirebaseConfig {
   Future<void> initialize() async {
     try {

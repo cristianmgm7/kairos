@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:blueprint_app/core/config/firebase_config.dart';
-import 'package:blueprint_app/core/di/injection.dart';
 import 'package:blueprint_app/core/routing/router_provider.dart';
 import 'package:blueprint_app/core/theme/app_theme.dart';
 
@@ -10,12 +9,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize dependency injection
-    await configureDependencies();
-    debugPrint('✅ Dependencies configured');
-
     // Initialize Firebase
-    final firebaseConfig = getIt<FirebaseConfig>();
+    final firebaseConfig = FirebaseConfig();
     await firebaseConfig.initialize();
     debugPrint('✅ Firebase initialized');
 

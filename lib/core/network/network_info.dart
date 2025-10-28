@@ -1,11 +1,12 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:injectable/injectable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:blueprint_app/core/providers/core_providers.dart';
 
 abstract class NetworkInfo {
   Future<bool> get isConnected;
 }
 
-@LazySingleton(as: NetworkInfo)
 class NetworkInfoImpl implements NetworkInfo {
   NetworkInfoImpl(this._connectivity);
 
@@ -19,3 +20,9 @@ class NetworkInfoImpl implements NetworkInfo {
         result.contains(ConnectivityResult.ethernet);
   }
 }
+
+/// NetworkInfo provider
+final networkInfoProvider = Provider<NetworkInfo>((ref) {
+  final connectivity = ref.watch(connectivityProvider);
+  return NetworkInfoImpl(connectivity);
+});

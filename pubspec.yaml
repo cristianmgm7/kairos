@@ -14,9 +14,7 @@ dependencies:
   # Utilities
   flutter_dotenv: ^5.1.0
 
-  # Dependency Injection
-  get_it: ^8.2.0
-  injectable: ^2.5.2
+  # Dependency Injection - Migrated to Riverpod
 
   # Utilities
   logger: ^2.5.0
@@ -50,7 +48,6 @@ dev_dependencies:
 
   # Code Generation
   build_runner: ^2.4.0
-  injectable_generator: ^2.6.2
 
   # Testing
   mockito: ^5.4.0
