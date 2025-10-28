@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:blueprint_app/core/routing/app_routes.dart';
 import 'package:blueprint_app/core/routing/pages/dashboard_page.dart';
 import 'package:blueprint_app/core/routing/pages/error_page.dart';
-import 'package:blueprint_app/core/routing/pages/onboarding_page.dart';
-import 'package:blueprint_app/core/routing/pages/splash_page.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:blueprint_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:blueprint_app/features/auth/presentation/screens/register_screen.dart';
@@ -18,31 +16,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: AppRoutes.splash,
+    initialLocation: AppRoutes.login,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      // Handle loading state
+      // If still loading auth state, don't redirect
       if (authState.isLoading || !authState.hasValue) {
-        // Stay on current route while loading
-        if (state.matchedLocation == AppRoutes.splash) {
-          return null;
-        }
-        // Or go to splash if on a protected route
-        return AppRoutes.splash;
-      }
-
-      final isAuthenticated = authState.valueOrNull != null;
-      final isLoading = authState.isLoading;
-
-      // Show splash while loading auth state
-      if (isLoading && state.matchedLocation == AppRoutes.splash) {
         return null;
       }
 
+      final isAuthenticated = authState.valueOrNull != null;
+
       // Public routes (no auth required)
       final publicRoutes = [
-        AppRoutes.splash,
-        AppRoutes.onboarding,
         AppRoutes.login,
         AppRoutes.register,
       ];
@@ -60,22 +45,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return AppRoutes.dashboard;
       }
 
-      // If authenticated and on splash, go to dashboard
-      if (isAuthenticated && state.matchedLocation == AppRoutes.splash) {
-        return AppRoutes.dashboard;
-      }
-
       return null;
     },
     routes: [
-      GoRoute(
-        path: AppRoutes.splash,
-        builder: (context, state) => const SplashPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.onboarding,
-        builder: (context, state) => const OnboardingPage(),
-      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginScreen(),

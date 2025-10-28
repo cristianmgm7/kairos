@@ -16,6 +16,16 @@ class FirebaseConfig {
 
       debugPrint('🔥 Initializing Firebase for flavor: $flavor');
 
+      // Use native platform configuration files on mobile to avoid crashes
+      // when Dart options are placeholders or not configured.
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.iOS ||
+              defaultTargetPlatform == TargetPlatform.android)) {
+        await Firebase.initializeApp();
+        debugPrint('✅ Firebase initialized successfully (plist/json)');
+        return;
+      }
+
       switch (flavor) {
         case Flavor.dev:
           await Firebase.initializeApp(
