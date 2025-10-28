@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 enum AppButtonType { elevated, outlined, text }
 
 class AppButton extends StatelessWidget {
-
   // constructor
   const AppButton({
     required this.text,
@@ -43,7 +42,7 @@ class AppButton extends StatelessWidget {
     super.key,
   }) : type = AppButtonType.text;
 
-   // properties
+  // properties
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
@@ -60,9 +59,7 @@ class AppButton extends StatelessWidget {
       AppButtonType.text => _buildTextButton(context),
     };
 
-    return fullWidth
-        ? SizedBox(width: double.infinity, child: button)
-        : button;
+    return fullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }
 
   Widget _buildElevatedButton(BuildContext context) {

@@ -22,8 +22,9 @@ Implementing Firebase Authentication (Google Sign-In + Email/Password) using Riv
 - Clean Architecture structure ready for feature modules
 - Custom Result type for error handling already established
 
-### Architectural Decision:
-**Hybrid Approach** - Keep GetIt/Injectable for infrastructure (routing, network, Firebase initialization) while adopting Riverpod for feature-level state management starting with auth.
+### Architectural Decisions:
+1. **Hybrid DI Approach** - Keep GetIt/Injectable for infrastructure (routing, network, Firebase initialization) while adopting Riverpod for feature-level state management starting with auth.
+2. **Result-Based Error Handling** - Use existing `Result<T>` type (Success/Error) instead of throwing exceptions. This makes error handling explicit, type-safe, and eliminates hidden control flows.
 
 ## Desired End State
 
@@ -63,7 +64,7 @@ After implementation:
 ### Strategy:
 1. **Foundation First**: Add dependencies, configure Firebase for all flavors
 2. **Domain Layer**: Define contracts (entities, repositories, use cases)
-3. **Data Layer**: Implement Firebase Auth repository with error handling
+3. **Data Layer**: Implement Firebase Auth repository with Result-based error handling
 4. **Riverpod Integration**: Create providers, controllers, and state management
 5. **Router Integration**: Bridge Riverpod auth state with GoRouter
 6. **UI Layer**: Build auth screens following design system
@@ -76,6 +77,78 @@ After implementation:
 - Router must be integrated before UI navigation works
 - UI is built last to avoid rework
 - Tests written alongside each layer
+
+### Result-Based Error Handling Benefits:
+
+**Why Result<T> instead of exceptions:**
+
+1. **Explicit Error Handling** - Errors are part of the type signature, making them visible and forcing handling
+   ```dart
+   // Clear: caller knows this can fail
+   Future<Result<UserEntity>> signInWithEmail(...);
+
+   // Hidden: caller might not know this throws
+   Future<UserEntity> signInWithEmail(...);
+   ```
+
+2. **Type Safety** - Compiler ensures all error cases are handled
+   ```dart
+   final result = await repository.signInWithEmail(...);
+   result.when(
+     success: (user) => // handle success,
+     error: (failure) => // MUST handle error,
+   );
+   ```
+
+3. **No Silent Failures** - Can't accidentally ignore errors
+   ```dart
+   // This won't compile - must handle both cases
+   final user = await repository.signInWithEmail(...);
+
+   // Must do this
+   final result = await repository.signInWithEmail(...);
+   final user = result.dataOrNull; // Explicit null handling
+   ```
+
+4. **Cleaner Control Flow** - No try-catch blocks cluttering business logic
+   ```dart
+   // Old way: nested try-catch
+   try {
+     final user = await repository.signInWithEmail(...);
+     // success
+   } catch (e) {
+     // error
+   }
+
+   // New way: flat, readable
+   final result = await repository.signInWithEmail(...);
+   result.when(
+     success: (user) => ...,
+     error: (failure) => ...,
+   );
+   ```
+
+5. **Consistent Error Types** - All errors return `Failure` subclasses, not mixed exceptions
+   ```dart
+   // Consistent: always returns AuthFailure
+   Error(AuthFailure.invalidCredentials())
+   Error(AuthFailure.network())
+
+   // Inconsistent: different exception types
+   throw InvalidCredentialsException();
+   throw NetworkException();
+   ```
+
+6. **Better Testability** - Easy to test success and error paths
+   ```dart
+   // Mock returns Result, not throw
+   when(repository.signIn(...))
+     .thenAnswer((_) async => const Error(AuthFailure.network()));
+
+   // vs
+   when(repository.signIn(...))
+     .thenThrow(NetworkException());
+   ```
 
 ---
 
@@ -269,12 +342,12 @@ buildscript {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Dependencies install successfully: `flutter pub get`
-- [ ] No dependency conflicts
-- [ ] Code generation runs: `flutter packages pub run build_runner build --delete-conflicting-outputs`
+- [x] Dependencies install successfully: `flutter pub get`
+- [x] No dependency conflicts
+- [x] Code generation runs: `flutter packages pub run build_runner build --delete-conflicting-outputs`
 - [ ] App builds for Android: `flutter build apk --flavor dev`
 - [ ] App builds for iOS: `flutter build ios --flavor dev`
-- [ ] No analyzer errors: `flutter analyze`
+- [x] No analyzer errors: `flutter analyze`
 
 #### Manual Verification:
 - [ ] Firebase console shows all apps registered (dev, staging, prod)
@@ -326,9 +399,10 @@ class UserEntity extends Equatable {
 
 #### 2. Auth Repository Interface
 **File**: `lib/features/auth/domain/repositories/auth_repository.dart`
-**Changes**: Define repository contract
+**Changes**: Define repository contract using Result pattern
 
 ```dart
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 
 abstract class AuthRepository {
@@ -340,39 +414,38 @@ abstract class AuthRepository {
   UserEntity? get currentUser;
 
   /// Sign in with Google
-  /// Returns UserEntity on success
-  /// Throws AuthException on failure
-  Future<UserEntity> signInWithGoogle();
+  /// Returns Result<UserEntity> - Success with user or Error with failure
+  Future<Result<UserEntity>> signInWithGoogle();
 
   /// Sign in with email and password
-  /// Returns UserEntity on success
-  /// Throws AuthException on failure
-  Future<UserEntity> signInWithEmail({
+  /// Returns Result<UserEntity> - Success with user or Error with failure
+  Future<Result<UserEntity>> signInWithEmail({
     required String email,
     required String password,
   });
 
   /// Register new user with email and password
-  /// Returns UserEntity on success
-  /// Throws AuthException on failure
-  Future<UserEntity> registerWithEmail({
+  /// Returns Result<UserEntity> - Success with user or Error with failure
+  Future<Result<UserEntity>> registerWithEmail({
     required String email,
     required String password,
   });
 
   /// Send password reset email
-  /// Throws AuthException on failure
-  Future<void> sendPasswordReset(String email);
+  /// Returns Result<void> - Success or Error with failure
+  Future<Result<void>> sendPasswordReset(String email);
 
   /// Sign out current user
-  /// Throws AuthException on failure
-  Future<void> signOut();
+  /// Returns Result<void> - Success or Error with failure
+  Future<Result<void>> signOut();
 }
 ```
 
-#### 3. Auth-Specific Exceptions
+#### 3. Auth-Specific Exceptions (Internal Use Only)
 **File**: `lib/features/auth/domain/exceptions/auth_exceptions.dart`
-**Changes**: Define auth-specific exceptions
+**Changes**: Define auth-specific exceptions for internal mapping in data layer
+
+**Note**: These exceptions are used internally in the data layer to convert Firebase errors. They are caught and converted to `AuthFailure` within the repository, never thrown to external callers.
 
 ```dart
 class AuthException implements Exception {
@@ -390,7 +463,7 @@ class InvalidCredentialsException extends AuthException {
       : super('Invalid email or password', code);
 }
 
-class UserNotFoundExce extends AuthException {
+class UserNotFoundException extends AuthException {
   const UserNotFoundException([String? code])
       : super('User not found', code);
 }
@@ -472,9 +545,10 @@ class AuthFailure extends Failure {
 
 #### 5. Use Cases (Optional but Recommended)
 **File**: `lib/features/auth/domain/usecases/sign_in_with_google.dart`
-**Changes**: Encapsulate Google sign-in use case
+**Changes**: Encapsulate Google sign-in use case with Result pattern
 
 ```dart
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -483,13 +557,14 @@ class SignInWithGoogle {
 
   final AuthRepository _repository;
 
-  Future<UserEntity> call() => _repository.signInWithGoogle();
+  Future<Result<UserEntity>> call() => _repository.signInWithGoogle();
 }
 ```
 
 **File**: `lib/features/auth/domain/usecases/sign_in_with_email.dart`
 
 ```dart
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -498,7 +573,7 @@ class SignInWithEmail {
 
   final AuthRepository _repository;
 
-  Future<UserEntity> call({
+  Future<Result<UserEntity>> call({
     required String email,
     required String password,
   }) =>
@@ -509,6 +584,7 @@ class SignInWithEmail {
 **File**: `lib/features/auth/domain/usecases/register_with_email.dart`
 
 ```dart
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 
@@ -517,7 +593,7 @@ class RegisterWithEmail {
 
   final AuthRepository _repository;
 
-  Future<UserEntity> call({
+  Future<Result<UserEntity>> call({
     required String email,
     required String password,
   }) =>
@@ -528,6 +604,7 @@ class RegisterWithEmail {
 **File**: `lib/features/auth/domain/usecases/sign_out.dart`
 
 ```dart
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 
 class SignOut {
@@ -535,23 +612,23 @@ class SignOut {
 
   final AuthRepository _repository;
 
-  Future<void> call() => _repository.signOut();
+  Future<Result<void>> call() => _repository.signOut();
 }
 ```
 
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] All files compile without errors: `flutter analyze`
-- [ ] Domain layer has zero external dependencies (no Firebase, no Riverpod)
-- [ ] Code follows linting rules: `flutter analyze`
+- [x] All files compile without errors: `flutter analyze`
+- [x] Domain layer has zero external dependencies (no Firebase, no Riverpod)
+- [x] Code follows linting rules: `flutter analyze`
 
 #### Manual Verification:
-- [ ] UserEntity is immutable and uses Equatable
-- [ ] AuthRepository interface is complete with all required methods
-- [ ] Exceptions are well-defined and cover common auth errors
-- [ ] Use cases provide clean abstraction over repository methods
-- [ ] No implementation details leak into domain layer
+- [x] UserEntity is immutable and uses Equatable
+- [x] AuthRepository interface is complete with all required methods
+- [x] Exceptions are well-defined and cover common auth errors
+- [x] Use cases provide clean abstraction over repository methods
+- [x] No implementation details leak into domain layer
 
 **Implementation Note**: The domain layer should be pure Dart with no Flutter/Firebase dependencies. After verification, proceed to implement the data layer.
 
@@ -624,14 +701,15 @@ class UserModel extends UserEntity {
 
 #### 2. Firebase Auth Repository Implementation
 **File**: `lib/features/auth/data/repositories/firebase_auth_repository.dart`
-**Changes**: Implement AuthRepository with Firebase
+**Changes**: Implement AuthRepository with Firebase using Result pattern
 
 ```dart
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:blueprint_app/features/auth/domain/exceptions/auth_exceptions.dart';
+import 'package:blueprint_app/features/auth/domain/failures/auth_failure.dart';
 import 'package:blueprint_app/features/auth/data/models/user_model.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
@@ -656,13 +734,14 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<UserEntity> signInWithGoogle() async {
+  Future<Result<UserEntity>> signInWithGoogle() async {
     try {
       // Trigger Google Sign-In flow
       final googleUser = await _googleSignIn.signIn();
 
+      // User cancelled the sign-in
       if (googleUser == null) {
-        throw const GoogleSignInCancelledException();
+        return const Error(AuthFailure.cancelled());
       }
 
       // Obtain auth credentials
@@ -676,21 +755,22 @@ class FirebaseAuthRepository implements AuthRepository {
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
 
       if (userCredential.user == null) {
-        throw const UnknownAuthException('Failed to sign in with Google');
+        return const Error(
+          AuthFailure.unknown('Failed to sign in with Google'),
+        );
       }
 
-      return UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      final user = UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      return Success(user);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } on GoogleSignInCancelledException {
-      rethrow;
+      return Error(_mapFirebaseException(e));
     } catch (e) {
-      throw UnknownAuthException('Google sign-in failed: ${e.toString()}');
+      return Error(AuthFailure.unknown('Google sign-in failed: ${e.toString()}'));
     }
   }
 
   @override
-  Future<UserEntity> signInWithEmail({
+  Future<Result<UserEntity>> signInWithEmail({
     required String email,
     required String password,
   }) async {
@@ -701,19 +781,20 @@ class FirebaseAuthRepository implements AuthRepository {
       );
 
       if (userCredential.user == null) {
-        throw const UnknownAuthException('Failed to sign in');
+        return const Error(AuthFailure.unknown('Failed to sign in'));
       }
 
-      return UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      final user = UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      return Success(user);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+      return Error(_mapFirebaseException(e));
     } catch (e) {
-      throw UnknownAuthException('Sign in failed: ${e.toString()}');
+      return Error(AuthFailure.unknown('Sign in failed: ${e.toString()}'));
     }
   }
 
   @override
-  Future<UserEntity> registerWithEmail({
+  Future<Result<UserEntity>> registerWithEmail({
     required String email,
     required String password,
   }) async {
@@ -724,62 +805,67 @@ class FirebaseAuthRepository implements AuthRepository {
       );
 
       if (userCredential.user == null) {
-        throw const UnknownAuthException('Failed to create account');
+        return const Error(AuthFailure.unknown('Failed to create account'));
       }
 
-      return UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      final user = UserModel.fromFirebaseUser(userCredential.user!).toEntity();
+      return Success(user);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+      return Error(_mapFirebaseException(e));
     } catch (e) {
-      throw UnknownAuthException('Registration failed: ${e.toString()}');
+      return Error(AuthFailure.unknown('Registration failed: ${e.toString()}'));
     }
   }
 
   @override
-  Future<void> sendPasswordReset(String email) async {
+  Future<Result<void>> sendPasswordReset(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+      return const Success(null);
     } on firebase_auth.FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
+      return Error(_mapFirebaseException(e));
     } catch (e) {
-      throw UnknownAuthException('Password reset failed: ${e.toString()}');
+      return Error(AuthFailure.unknown('Password reset failed: ${e.toString()}'));
     }
   }
 
   @override
-  Future<void> signOut() async {
+  Future<Result<void>> signOut() async {
     try {
       await Future.wait([
         _firebaseAuth.signOut(),
         _googleSignIn.signOut(),
       ]);
+      return const Success(null);
     } catch (e) {
-      throw UnknownAuthException('Sign out failed: ${e.toString()}');
+      return Error(AuthFailure.unknown('Sign out failed: ${e.toString()}'));
     }
   }
 
-  /// Map Firebase Auth exceptions to domain exceptions
-  AuthException _handleFirebaseAuthException(firebase_auth.FirebaseAuthException e) {
+  /// Map Firebase Auth exceptions to AuthFailure
+  AuthFailure _mapFirebaseException(firebase_auth.FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return UserNotFoundException(e.code);
+        return AuthFailure.userNotFound();
       case 'wrong-password':
       case 'invalid-credential':
-        return InvalidCredentialsException(e.code);
+        return AuthFailure.invalidCredentials();
       case 'email-already-in-use':
-        return EmailAlreadyInUseException(e.code);
+        return AuthFailure.emailInUse();
       case 'weak-password':
-        return WeakPasswordException(e.code);
+        return AuthFailure.weakPassword();
       case 'network-request-failed':
-        return NetworkException(e.code);
+        return AuthFailure.network();
       case 'user-disabled':
-        return const AuthException('This account has been disabled');
+        return const AuthFailure(message: 'This account has been disabled');
       case 'too-many-requests':
-        return const AuthException('Too many attempts. Please try again later');
+        return const AuthFailure(
+          message: 'Too many attempts. Please try again later',
+        );
       case 'operation-not-allowed':
-        return const AuthException('This operation is not allowed');
+        return const AuthFailure(message: 'This operation is not allowed');
       default:
-        return UnknownAuthException(e.message ?? 'Authentication failed', e.code);
+        return AuthFailure.unknown(e.message ?? 'Authentication failed');
     }
   }
 }
@@ -820,17 +906,17 @@ abstract class CoreModule {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `flutter analyze`
-- [ ] Repository implements all interface methods
-- [ ] No linting errors: `flutter analyze`
-- [ ] Code generation runs successfully: `flutter packages pub run build_runner build --delete-conflicting-outputs`
+- [x] Code compiles without errors: `flutter analyze`
+- [x] Repository implements all interface methods
+- [x] No linting errors: `flutter analyze`
+- [x] Code generation runs successfully: `flutter packages pub run build_runner build --delete-conflicting-outputs`
 
 #### Manual Verification:
-- [ ] FirebaseAuth and GoogleSignIn are registered in GetIt
-- [ ] All Firebase exception codes are properly mapped
-- [ ] UserModel correctly converts Firebase User to UserEntity
-- [ ] Error messages are user-friendly
-- [ ] Repository methods handle null cases properly
+- [x] FirebaseAuth and GoogleSignIn are registered in GetIt
+- [x] All Firebase exception codes are properly mapped
+- [x] UserModel correctly converts Firebase User to UserEntity
+- [x] Error messages are user-friendly
+- [x] Repository methods handle null cases properly
 
 **Implementation Note**: The data layer bridges Firebase with our domain. After verification, we'll create Riverpod providers to expose this to the UI.
 
@@ -878,13 +964,13 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 
 #### 2. Auth Controller (State Notifier)
 **File**: `lib/features/auth/presentation/providers/auth_controller.dart`
-**Changes**: Create controller for auth actions
+**Changes**: Create controller for auth actions using Result pattern
 
 ```dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:blueprint_app/features/auth/domain/exceptions/auth_exceptions.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
 
 /// State for auth operations (loading, error, etc.)
@@ -916,19 +1002,21 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> signInWithGoogle() async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repository.signInWithGoogle();
-      state = state.copyWith(isLoading: false);
-    } on GoogleSignInCancelledException {
-      state = state.copyWith(isLoading: false, error: null);
-    } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'An unexpected error occurred',
-      );
-    }
+
+    final result = await _repository.signInWithGoogle();
+
+    result.when(
+      success: (_) {
+        // Auth state stream will handle navigation
+        state = state.copyWith(isLoading: false);
+      },
+      error: (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: failure.message,
+        );
+      },
+    );
   }
 
   Future<void> signInWithEmail({
@@ -936,17 +1024,23 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repository.signInWithEmail(email: email, password: password);
-      state = state.copyWith(isLoading: false);
-    } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'An unexpected error occurred',
-      );
-    }
+
+    final result = await _repository.signInWithEmail(
+      email: email,
+      password: password,
+    );
+
+    result.when(
+      success: (_) {
+        state = state.copyWith(isLoading: false);
+      },
+      error: (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: failure.message,
+        );
+      },
+    );
   }
 
   Future<void> registerWithEmail({
@@ -954,32 +1048,41 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repository.registerWithEmail(email: email, password: password);
-      state = state.copyWith(isLoading: false);
-    } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'An unexpected error occurred',
-      );
-    }
+
+    final result = await _repository.registerWithEmail(
+      email: email,
+      password: password,
+    );
+
+    result.when(
+      success: (_) {
+        state = state.copyWith(isLoading: false);
+      },
+      error: (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: failure.message,
+        );
+      },
+    );
   }
 
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repository.signOut();
-      state = state.copyWith(isLoading: false);
-    } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'An unexpected error occurred',
-      );
-    }
+
+    final result = await _repository.signOut();
+
+    result.when(
+      success: (_) {
+        state = state.copyWith(isLoading: false);
+      },
+      error: (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          error: failure.message,
+        );
+      },
+    );
   }
 
   /// Clear error message
@@ -999,16 +1102,16 @@ final authControllerProvider =
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `flutter analyze`
-- [ ] All providers are properly typed
-- [ ] No linting errors: `flutter analyze`
+- [x] Code compiles without errors: `flutter analyze`
+- [x] All providers are properly typed
+- [x] No linting errors: `flutter analyze`
 
 #### Manual Verification:
-- [ ] authStateProvider correctly streams authentication state
-- [ ] authControllerProvider exposes all auth actions
-- [ ] Error handling is comprehensive
-- [ ] Loading states are properly managed
-- [ ] GetIt AuthRepository is bridged to Riverpod successfully
+- [x] authStateProvider correctly streams authentication state
+- [x] authControllerProvider exposes all auth actions
+- [x] Error handling is comprehensive
+- [x] Loading states are properly managed
+- [x] GetIt AuthRepository is bridged to Riverpod successfully
 
 **Implementation Note**: Providers are now ready. Next, we'll integrate them with the router for reactive navigation.
 
@@ -1219,8 +1322,8 @@ class AppRouter {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] App compiles without errors: `flutter analyze`
-- [ ] No linting errors: `flutter analyze`
+- [x] App compiles without errors: `flutter analyze`
+- [x] No linting errors: `flutter analyze`
 - [ ] App builds successfully: `flutter build apk --flavor dev`
 
 #### Manual Verification:
@@ -1229,7 +1332,7 @@ class AppRouter {
 - [ ] Login page is accessible
 - [ ] Router updates reactively when auth state changes
 - [ ] No navigation loops or errors in console
-- [ ] ProviderScope is properly wrapping the app
+- [x] ProviderScope is properly wrapping the app
 
 **Implementation Note**: Router now reactively responds to auth state. Next, we'll build the UI screens.
 
@@ -1932,7 +2035,7 @@ void main() {
     const email = 'test@example.com';
     const password = 'password123';
 
-    test('should return UserEntity on successful sign in', () async {
+    test('should return Success<UserEntity> on successful sign in', () async {
       when(mockUserCredential.user).thenReturn(mockUser);
       when(mockFirebaseAuth.signInWithEmailAndPassword(
         email: anyNamed('email'),
@@ -1944,16 +2047,20 @@ void main() {
         password: password,
       );
 
-      expect(result, isA<UserEntity>());
-      expect(result.id, 'test-uid');
-      expect(result.email, email);
+      expect(result, isA<Success<UserEntity>>());
+      expect(result.isSuccess, true);
+
+      final user = result.dataOrNull!;
+      expect(user.id, 'test-uid');
+      expect(user.email, email);
+
       verify(mockFirebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       )).called(1);
     });
 
-    test('should throw InvalidCredentialsException on wrong password', () {
+    test('should return Error with AuthFailure.invalidCredentials on wrong password', () async {
       when(mockFirebaseAuth.signInWithEmailAndPassword(
         email: anyNamed('email'),
         password: anyNamed('password'),
@@ -1961,13 +2068,20 @@ void main() {
         firebase_auth.FirebaseAuthException(code: 'wrong-password'),
       );
 
-      expect(
-        () => repository.signInWithEmail(email: email, password: password),
-        throwsA(isA<InvalidCredentialsException>()),
+      final result = await repository.signInWithEmail(
+        email: email,
+        password: password,
       );
+
+      expect(result, isA<Error<UserEntity>>());
+      expect(result.isError, true);
+
+      final failure = result.failureOrNull!;
+      expect(failure, isA<AuthFailure>());
+      expect(failure.message, contains('Invalid email or password'));
     });
 
-    test('should throw UserNotFoundException when user not found', () {
+    test('should return Error with AuthFailure.userNotFound when user not found', () async {
       when(mockFirebaseAuth.signInWithEmailAndPassword(
         email: anyNamed('email'),
         password: anyNamed('password'),
@@ -1975,10 +2089,16 @@ void main() {
         firebase_auth.FirebaseAuthException(code: 'user-not-found'),
       );
 
-      expect(
-        () => repository.signInWithEmail(email: email, password: password),
-        throwsA(isA<UserNotFoundException>()),
+      final result = await repository.signInWithEmail(
+        email: email,
+        password: password,
       );
+
+      expect(result, isA<Error<UserEntity>>());
+
+      final failure = result.failureOrNull!;
+      expect(failure, isA<AuthFailure>());
+      expect(failure.message, contains('User not found'));
     });
   });
 
@@ -1986,7 +2106,7 @@ void main() {
     const email = 'newuser@example.com';
     const password = 'password123';
 
-    test('should return UserEntity on successful registration', () async {
+    test('should return Success<UserEntity> on successful registration', () async {
       when(mockUserCredential.user).thenReturn(mockUser);
       when(mockFirebaseAuth.createUserWithEmailAndPassword(
         email: anyNamed('email'),
@@ -1998,14 +2118,16 @@ void main() {
         password: password,
       );
 
-      expect(result, isA<UserEntity>());
+      expect(result, isA<Success<UserEntity>>());
+      expect(result.isSuccess, true);
+
       verify(mockFirebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       )).called(1);
     });
 
-    test('should throw EmailAlreadyInUseException when email exists', () {
+    test('should return Error with AuthFailure.emailInUse when email exists', () async {
       when(mockFirebaseAuth.createUserWithEmailAndPassword(
         email: anyNamed('email'),
         password: anyNamed('password'),
@@ -2013,13 +2135,19 @@ void main() {
         firebase_auth.FirebaseAuthException(code: 'email-already-in-use'),
       );
 
-      expect(
-        () => repository.registerWithEmail(email: email, password: password),
-        throwsA(isA<EmailAlreadyInUseException>()),
+      final result = await repository.registerWithEmail(
+        email: email,
+        password: password,
       );
+
+      expect(result, isA<Error<UserEntity>>());
+
+      final failure = result.failureOrNull!;
+      expect(failure, isA<AuthFailure>());
+      expect(failure.message, contains('Email already in use'));
     });
 
-    test('should throw WeakPasswordException for weak password', () {
+    test('should return Error with AuthFailure.weakPassword for weak password', () async {
       when(mockFirebaseAuth.createUserWithEmailAndPassword(
         email: anyNamed('email'),
         password: anyNamed('password'),
@@ -2027,10 +2155,16 @@ void main() {
         firebase_auth.FirebaseAuthException(code: 'weak-password'),
       );
 
-      expect(
-        () => repository.registerWithEmail(email: email, password: password),
-        throwsA(isA<WeakPasswordException>()),
+      final result = await repository.registerWithEmail(
+        email: email,
+        password: password,
       );
+
+      expect(result, isA<Error<UserEntity>>());
+
+      final failure = result.failureOrNull!;
+      expect(failure, isA<AuthFailure>());
+      expect(failure.message, contains('Password is too weak'));
     });
   });
 
@@ -2108,7 +2242,7 @@ void main() {
       when(mockRepository.signInWithEmail(
         email: anyNamed('email'),
         password: anyNamed('password'),
-      )).thenAnswer((_) async => testUserEntity);
+      )).thenAnswer((_) async => const Success(testUserEntity));
 
       final controller = container.read(authControllerProvider.notifier);
       final states = <AuthState>[];
@@ -2134,7 +2268,7 @@ void main() {
       when(mockRepository.signInWithEmail(
         email: anyNamed('email'),
         password: anyNamed('password'),
-      )).thenThrow(const InvalidCredentialsException());
+      )).thenAnswer((_) async => const Error(AuthFailure.invalidCredentials()));
 
       final controller = container.read(authControllerProvider.notifier);
       await controller.signInWithEmail(
@@ -2152,7 +2286,7 @@ void main() {
   group('AuthController - signInWithGoogle', () {
     test('should handle successful Google sign in', () async {
       when(mockRepository.signInWithGoogle())
-          .thenAnswer((_) async => testUserEntity);
+          .thenAnswer((_) async => const Success(testUserEntity));
 
       final controller = container.read(authControllerProvider.notifier);
       await controller.signInWithGoogle();
@@ -2164,20 +2298,21 @@ void main() {
 
     test('should handle cancelled Google sign in gracefully', () async {
       when(mockRepository.signInWithGoogle())
-          .thenThrow(const GoogleSignInCancelledException());
+          .thenAnswer((_) async => const Error(AuthFailure.cancelled()));
 
       final controller = container.read(authControllerProvider.notifier);
       await controller.signInWithGoogle();
 
       final state = container.read(authControllerProvider);
       expect(state.isLoading, false);
-      expect(state.error, isNull); // No error for cancellation
+      expect(state.error, contains('cancelled')); // Error message for cancellation
     });
   });
 
   group('AuthController - signOut', () {
     test('should successfully sign out', () async {
-      when(mockRepository.signOut()).thenAnswer((_) async {});
+      when(mockRepository.signOut())
+          .thenAnswer((_) async => const Success(null));
 
       final controller = container.read(authControllerProvider.notifier);
       await controller.signOut();
@@ -2267,7 +2402,7 @@ void main() {
       when(mockRepository.signInWithEmail(
         email: anyNamed('email'),
         password: anyNamed('password'),
-      )).thenAnswer((_) async => testUserEntity);
+      )).thenAnswer((_) async => const Success(testUserEntity));
 
       await tester.pumpWidget(createTestWidget());
 
