@@ -18,6 +18,7 @@ import 'package:injectable/injectable.dart' as _i526;
 import 'package:logger/logger.dart' as _i974;
 
 import '../../features/auth/domain/repositories/auth_repository.dart' as _i787;
+import '../config/firebase_config.dart' as _i119;
 import '../network/api_client.dart' as _i557;
 import '../network/network_info.dart' as _i932;
 import 'core_module.dart' as _i154;
@@ -37,6 +38,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i974.Logger>(() => coreModule.logger);
     gh.lazySingleton<_i361.Dio>(() => coreModule.dio);
     gh.lazySingleton<_i895.Connectivity>(() => coreModule.connectivity);
+    gh.lazySingleton<_i119.FirebaseConfig>(() => coreModule.firebaseConfig);
     gh.lazySingleton<_i59.FirebaseAuth>(() => coreModule.firebaseAuth);
     gh.lazySingleton<_i116.GoogleSignIn>(() => coreModule.googleSignIn);
     gh.lazySingleton<_i557.ApiClient>(() => _i557.ApiClient(gh<_i361.Dio>()));

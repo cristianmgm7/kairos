@@ -21,6 +21,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) {
+      // Handle loading state
+      if (authState.isLoading || !authState.hasValue) {
+        // Stay on current route while loading
+        if (state.matchedLocation == AppRoutes.splash) {
+          return null;
+        }
+        // Or go to splash if on a protected route
+        return AppRoutes.splash;
+      }
+
       final isAuthenticated = authState.valueOrNull != null;
       final isLoading = authState.isLoading;
 

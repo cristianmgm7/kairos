@@ -1,3 +1,4 @@
+import 'package:blueprint_app/core/config/firebase_config.dart';
 import 'package:blueprint_app/core/config/flavor_config.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
@@ -46,6 +47,9 @@ abstract class CoreModule {
 
   @lazySingleton
   Connectivity get connectivity => Connectivity();
+
+  @lazySingleton
+  FirebaseConfig get firebaseConfig => FirebaseConfig();
 
   @lazySingleton
   FirebaseAuth get firebaseAuth => FirebaseAuth.instance;
