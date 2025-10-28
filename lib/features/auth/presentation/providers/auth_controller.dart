@@ -4,26 +4,13 @@ import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
 
-/// State for auth operations (loading, error, etc.)
-class AuthState {
-  const AuthState({
-    this.isLoading = false,
-    this.error,
-  });
 
-  final bool isLoading;
-  final String? error;
-
-  AuthState copyWith({
-    bool? isLoading,
-    String? error,
-  }) {
-    return AuthState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-}
+/// Provider for auth controller
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return AuthController(repository);
+});
 
 /// Controller for authentication actions
 class AuthController extends StateNotifier<AuthState> {
@@ -122,9 +109,23 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-/// Provider for auth controller
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthController(repository);
-});
+/// State for auth operations (loading, error, etc.)
+class AuthState {
+  const AuthState({
+    this.isLoading = false,
+    this.error,
+  });
+
+  final bool isLoading;
+  final String? error;
+
+  AuthState copyWith({
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
