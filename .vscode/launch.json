@@ -10,9 +10,9 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_development.dart",
+            "program": "lib/main_dev.dart",
             "deviceId": "F0762F45-54FB-4AC1-B2A5-3530145A2420",
-            "args": ["--flavor", "develop", "--dart-define=FLAVOR=development"]
+            "args": ["--flavor", "dev"]
         },
         {
             "name": "🧪 Staging (iOS Simulator)",
@@ -21,25 +21,25 @@
             "flutterMode": "debug",
             "program": "lib/main_staging.dart",
             "deviceId": "F0762F45-54FB-4AC1-B2A5-3530145A2420",
-            "args": ["--flavor", "staging", "--dart-define=FLAVOR=staging"]
+            "args": ["--flavor", "staging"]
         },
         {
             "name": "🎯 Prod (iOS Simulator)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_production.dart",
+            "program": "lib/main_prod.dart",
             "deviceId": "F0762F45-54FB-4AC1-B2A5-3530145A2420",
-            "args": ["--flavor", "production", "--dart-define=FLAVOR=production"]
+            "args": ["--flavor", "prod"]
         },
         {
             "name": "🚀 Dev (iOS Simulator2)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_development.dart",
+            "program": "lib/main_dev.dart",
             "deviceId": "6AA19534-BF71-4F45-844A-392F8033BA9A",
-            "args": ["--flavor", "develop", "--dart-define=FLAVOR=development"]
+            "args": ["--flavor", "dev"]
         },
         {
             "name": "🧪 Staging (iOS Simulator2)",
@@ -48,27 +48,27 @@
             "flutterMode": "debug",
             "program": "lib/main_staging.dart",
             "deviceId": "6AA19534-BF71-4F45-844A-392F8033BA9A",
-            "args": ["--flavor", "staging", "--dart-define=FLAVOR=staging"]
+            "args": ["--flavor", "staging"]
         },
         {
             "name": "🎯 Prod (iOS Simulator2)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_production.dart",
+            "program": "lib/main_prod.dart",
             "deviceId": "6AA19534-BF71-4F45-844A-392F8033BA9A",
-            "args": ["--flavor", "production", "--dart-define=FLAVOR=production"]
+            "args": ["--flavor", "prod"]
         },
-        
+
         // === Tu iPhone Físico ===
         {
             "name": "🚀 Dev (Tu iPhone)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_development.dart",
+            "program": "lib/main_dev.dart",
             "deviceId": "00008030-00010C31110A802E",
-            "args": ["--flavor", "develop", "--dart-define=FLAVOR=development"]
+            "args": ["--flavor", "dev"]
         },
         {
             "name": "🧪 Staging (Tu iPhone)",
@@ -77,27 +77,27 @@
             "flutterMode": "debug",
             "program": "lib/main_staging.dart",
             "deviceId": "00008030-00010C31110A802E",
-            "args": ["--flavor", "staging", "--dart-define=FLAVOR=staging"]
+            "args": ["--flavor", "staging"]
         },
         {
             "name": "🎯 Prod (Tu iPhone)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_production.dart",
+            "program": "lib/main_prod.dart",
             "deviceId": "00008030-00010C31110A802E",
-            "args": ["--flavor", "production", "--dart-define=FLAVOR=production"]
+            "args": ["--flavor", "prod"]
         },
-        
+
         // === iPhone X Físico ===
         {
             "name": "🚀 Dev (iPhone X)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_development.dart",
+            "program": "lib/main_dev.dart",
             "deviceId": "011a383549b06a289a4fd1d32ac5145d13066afe",
-            "args": ["--flavor", "develop", "--dart-define=FLAVOR=development"]
+            "args": ["--flavor", "dev"]
         },
         {
             "name": "🧪 Staging (iPhone X)",
@@ -106,45 +106,71 @@
             "flutterMode": "debug",
             "program": "lib/main_staging.dart",
             "deviceId": "011a383549b06a289a4fd1d32ac5145d13066afe",
-            "args": ["--flavor", "staging", "--dart-define=FLAVOR=staging"]
+            "args": ["--flavor", "staging"]
         },
         {
             "name": "🎯 Prod (iPhone X)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_production.dart",
+            "program": "lib/main_prod.dart",
             "deviceId": "011a383549b06a289a4fd1d32ac5145d13066afe",
-            "args": ["--flavor", "production", "--dart-define=FLAVOR=production"]
+            "args": ["--flavor", "prod"]
         },
-        
+
         // === Android Emulator ===
         {
-            "name": "🚀 Dev (Android)",
+            "name": "🚀 Dev (Android Emulator)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_development.dart",
+            "program": "lib/main_dev.dart",
             "deviceId": "emulator-5554",
-            "args": ["--flavor", "development", "--dart-define=FLAVOR=development"]
+            "args": ["--flavor", "dev"]
         },
         {
-            "name": "🧪 Staging (Android)",
+            "name": "🧪 Staging (Android Emulator)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
             "program": "lib/main_staging.dart",
             "deviceId": "emulator-5554",
-            "args": ["--dart-define=FLAVOR=staging"]
+            "args": ["--flavor", "staging"]
         },
         {
-            "name": "🎯 Prod (Android)",
+            "name": "🎯 Prod (Android Emulator)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "program": "lib/main_production.dart",
+            "program": "lib/main_prod.dart",
             "deviceId": "emulator-5554",
-            "args": ["--dart-define=FLAVOR=production"]
+            "args": ["--flavor", "prod"]
+        },
+
+        // === Android Physical Device (Auto-detect) ===
+        {
+            "name": "🚀 Dev (Android Device)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main_dev.dart",
+            "args": ["--flavor", "dev"]
+        },
+        {
+            "name": "🧪 Staging (Android Device)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main_staging.dart",
+            "args": ["--flavor", "staging"]
+        },
+        {
+            "name": "🎯 Prod (Android Device)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "program": "lib/main_prod.dart",
+            "args": ["--flavor", "prod"]
         }
     ]
 }
