@@ -9,19 +9,55 @@ import 'package:blueprint_app/core/theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependency injection
-  await configureDependencies();
+  try {
+    // Initialize dependency injection
+    await configureDependencies();
+    debugPrint('✅ Dependencies configured');
 
-  // Initialize Firebase
-  final firebaseConfig = getIt<FirebaseConfig>();
-  await firebaseConfig.initialize();
+    // Initialize Firebase
+    final firebaseConfig = getIt<FirebaseConfig>();
+    await firebaseConfig.initialize();
+    debugPrint('✅ Firebase initialized');
 
-  runApp(
-    // Wrap with ProviderScope to enable Riverpod
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+    runApp(
+      // Wrap with ProviderScope to enable Riverpod
+      const ProviderScope(
+        child: MyApp(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    debugPrint('❌ Error during initialization: $e');
+    debugPrint('Stack trace: $stackTrace');
+    // Still run the app but with an error screen
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Initialization Error',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    e.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends ConsumerWidget {
