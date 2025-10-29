@@ -1,3 +1,5 @@
+import 'package:blueprint_app/core/config/firebase_config.dart';
+import 'package:blueprint_app/core/config/flavor_config.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,12 +8,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
-import 'package:blueprint_app/core/config/firebase_config.dart';
-import 'package:blueprint_app/core/config/flavor_config.dart';
-
 // Export network providers
-export 'package:blueprint_app/core/network/network_info.dart';
 export 'package:blueprint_app/core/network/api_client.dart';
+export 'package:blueprint_app/core/network/network_info.dart';
 
 /// Logger provider - foundational logging service
 final loggerProvider = Provider<Logger>((ref) {

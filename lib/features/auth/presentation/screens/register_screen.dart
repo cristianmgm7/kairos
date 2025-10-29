@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:blueprint_app/core/theme/app_spacing.dart';
 import 'package:blueprint_app/core/widgets/app_button.dart';
 import 'package:blueprint_app/core/widgets/app_text_field.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_controller.dart';
 import 'package:blueprint_app/features/auth/presentation/widgets/google_sign_in_button.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});

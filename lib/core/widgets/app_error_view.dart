@@ -1,13 +1,8 @@
+import 'package:blueprint_app/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 
-import 'package:blueprint_app/core/theme/app_spacing.dart';
 
 class AppErrorView extends StatelessWidget {
-  final String message;
-  final String? title;
-  final VoidCallback? onRetry;
-  final IconData icon;
-
   const AppErrorView({
     required this.message,
     this.title,
@@ -15,6 +10,12 @@ class AppErrorView extends StatelessWidget {
     this.icon = Icons.error_outline,
     super.key,
   });
+
+  final String message;
+  final String? title;
+  final VoidCallback? onRetry;
+
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +66,6 @@ class AppErrorView extends StatelessWidget {
 
 // Empty state variant
 class AppEmptyView extends StatelessWidget {
-  final String message;
-  final String? title;
-  final VoidCallback? onAction;
-  final String? actionText;
-  final IconData icon;
-
   const AppEmptyView({
     required this.message,
     this.title,
@@ -79,6 +74,12 @@ class AppEmptyView extends StatelessWidget {
     this.icon = Icons.inbox_outlined,
     super.key,
   });
+
+  final String message;
+  final String? title;
+  final VoidCallback? onAction;
+  final String? actionText;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {

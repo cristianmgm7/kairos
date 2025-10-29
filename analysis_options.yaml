@@ -28,5 +28,8 @@ linter:
     # Keep these enabled
     always_use_package_imports: true
     avoid_print: true
+    avoid_redundant_argument_values: true
     avoid_web_libraries_in_flutter: true
+    directives_ordering: true
+    sort_constructors_first: true
     unawaited_futures: true

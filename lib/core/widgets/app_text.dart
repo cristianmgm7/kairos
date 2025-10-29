@@ -106,7 +106,7 @@ class AppText extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
-    final TextStyle? baseStyle = switch (style) {
+    final baseStyle = switch (style) {
       AppTextStyle.displayLarge => textTheme.displayLarge,
       AppTextStyle.displayMedium => textTheme.displayMedium,
       AppTextStyle.displaySmall => textTheme.displaySmall,
