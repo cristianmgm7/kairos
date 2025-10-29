@@ -1,11 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:google_sign_in/google_sign_in.dart';
-
 import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/data/models/user_model.dart';
 import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
 import 'package:blueprint_app/features/auth/domain/failures/auth_failure.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:google_sign_in/google_sign_in.dart';
+
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._firebaseAuth, this._googleSignIn);

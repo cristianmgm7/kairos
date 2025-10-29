@@ -53,7 +53,7 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // build the button based on the type
-    final Widget button = switch (type) {
+    final button = switch (type) {
       AppButtonType.elevated => _buildElevatedButton(context),
       AppButtonType.outlined => _buildOutlinedButton(context),
       AppButtonType.text => _buildTextButton(context),

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppLoader extends StatelessWidget {
-  final double size;
-  final Color? color;
-  final double strokeWidth;
-
   const AppLoader({
     this.size = 40,
     this.color,
@@ -23,6 +19,10 @@ class AppLoader extends StatelessWidget {
     super.key,
   })  : size = 60,
         strokeWidth = 6;
+
+  final double size;
+  final Color? color;
+  final double strokeWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -43,12 +43,12 @@ class AppLoader extends StatelessWidget {
 
 // Full screen loader
 class AppFullScreenLoader extends StatelessWidget {
-  final String? message;
-
   const AppFullScreenLoader({
     this.message,
     super.key,
   });
+
+  final String? message;
 
   @override
   Widget build(BuildContext context) {

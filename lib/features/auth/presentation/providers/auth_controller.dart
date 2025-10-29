@@ -1,8 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
 /// Provider for auth controller
@@ -19,7 +18,7 @@ class AuthController extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
   Future<void> signInWithGoogle() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.signInWithGoogle();
 
@@ -41,7 +40,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.signInWithEmail(
       email: email,
@@ -65,7 +64,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.registerWithEmail(
       email: email,
@@ -86,7 +85,7 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signOut() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.signOut();
 
@@ -105,7 +104,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Clear error message
   void clearError() {
-    state = state.copyWith(error: null);
+    state = state.copyWith();
   }
 }
 
