@@ -34,7 +34,27 @@ dependencies:
   # Firebase
   firebase_core: ^3.8.1
   firebase_auth: ^5.3.3
+  firebase_storage: ^12.3.4
   google_sign_in: ^6.2.2
+
+  # Local Database
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+
+  # Offline-first Sync
+  datum: ^0.0.9
+
+  # Image Handling
+  image_picker: ^1.1.2
+  image: ^4.2.0
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Image Caching
+  cached_network_image: ^3.4.1
+
+  # Utilities
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
@@ -51,9 +71,11 @@ dev_dependencies:
 
   # Testing
   mockito: ^5.4.0
-  bloc_test: ^9.1.0
   integration_test:
     sdk: flutter
+
+  # Isar Code Generation
+  isar_generator: ^3.0.0
 
 flutter:
   uses-material-design: true

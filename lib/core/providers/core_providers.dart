@@ -3,6 +3,7 @@ import 'package:blueprint_app/core/config/flavor_config.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
@@ -44,6 +45,11 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
 /// Firebase config provider - Firebase initialization service
 final firebaseConfigProvider = Provider<FirebaseConfig>((ref) {
   return FirebaseConfig();
+});
+
+/// Firebase Storage provider - Firebase Storage instance
+final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
+  return FirebaseStorage.instance;
 });
 
 /// Dio provider - HTTP client with logging and configuration
