@@ -35,14 +35,12 @@ dependencies:
   firebase_core: ^3.8.1
   firebase_auth: ^5.3.3
   firebase_storage: ^12.3.4
+  cloud_firestore: ^5.5.0
   google_sign_in: ^6.2.2
 
   # Local Database
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
-
-  # Offline-first Sync
-  datum: ^0.0.9
 
   # Image Handling
   image_picker: ^1.1.2

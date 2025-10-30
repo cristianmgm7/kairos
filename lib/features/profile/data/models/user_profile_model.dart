@@ -1,25 +1,22 @@
 import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
-import 'package:datum/datum.dart';
 import 'package:isar/isar.dart';
 import 'package:uuid/uuid.dart';
 
 part 'user_profile_model.g.dart';
 
-/// Data model for user profile with Isar persistence and Datum sync
+/// Data model for user profile with Isar persistence
+/// Note: Does not extend DatumEntity due to Isar incompatibility with Equatable
 @collection
-class UserProfileModel extends DatumEntity {
+class UserProfileModel {
   /// Isar ID (required for Isar collections)
-  @override
   Id get isarId => fastHash(id);
 
   /// Unique profile ID (UUID)
   @Index(unique: true)
-  @override
   final String id;
 
   /// Firebase Auth user ID
   @Index()
-  @override
   final String userId;
 
   /// Display name
@@ -51,19 +48,15 @@ class UserProfileModel extends DatumEntity {
   final List<String>? interests;
 
   /// Created at timestamp (milliseconds since epoch)
-  @override
   final int createdAtMillis;
 
   /// Updated at timestamp (milliseconds since epoch)
-  @override
   final int modifiedAtMillis;
 
   /// Soft delete flag (Datum requirement)
-  @override
   final bool isDeleted;
 
   /// Version for optimistic locking (Datum requirement)
-  @override
   final int version;
 
   UserProfileModel({
@@ -154,7 +147,6 @@ class UserProfileModel extends DatumEntity {
   }
 
   /// Convert to Map for Datum sync
-  @override
   Map<String, dynamic> toDatumMap() {
     return {
       'id': id,
@@ -249,12 +241,12 @@ class UserProfileModel extends DatumEntity {
     return hash;
   }
 
-  @override
   DateTime get createdAt =>
       DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
 
-  @override
   DateTime get modifiedAt =>
       DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis);
 }
+
+
 

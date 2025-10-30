@@ -1,5 +1,6 @@
 import 'package:blueprint_app/core/config/firebase_config.dart';
 import 'package:blueprint_app/core/config/flavor_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -50,6 +51,11 @@ final firebaseConfigProvider = Provider<FirebaseConfig>((ref) {
 /// Firebase Storage provider - Firebase Storage instance
 final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
   return FirebaseStorage.instance;
+});
+
+/// Firestore provider - Cloud Firestore instance
+final firestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return FirebaseFirestore.instance;
 });
 
 /// Dio provider - HTTP client with logging and configuration

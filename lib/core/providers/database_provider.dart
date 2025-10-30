@@ -1,5 +1,3 @@
-import 'package:blueprint_app/core/data/models/pending_operation_model.dart';
-import 'package:blueprint_app/core/data/models/sync_metadata_model.dart';
 import 'package:blueprint_app/features/profile/data/models/user_profile_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -14,11 +12,9 @@ final isarProvider = Provider<Isar>((ref) {
 Future<Isar> initializeIsar() async {
   final dir = await getApplicationDocumentsDirectory();
 
-  return await Isar.open(
+  return Isar.open(
     [
       UserProfileModelSchema,
-      PendingOperationModelSchema,
-      SyncMetadataModelSchema,
     ],
     directory: dir.path,
     name: 'kairos_db',
