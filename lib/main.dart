@@ -1,6 +1,10 @@
 import 'package:blueprint_app/core/config/firebase_config.dart';
+import 'package:blueprint_app/core/providers/database_provider.dart';
+import 'package:blueprint_app/core/providers/datum_provider.dart';
 import 'package:blueprint_app/core/routing/router_provider.dart';
 import 'package:blueprint_app/core/theme/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,10 +17,30 @@ Future<void> main() async {
     await firebaseConfig.initialize();
     debugPrint('✅ Firebase initialized');
 
+    // Initialize Isar
+    final isar = await initializeIsar();
+    debugPrint('✅ Isar initialized');
+
+    // Initialize Firebase Firestore
+    final firestore = FirebaseFirestore.instance;
+    debugPrint('✅ Firebase Firestore initialized');
+
+    // Initialize Datum
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final datum = await initializeDatum(
+      initialUserId: currentUserId,
+      isar: isar,
+      firestore: firestore,
+    );
+    debugPrint('✅ Datum initialized');
+
     runApp(
-      // Wrap with ProviderScope to enable Riverpod
-      const ProviderScope(
-        child: MyApp(),
+      ProviderScope(
+        overrides: [
+          isarProvider.overrideWithValue(isar),
+          datumProvider.overrideWithValue(datum),
+        ],
+        child: const MyApp(),
       ),
     );
   } catch (e, stackTrace) {
