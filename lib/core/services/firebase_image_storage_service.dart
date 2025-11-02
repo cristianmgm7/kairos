@@ -7,8 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image/image.dart' as img;
 
 /// Service for handling Firebase Storage operations
-class FirebaseStorageService {
-  FirebaseStorageService(this._storage);
+class FirebaseImageStorageService {
+  FirebaseImageStorageService(this._storage);
 
   final FirebaseStorage _storage;
 
