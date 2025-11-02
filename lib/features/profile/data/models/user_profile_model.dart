@@ -1,4 +1,4 @@
-import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:isar/isar.dart';
 import 'package:uuid/uuid.dart';
 
@@ -247,6 +247,3 @@ class UserProfileModel {
   DateTime get modifiedAt =>
       DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis);
 }
-
-
-

@@ -1,5 +1,5 @@
-import 'package:blueprint_app/core/utils/result.dart';
-import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 
 abstract class AuthRepository {
   /// Stream of authentication state changes

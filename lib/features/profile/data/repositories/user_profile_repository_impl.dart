@@ -1,10 +1,10 @@
-import 'package:blueprint_app/core/errors/failures.dart';
-import 'package:blueprint_app/core/utils/result.dart';
-import 'package:blueprint_app/features/profile/data/datasources/user_profile_local_datasource.dart';
-import 'package:blueprint_app/features/profile/data/datasources/user_profile_remote_datasource.dart';
-import 'package:blueprint_app/features/profile/data/models/user_profile_model.dart';
-import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
-import 'package:blueprint_app/features/profile/domain/repositories/user_profile_repository.dart';
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/profile/data/datasources/user_profile_local_datasource.dart';
+import 'package:kairos/features/profile/data/datasources/user_profile_remote_datasource.dart';
+import 'package:kairos/features/profile/data/models/user_profile_model.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
+import 'package:kairos/features/profile/domain/repositories/user_profile_repository.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 

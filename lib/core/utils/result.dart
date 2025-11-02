@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/errors/failures.dart';
+import 'package:kairos/core/errors/failures.dart';
 import 'package:equatable/equatable.dart';
 
 sealed class Result<T> extends Equatable {

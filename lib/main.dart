@@ -1,7 +1,7 @@
-import 'package:blueprint_app/core/config/firebase_config.dart';
-import 'package:blueprint_app/core/providers/database_provider.dart';
-import 'package:blueprint_app/core/routing/router_provider.dart';
-import 'package:blueprint_app/core/theme/app_theme.dart';
+import 'package:kairos/core/config/firebase_config.dart';
+import 'package:kairos/core/providers/database_provider.dart';
+import 'package:kairos/core/routing/router_provider.dart';
+import 'package:kairos/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -70,7 +70,7 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Blueprint App',
+      title: 'Kairos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

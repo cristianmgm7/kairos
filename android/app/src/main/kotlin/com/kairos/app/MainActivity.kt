@@ -1,4 +1,4 @@
-package com.blueprint.blueprint_app
+package com.kairos.app
 
 import io.flutter.embedding.android.FlutterActivity
 

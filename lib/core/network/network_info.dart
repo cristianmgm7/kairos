@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/providers/core_providers.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.blueprint.blueprint_app"
+    namespace = "com.kairos.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.blueprint.blueprint_app"
+        applicationId = "com.kairos.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -35,17 +35,17 @@ android {
             dimension = "flavor-type"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "Blueprint Dev")
+            resValue("string", "app_name", "Kairos Dev")
         }
         create("staging") {
             dimension = "flavor-type"
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
-            resValue("string", "app_name", "Blueprint Staging")
+            resValue("string", "app_name", "Kairos Staging")
         }
         create("prod") {
             dimension = "flavor-type"
-            resValue("string", "app_name", "Blueprint")
+            resValue("string", "app_name", "Kairos")
         }
     }
 

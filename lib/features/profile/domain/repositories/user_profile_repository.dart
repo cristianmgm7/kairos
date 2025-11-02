@@ -1,5 +1,5 @@
-import 'package:blueprint_app/core/utils/result.dart';
-import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 
 /// Repository interface for user profile operations
 abstract class UserProfileRepository {
@@ -24,9 +24,3 @@ abstract class UserProfileRepository {
   /// Manually trigger sync
   Future<Result<void>> syncProfile();
 }
-
-
-
-
-
-

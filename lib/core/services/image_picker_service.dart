@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:blueprint_app/core/errors/failures.dart';
-import 'package:blueprint_app/core/utils/result.dart';
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Service for handling image picking from gallery or camera

@@ -1,4 +1,4 @@
-import 'package:blueprint_app/features/profile/data/models/user_profile_model.dart';
+import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Remote data source using Firestore
@@ -78,7 +78,8 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   ) async {
     final querySnapshot = await _collection
         .where('userId', isEqualTo: userId)
-        .where('modifiedAtMillis', isGreaterThan: timestamp.millisecondsSinceEpoch)
+        .where('modifiedAtMillis',
+            isGreaterThan: timestamp.millisecondsSinceEpoch)
         .get();
 
     return querySnapshot.docs

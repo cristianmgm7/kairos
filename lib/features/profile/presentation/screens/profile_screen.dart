@@ -1,6 +1,6 @@
-import 'package:blueprint_app/core/theme/app_spacing.dart';
-import 'package:blueprint_app/features/auth/presentation/providers/auth_controller.dart';
-import 'package:blueprint_app/features/profile/presentation/providers/user_profile_providers.dart';
+import 'package:kairos/core/theme/app_spacing.dart';
+import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
+import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -83,7 +83,8 @@ class ProfileScreen extends ConsumerWidget {
                       title: 'Experience Level',
                       value: profile.experienceLevel ?? 'Not set',
                     ),
-                    if (profile.interests != null && profile.interests!.isNotEmpty)
+                    if (profile.interests != null &&
+                        profile.interests!.isNotEmpty)
                       _ProfileDetailTile(
                         icon: Icons.favorite,
                         title: 'Interests',

@@ -1,5 +1,5 @@
-import 'package:blueprint_app/core/config/firebase_config.dart';
-import 'package:blueprint_app/core/config/flavor_config.dart';
+import 'package:kairos/core/config/firebase_config.dart';
+import 'package:kairos/core/config/flavor_config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
@@ -11,8 +11,8 @@ import 'package:logger/logger.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 // Export network providers
-export 'package:blueprint_app/core/network/api_client.dart';
-export 'package:blueprint_app/core/network/network_info.dart';
+export 'package:kairos/core/network/api_client.dart';
+export 'package:kairos/core/network/network_info.dart';
 
 /// Logger provider - foundational logging service
 final loggerProvider = Provider<Logger>((ref) {

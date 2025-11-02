@@ -1,4 +1,4 @@
-import 'package:blueprint_app/features/auth/domain/entities/user_entity.dart';
+import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 class UserModel extends UserEntity {
