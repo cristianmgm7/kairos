@@ -1,5 +1,5 @@
-name: blueprint_app
-description: A production-ready Flutter blueprint template
+name: kairos
+description: A personal journaling and mindfulness app
 publish_to: 'none'
 version: 1.0.0+1
 

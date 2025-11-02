@@ -1,4 +1,4 @@
-import 'package:blueprint_app/features/profile/data/models/user_profile_model.dart';
+import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 import 'package:isar/isar.dart';
 
 /// Local data source using Isar for offline storage

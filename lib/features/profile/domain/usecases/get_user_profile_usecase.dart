@@ -1,6 +1,6 @@
-import 'package:blueprint_app/core/utils/result.dart';
-import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
-import 'package:blueprint_app/features/profile/domain/repositories/user_profile_repository.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
+import 'package:kairos/features/profile/domain/repositories/user_profile_repository.dart';
 
 /// Parameters for getting a user profile
 class GetUserProfileParams {
@@ -19,7 +19,3 @@ class GetUserProfileUseCase {
     return repository.getProfileByUserId(params.userId);
   }
 }
-
-
-
-

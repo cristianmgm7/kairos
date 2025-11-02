@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:blueprint_app/core/routing/app_routes.dart';
+import 'package:kairos/core/routing/app_routes.dart';
 
 /// MainScaffold provides a persistent bottom navigation bar for the main app.
 /// This widget wraps all tab screens via GoRouter's ShellRoute.

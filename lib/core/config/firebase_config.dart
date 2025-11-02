@@ -1,8 +1,7 @@
-import 'package:blueprint_app/core/config/firebase_options_dev.dart' as dev;
-import 'package:blueprint_app/core/config/firebase_options_prod.dart' as prod;
-import 'package:blueprint_app/core/config/firebase_options_staging.dart'
-    as staging;
-import 'package:blueprint_app/core/config/flavor_config.dart';
+import 'package:kairos/core/config/firebase_options_dev.dart' as dev;
+import 'package:kairos/core/config/firebase_options_prod.dart' as prod;
+import 'package:kairos/core/config/firebase_options_staging.dart' as staging;
+import 'package:kairos/core/config/flavor_config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 

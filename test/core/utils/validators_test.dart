@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/utils/validators.dart';
+import 'package:kairos/core/utils/validators.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

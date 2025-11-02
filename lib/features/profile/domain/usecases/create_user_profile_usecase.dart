@@ -1,7 +1,7 @@
-import 'package:blueprint_app/core/errors/failures.dart';
-import 'package:blueprint_app/core/utils/result.dart';
-import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
-import 'package:blueprint_app/features/profile/domain/repositories/user_profile_repository.dart';
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
+import 'package:kairos/features/profile/domain/repositories/user_profile_repository.dart';
 import 'package:uuid/uuid.dart';
 
 /// Parameters for creating a user profile
@@ -74,7 +74,3 @@ class CreateUserProfileUseCase {
     return repository.createProfile(profile);
   }
 }
-
-
-
-

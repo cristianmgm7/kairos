@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/theme/app_spacing.dart';
+import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 
 class GoogleSignInButton extends StatelessWidget {

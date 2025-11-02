@@ -1,19 +1,22 @@
 import 'dart:io';
 
-import 'package:blueprint_app/core/theme/app_spacing.dart';
-import 'package:blueprint_app/core/widgets/app_button.dart';
-import 'package:blueprint_app/core/widgets/app_error_view.dart';
-import 'package:blueprint_app/core/widgets/app_text.dart';
-import 'package:blueprint_app/core/widgets/app_text_field.dart';
-import 'package:blueprint_app/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:kairos/core/routing/app_routes.dart';
+import 'package:kairos/core/theme/app_spacing.dart';
+import 'package:kairos/core/widgets/app_button.dart';
+import 'package:kairos/core/widgets/app_error_view.dart';
+import 'package:kairos/core/widgets/app_text.dart';
+import 'package:kairos/core/widgets/app_text_field.dart';
+import 'package:kairos/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
 
   @override
-  ConsumerState<CreateProfileScreen> createState() => _CreateProfileScreenState();
+  ConsumerState<CreateProfileScreen> createState() =>
+      _CreateProfileScreenState();
 }
 
 class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
@@ -43,6 +46,14 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final profileController = ref.read(profileControllerProvider.notifier);
+
+    // Listen for successful profile creation
+    ref.listen<ProfileState>(profileControllerProvider, (previous, next) {
+      if (next is ProfileSuccess) {
+        // Navigate to home after successful profile creation
+        context.go(AppRoutes.home);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -162,7 +173,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                 backgroundImage: _selectedAvatar != null
                     ? FileImage(_selectedAvatar!)
                     : null,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: _selectedAvatar == null
                     ? Icon(
                         Icons.person,
@@ -198,7 +210,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     return InkWell(
       onTap: _selectDateOfBirth,
       child: IgnorePointer(
-        child:         AppTextField(
+        child: AppTextField(
           controller: TextEditingController(
             text: _selectedDateOfBirth != null
                 ? '${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.year}'
@@ -223,7 +235,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         DropdownMenuItem(value: 'male', child: Text('Male')),
         DropdownMenuItem(value: 'female', child: Text('Female')),
         DropdownMenuItem(value: 'non-binary', child: Text('Non-binary')),
-        DropdownMenuItem(value: 'prefer-not-to-say', child: Text('Prefer not to say')),
+        DropdownMenuItem(
+            value: 'prefer-not-to-say', child: Text('Prefer not to say')),
       ],
       onChanged: (value) {
         setState(() {
@@ -235,7 +248,9 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildExperienceLevelDropdown() {
     return DropdownButtonFormField<String>(
-      value: _experienceLevelController.text.isNotEmpty ? _experienceLevelController.text : null,
+      value: _experienceLevelController.text.isNotEmpty
+          ? _experienceLevelController.text
+          : null,
       decoration: const InputDecoration(
         labelText: 'Experience Level',
         hintText: 'Select your experience level',
@@ -256,7 +271,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   Future<void> _selectDateOfBirth() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // 18 years ago
+      initialDate: DateTime.now()
+          .subtract(const Duration(days: 365 * 18)), // 18 years ago
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -312,10 +328,18 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     profileController.createProfile(
       name: _nameController.text.trim(),
       dateOfBirth: _selectedDateOfBirth,
-      country: _countryController.text.trim().isNotEmpty ? _countryController.text : null,
-      gender: _genderController.text.trim().isNotEmpty ? _genderController.text : null,
-      mainGoal: _mainGoalController.text.trim().isNotEmpty ? _mainGoalController.text : null,
-      experienceLevel: _experienceLevelController.text.trim().isNotEmpty ? _experienceLevelController.text : null,
+      country: _countryController.text.trim().isNotEmpty
+          ? _countryController.text
+          : null,
+      gender: _genderController.text.trim().isNotEmpty
+          ? _genderController.text
+          : null,
+      mainGoal: _mainGoalController.text.trim().isNotEmpty
+          ? _mainGoalController.text
+          : null,
+      experienceLevel: _experienceLevelController.text.trim().isNotEmpty
+          ? _experienceLevelController.text
+          : null,
       interests: interests.isNotEmpty ? interests : null,
     );
   }

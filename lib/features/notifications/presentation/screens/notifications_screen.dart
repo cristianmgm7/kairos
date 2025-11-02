@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/theme/app_spacing.dart';
+import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 
 /// Notifications screen - placeholder for future notification functionality.
@@ -23,7 +23,8 @@ class NotificationsScreen extends StatelessWidget {
                   Icon(
                     Icons.notifications,
                     size: 80,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.5),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(

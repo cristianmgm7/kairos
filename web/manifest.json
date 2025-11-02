@@ -1,11 +1,11 @@
 {
-    "name": "blueprint_app",
-    "short_name": "blueprint_app",
+    "name": "kairos",
+    "short_name": "kairos",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "A personal journaling and mindfulness app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,6 +1,6 @@
-import 'package:blueprint_app/features/auth/presentation/providers/auth_controller.dart';
-import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
-import 'package:blueprint_app/features/profile/presentation/providers/user_profile_providers.dart';
+import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
+import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
+import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

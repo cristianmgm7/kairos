@@ -1,4 +1,4 @@
-import 'package:blueprint_app/core/routing/app_routes.dart';
+import 'package:kairos/core/routing/app_routes.dart';
 
 /// Helper function to handle authentication-based redirects.
 /// Returns the route to redirect to, or null if no redirect is needed.

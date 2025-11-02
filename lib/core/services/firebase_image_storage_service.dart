@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:blueprint_app/core/errors/failures.dart';
-import 'package:blueprint_app/core/utils/result.dart';
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image/image.dart' as img;
 
@@ -118,6 +118,3 @@ class FirebaseImageStorageService {
     }
   }
 }
-
-
-
