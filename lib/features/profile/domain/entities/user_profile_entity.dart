@@ -7,6 +7,8 @@ class UserProfileEntity extends Equatable {
     required this.id,
     required this.userId, // Links to Firebase Auth UID
     required this.name,
+    required this.createdAt,
+    required this.updatedAt,
     this.dateOfBirth,
     this.country,
     this.gender,
@@ -14,8 +16,6 @@ class UserProfileEntity extends Equatable {
     this.mainGoal,
     this.experienceLevel,
     this.interests,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
   /// Unique profile ID (UUID)
@@ -75,4 +75,9 @@ class UserProfileEntity extends Equatable {
     return 'UserProfileEntity(id: $id, userId: $userId, name: $name)';
   }
 }
+
+
+
+
+
 

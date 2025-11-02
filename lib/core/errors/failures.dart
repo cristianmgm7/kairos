@@ -47,3 +47,24 @@ class UnknownFailure extends Failure {
     super.code,
   });
 }
+
+class StorageFailure extends Failure {
+  const StorageFailure({
+    required super.message,
+    super.code,
+  });
+}
+
+class PermissionFailure extends Failure {
+  const PermissionFailure({
+    required super.message,
+    super.code,
+  });
+}
+
+class UserCancelledFailure extends Failure {
+  const UserCancelledFailure({
+    required super.message,
+    super.code,
+  });
+}
