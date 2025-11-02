@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:blueprint_app/core/errors/failures.dart';
-import 'package:blueprint_app/core/services/firebase_storage_service.dart';
+import 'package:blueprint_app/core/services/firebase_image_storage_service.dart';
 import 'package:blueprint_app/core/services/image_picker_service.dart';
 import 'package:blueprint_app/core/utils/result.dart';
 import 'package:blueprint_app/features/auth/presentation/providers/auth_providers.dart';
@@ -37,7 +37,7 @@ class ProfileController extends StateNotifier<ProfileState> {
   final CreateUserProfileUseCase createProfileUseCase;
   final GetUserProfileUseCase getProfileUseCase;
   final ImagePickerService imagePickerService;
-  final FirebaseStorageService storageService;
+  final FirebaseImageStorageService storageService;
   final Ref ref;
 
   File? _selectedAvatar;
@@ -171,7 +171,7 @@ final profileControllerProvider = StateNotifierProvider<ProfileController, Profi
   final createProfileUseCase = ref.watch(createUserProfileUseCaseProvider);
   final getProfileUseCase = ref.watch(getUserProfileUseCaseProvider);
   final imagePickerService = ref.watch(imagePickerServiceProvider);
-  final storageService = ref.watch(firebaseStorageServiceProvider);
+  final storageService = ref.watch(firebaseImageStorageServiceProvider);
 
   return ProfileController(
     createProfileUseCase: createProfileUseCase,
