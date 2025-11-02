@@ -1,13 +1,19 @@
 import 'package:blueprint_app/core/providers/core_providers.dart';
 import 'package:blueprint_app/core/providers/database_provider.dart';
+import 'package:blueprint_app/core/services/firebase_image_storage_service.dart';
+import 'package:blueprint_app/core/services/image_picker_service.dart';
 import 'package:blueprint_app/features/profile/data/datasources/user_profile_local_datasource.dart';
 import 'package:blueprint_app/features/profile/data/datasources/user_profile_remote_datasource.dart';
 import 'package:blueprint_app/features/profile/data/repositories/user_profile_repository_impl.dart';
 import 'package:blueprint_app/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:blueprint_app/features/profile/domain/repositories/user_profile_repository.dart';
+import 'package:blueprint_app/features/profile/domain/usecases/create_user_profile_usecase.dart';
+import 'package:blueprint_app/features/profile/domain/usecases/get_user_profile_usecase.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Connectivity provider
 final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
@@ -58,4 +64,28 @@ final hasCompletedProfileProvider = Provider<bool>((ref) {
     data: (profile) => profile != null,
     orElse: () => false,
   );
+});
+
+/// Image picker service provider
+final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
+  final picker = ImagePicker();
+  return ImagePickerService(picker);
+});
+
+/// Firebase storage service provider
+final firebaseImageStorageServiceProvider = Provider<FirebaseImageStorageService>((ref) {
+  final storage = FirebaseStorage.instance;
+  return FirebaseImageStorageService(storage);
+});
+
+/// Create user profile use case provider
+final createUserProfileUseCaseProvider = Provider<CreateUserProfileUseCase>((ref) {
+  final repository = ref.watch(userProfileRepositoryProvider);
+  return CreateUserProfileUseCase(repository);
+});
+
+/// Get user profile use case provider
+final getUserProfileUseCaseProvider = Provider<GetUserProfileUseCase>((ref) {
+  final repository = ref.watch(userProfileRepositoryProvider);
+  return GetUserProfileUseCase(repository);
 });
