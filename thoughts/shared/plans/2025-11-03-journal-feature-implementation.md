@@ -64,7 +64,8 @@ This plan explicitly excludes:
 - Waveform visualization for audio
 - Rich text editing (simple text input only)
 - Image annotation or editing
-- Audio playback controls (display only in Phase 1)
+- Full audio playback controls (display only in Phase 1, playback later)
+- Progress bars during upload (progress tracking implemented, UI indicator optional for Phase 2)
 
 ## Implementation Approach
 
@@ -76,11 +77,17 @@ This plan explicitly excludes:
 
 ### Architectural Decisions
 - **Single Entry Type**: Each entry is text OR image OR audio (not mixed)
-- **Generalized Storage Service**: Refactor to `FirebaseStorageService` with optional processing
-- **Thumbnail Strategy**: Generate locally using `image` package before upload
+- **Generalized Storage Service**: Refactor to `FirebaseStorageService` with optional processing and progress streams
+- **Storage Path Pattern**: `users/{userId}/journals/{journalId}/{filename}` for organized structure
+- **Thumbnail Strategy**: Generate locally using `image` package before upload for instant offline preview
 - **Audio Package**: Use `record` package for simplicity and cross-platform support
-- **Retry Strategy**: Automatic background retry + manual UI trigger
+- **Audio Format**: Encode to M4A/AAC for optimal compression and quality
+- **Retry Strategy**: Automatic background retry with exponential backoff (2s → 4s → 8s → 16s → 32s) + manual UI trigger
 - **Upload Status Enum**: Track 5 states: `notStarted`, `uploading`, `completed`, `failed`, `retrying`
+- **Sync Queue**: Use `needsSync` boolean flag on entries to simplify retry logic
+- **Timestamps**: All timestamps use UTC to avoid sync conflicts
+- **Metadata Field**: Optional JSON field for future extensions (AI tags, geolocation, etc.)
+- **Reactive Updates**: Isar `.watch()` triggers on uploadStatus and transcription changes for instant UI updates
 
 ---
 
@@ -131,15 +138,17 @@ class JournalEntryEntity extends Equatable {
     this.thumbnailUrl,
     this.audioDurationSeconds,
     this.transcription,
+    this.metadata,
     this.aiProcessingStatus = AiProcessingStatus.pending,
     this.uploadStatus = UploadStatus.notStarted,
+    this.needsSync = false,
   });
 
   final String id;
   final String userId;
   final JournalEntryType entryType;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime createdAt; // Always UTC
+  final DateTime updatedAt; // Always UTC
 
   // Content fields (type-specific)
   final String? textContent;
@@ -153,6 +162,10 @@ class JournalEntryEntity extends Equatable {
 
   // Sync fields
   final UploadStatus uploadStatus;
+  final bool needsSync; // Flag for retry queue
+
+  // Future extensibility (AI tags, geolocation, etc.)
+  final Map<String, dynamic>? metadata;
 
   @override
   List<Object?> get props => [
@@ -166,8 +179,10 @@ class JournalEntryEntity extends Equatable {
         thumbnailUrl,
         audioDurationSeconds,
         transcription,
+        metadata,
         aiProcessingStatus,
         uploadStatus,
+        needsSync,
       ];
 
   JournalEntryEntity copyWith({
@@ -181,8 +196,10 @@ class JournalEntryEntity extends Equatable {
     String? thumbnailUrl,
     int? audioDurationSeconds,
     String? transcription,
+    Map<String, dynamic>? metadata,
     AiProcessingStatus? aiProcessingStatus,
     UploadStatus? uploadStatus,
+    bool? needsSync,
   }) {
     return JournalEntryEntity(
       id: id ?? this.id,
@@ -195,8 +212,10 @@ class JournalEntryEntity extends Equatable {
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
+      metadata: metadata ?? this.metadata,
       aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
       uploadStatus: uploadStatus ?? this.uploadStatus,
+      needsSync: needsSync ?? this.needsSync,
     );
   }
 }
@@ -244,7 +263,7 @@ class JournalEntryModel {
     String? localThumbnailPath,
     int? audioDurationSeconds,
   }) {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc(); // Always use UTC
     return JournalEntryModel(
       id: const Uuid().v4(),
       userId: userId,
@@ -255,6 +274,7 @@ class JournalEntryModel {
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: now.millisecondsSinceEpoch,
       modifiedAtMillis: now.millisecondsSinceEpoch,
+      needsSync: entryType != JournalEntryType.text, // Media entries need upload
     );
   }
 
@@ -430,7 +450,16 @@ class FirebaseStorageService {
   FirebaseStorageService(this._storage);
   final FirebaseStorage _storage;
 
-  /// Upload file with optional processing
+  /// Build dynamic storage path: users/{userId}/journals/{journalId}/{filename}
+  String buildJournalPath({
+    required String userId,
+    required String journalId,
+    required String filename,
+  }) {
+    return 'users/$userId/journals/$journalId/$filename';
+  }
+
+  /// Upload file with optional processing and progress tracking
   Future<Result<String>> uploadFile({
     required File file,
     required String storagePath,
@@ -438,6 +467,7 @@ class FirebaseStorageService {
     Map<String, String>? metadata,
     int? imageMaxSize,
     int? imageQuality,
+    void Function(double progress)? onProgress,
   }) async {
     try {
       if (!file.existsSync()) {
@@ -462,7 +492,7 @@ class FirebaseStorageService {
 
         case FileType.audio:
           fileBytes = await file.readAsBytes();
-          contentType = 'audio/m4a'; // iOS default
+          contentType = 'audio/m4a'; // M4A/AAC for optimal compression
           break;
 
         case FileType.document:
@@ -478,11 +508,20 @@ class FirebaseStorageService {
         SettableMetadata(
           contentType: contentType,
           customMetadata: {
-            'uploadedAt': DateTime.now().toIso8601String(),
+            'uploadedAt': DateTime.now().toUtc().toIso8601String(),
+            'fileType': fileType.name,
             ...?metadata,
           },
         ),
       );
+
+      // Listen to upload progress
+      if (onProgress != null) {
+        uploadTask.snapshotEvents.listen((snapshot) {
+          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+          onProgress(progress);
+        });
+      }
 
       final snapshot = await uploadTask.whenComplete(() {});
       final downloadUrl = await snapshot.ref.getDownloadURL();
@@ -2335,34 +2374,39 @@ class JournalEntryItem extends StatelessWidget {
   }
 
   Widget _buildUploadStatus(BuildContext context) {
-    final color = switch (entry.uploadStatus) {
-      UploadStatus.uploading || UploadStatus.retrying => Colors.blue,
-      UploadStatus.failed => Colors.red,
-      _ => Colors.grey,
+    // Determine color and icon based on upload status
+    final (color, icon, text) = switch (entry.uploadStatus) {
+      UploadStatus.notStarted => (Colors.orange, Icons.cloud_upload_outlined, 'Pending'),
+      UploadStatus.uploading => (Colors.blue, Icons.cloud_upload, 'Uploading...'),
+      UploadStatus.retrying => (Colors.amber, Icons.sync, 'Retrying...'),
+      UploadStatus.failed => (Colors.red, Icons.error_outline, 'Failed'),
+      UploadStatus.completed => (Colors.green, Icons.cloud_done, ''),
     };
 
-    final text = switch (entry.uploadStatus) {
-      UploadStatus.notStarted => 'Pending upload',
-      UploadStatus.uploading => 'Uploading...',
-      UploadStatus.retrying => 'Retrying...',
-      UploadStatus.failed => 'Upload failed',
-      UploadStatus.completed => '',
-    };
-
-    if (text.isEmpty) return const SizedBox.shrink();
+    if (text.isEmpty && entry.uploadStatus == UploadStatus.completed) {
+      return const SizedBox.shrink();
+    }
 
     return Row(
       children: [
-        if (entry.uploadStatus == UploadStatus.uploading || entry.uploadStatus == UploadStatus.retrying)
+        if (entry.uploadStatus == UploadStatus.uploading ||
+            entry.uploadStatus == UploadStatus.retrying)
           SizedBox(
             width: 12,
             height: 12,
             child: CircularProgressIndicator(strokeWidth: 2, color: color),
           )
         else
-          Icon(Icons.cloud_upload, size: 12, color: color),
+          Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 11, color: color)),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -2516,9 +2560,11 @@ final journalEntriesStreamProvider = StreamProvider.family<List<JournalEntryEnti
 
 ```dart
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:kairos/features/journal/data/datasources/journal_entry_local_datasource.dart';
 import 'package:kairos/features/journal/data/services/journal_upload_service.dart';
+import 'package:kairos/features/journal/domain/entities/journal_entry_entity.dart';
 
 class JournalSyncService {
   JournalSyncService({
@@ -2531,6 +2577,7 @@ class JournalSyncService {
 
   Timer? _syncTimer;
 
+  /// Start automatic background sync with 5-minute intervals
   void startPeriodicSync(String userId, {Duration interval = const Duration(minutes: 5)}) {
     _syncTimer?.cancel();
     _syncTimer = Timer.periodic(interval, (_) => _syncPendingUploads(userId));
@@ -2540,35 +2587,125 @@ class JournalSyncService {
     _syncTimer?.cancel();
   }
 
+  /// Manual sync all - for "Sync All" button
+  Future<Result<int>> syncAllPendingUploads(String userId) async {
+    try {
+      final pendingEntries = await localDataSource.getPendingUploads(userId);
+      int successCount = 0;
+
+      for (final entry in pendingEntries) {
+        final result = await _retryUpload(entry);
+        if (result.isSuccess) successCount++;
+      }
+
+      return Success(successCount);
+    } catch (e) {
+      return Error(UnknownFailure(message: 'Sync all failed: $e'));
+    }
+  }
+
+  /// Background sync with exponential backoff
   Future<void> _syncPendingUploads(String userId) async {
     try {
       final pendingEntries = await localDataSource.getPendingUploads(userId);
 
       for (final entry in pendingEntries) {
-        // Implement exponential backoff
+        // Implement exponential backoff: 2s, 4s, 8s, 16s, 32s
         final retryCount = entry.uploadRetryCount;
-        if (retryCount > 5) continue; // Stop after 5 retries
+        if (retryCount > 5) {
+          debugPrint('Max retries exceeded for entry ${entry.id}');
+          continue;
+        }
 
         final backoffSeconds = _calculateBackoff(retryCount);
         final lastAttempt = entry.lastUploadAttemptMillis ?? 0;
-        final now = DateTime.now().millisecondsSinceEpoch;
+        final now = DateTime.now().toUtc().millisecondsSinceEpoch;
 
         if (now - lastAttempt < backoffSeconds * 1000) {
-          continue; // Not ready to retry yet
+          debugPrint('Backoff not elapsed for entry ${entry.id}, waiting ${backoffSeconds}s');
+          continue;
         }
 
-        // Retry upload based on type
-        debugPrint('Retrying upload for entry ${entry.id}');
-        // Implementation depends on entry type
+        // Retry upload
+        await _retryUpload(entry);
       }
     } catch (e) {
-      debugPrint('Sync failed: $e');
+      debugPrint('Background sync failed: $e');
     }
   }
 
+  /// Retry upload for a single entry
+  Future<Result<void>> _retryUpload(JournalEntryModel entry) async {
+    try {
+      debugPrint('Retrying upload for entry ${entry.id} (attempt ${entry.uploadRetryCount + 1})');
+
+      // Update to retrying status
+      final retrying = entry.copyWith(
+        uploadStatus: UploadStatus.retrying.index,
+        lastUploadAttemptMillis: DateTime.now().toUtc().millisecondsSinceEpoch,
+        uploadRetryCount: entry.uploadRetryCount + 1,
+      );
+      await localDataSource.updateEntry(retrying);
+
+      // Load file from local path and retry based on type
+      if (entry.localFilePath == null) {
+        return const Error(ValidationFailure(message: 'Local file path missing'));
+      }
+
+      final file = File(entry.localFilePath!);
+      if (!file.existsSync()) {
+        return const Error(ValidationFailure(message: 'Local file not found'));
+      }
+
+      // Retry upload based on entry type
+      final entryType = JournalEntryType.values[entry.entryType];
+      Result<void> uploadResult;
+
+      switch (entryType) {
+        case JournalEntryType.image:
+          if (entry.localThumbnailPath == null) {
+            return const Error(ValidationFailure(message: 'Thumbnail path missing'));
+          }
+          final thumbnailFile = File(entry.localThumbnailPath!);
+          uploadResult = await uploadService.uploadImageEntry(
+            entry: entry,
+            imageFile: file,
+            thumbnailFile: thumbnailFile,
+          );
+          break;
+
+        case JournalEntryType.audio:
+          uploadResult = await uploadService.uploadAudioEntry(
+            entry: entry,
+            audioFile: file,
+          );
+          break;
+
+        case JournalEntryType.text:
+          // Text entries don't need upload
+          final completed = entry.copyWith(
+            uploadStatus: UploadStatus.completed.index,
+            needsSync: false,
+          );
+          await localDataSource.updateEntry(completed);
+          return const Success(null);
+      }
+
+      // Clear needsSync flag on success
+      if (uploadResult.isSuccess) {
+        final completed = entry.copyWith(needsSync: false);
+        await localDataSource.updateEntry(completed);
+      }
+
+      return uploadResult;
+    } catch (e) {
+      return Error(UnknownFailure(message: 'Retry upload failed: $e'));
+    }
+  }
+
+  /// Calculate exponential backoff: 2s, 4s, 8s, 16s, 32s
   int _calculateBackoff(int retryCount) {
-    // Exponential backoff: 30s, 60s, 120s, 240s, 480s
-    return 30 * (1 << retryCount);
+    return 2 * (1 << retryCount);
   }
 }
 ```
@@ -2605,13 +2742,20 @@ Future<void> retryUpload(String entryId) async {
 - [ ] Each option navigates to correct entry creation screen
 - [ ] Created entries immediately appear in list
 - [ ] Text entries show preview text
-- [ ] Image entries show thumbnails
+- [ ] Image entries show thumbnails (instant offline preview)
 - [ ] Audio entries show duration
-- [ ] Upload status indicators display correctly
-- [ ] Failed uploads show retry button
+- [ ] Upload status badges display with correct colors:
+  - Orange "Pending" for notStarted
+  - Blue spinner "Uploading..." for uploading
+  - Amber spinner "Retrying..." for retrying
+  - Red "Failed" with retry button for failed
+  - No badge for completed
+- [ ] Failed uploads show retry button in entry card
 - [ ] Retry button successfully re-uploads failed entries
-- [ ] Background sync retries failed uploads automatically
-- [ ] AI transcription placeholder appears for audio/image entries
+- [ ] Background sync retries failed uploads automatically with exponential backoff
+- [ ] AI transcription placeholder "Transcription pending..." appears for audio/image entries
+- [ ] Sync All button in app bar triggers manual sync of all pending uploads
+- [ ] Entries update reactively when upload status changes
 
 **Implementation Note**: Test the complete flow end-to-end: create all three entry types, verify sync, test offline/online transitions.
 
@@ -2697,16 +2841,113 @@ Future<void> retryUpload(String entryId) async {
 
 - **Image Processing**: Resize happens on background isolate (via `image` package)
 - **Thumbnail Generation**: Small size (150x150) ensures fast loading
-- **Stream Updates**: Isar streams are efficient, only emit on changes
-- **Upload Queue**: Background uploads don't block UI
+- **Image Compression**: 85-90% JPEG quality, max 1024px width before upload
+- **Audio Encoding**: M4A/AAC format provides optimal compression without quality loss
+- **Stream Updates**: Isar `.watch()` streams are efficient, only emit on actual changes to watched fields
+- **Upload Queue**: Background uploads don't block UI, run asynchronously
+- **Exponential Backoff**: Prevents hammering the server with failed uploads (2s → 4s → 8s → 16s → 32s)
 - **Pagination**: Consider adding pagination if user has >100 entries
+- **UTC Timestamps**: All timestamps stored in UTC to avoid timezone sync conflicts
 
 ## Migration Notes
 
-No existing data to migrate. New Firestore collection `journalEntries` and Storage folders will be created:
-- `journal_images/{userId}/{entryId}.jpg`
-- `journal_thumbnails/{userId}/{entryId}_thumb.jpg`
-- `journal_audio/{userId}/{entryId}.m4a`
+No existing data to migrate. New Firestore collection `journalEntries` and Storage folders will be created with organized path structure:
+
+**Firestore Collection**: `journalEntries`
+- Documents keyed by entry ID
+- Fields: id, userId, entryType, textContent, storageUrl, thumbnailUrl, audioDurationSeconds, transcription, aiProcessingStatus, createdAtMillis, modifiedAtMillis, isDeleted, version
+- Indexes: userId (for queries), createdAtMillis (for sorting)
+
+**Firebase Storage Paths**: `users/{userId}/journals/{journalId}/`
+- Full images: `users/{userId}/journals/{journalId}/image.jpg`
+- Thumbnails: `users/{userId}/journals/{journalId}/thumbnail.jpg`
+- Audio files: `users/{userId}/journals/{journalId}/audio.m4a`
+
+**Metadata attached to uploaded files**:
+- `uploadedAt`: ISO 8601 timestamp (UTC)
+- `fileType`: "image" | "audio" | "document"
+- `duration`: Audio duration in seconds (audio files only)
+- `entryId`: Journal entry ID for reference
+
+This structure enables:
+- Easy user data deletion (delete entire `users/{userId}/journals/` folder)
+- Efficient Cloud Functions triggers (can listen to specific paths)
+- Clear organization for future features (e.g., shared journals, exports)
+
+## AI Integration Readiness
+
+The journal feature is designed with AI processing in mind for future Cloud Functions implementation. Here's how the pipeline will work:
+
+### Current Implementation (Phase 1)
+
+**Data Model includes placeholder fields**:
+- `transcription`: String? - Will store OCR/Speech-to-Text results
+- `aiProcessingStatus`: enum (pending, processing, completed, failed)
+- `metadata`: Map<String, dynamic>? - Can store AI-generated tags, sentiment, etc.
+
+**UI shows placeholders**:
+- Audio/Image entries display: "Transcription pending..."
+- Subtle styling indicates AI processing hasn't occurred yet
+
+### Future Cloud Functions Pipeline (Phase 2 - Separate Implementation)
+
+**1. Storage Upload Trigger**:
+```
+Cloud Function listens to: users/{userId}/journals/{journalId}/*
+Triggered when: New image.jpg or audio.m4a uploaded
+```
+
+**2. AI Processing**:
+- **Images**: Extract text via OCR (Cloud Vision API, Tesseract)
+- **Audio**: Transcribe speech (Cloud Speech-to-Text, Whisper API)
+- Optional: Sentiment analysis, key phrase extraction, categorization
+
+**3. Write Back to Firestore**:
+```javascript
+// Cloud Function updates Firestore document
+await db.collection('journalEntries').doc(journalId).update({
+  transcription: extractedText,
+  aiProcessingStatus: 'completed',
+  metadata: {
+    sentiment: 'positive',
+    tags: ['work', 'meeting', 'ideas'],
+    confidence: 0.95
+  },
+  modifiedAtMillis: Date.now()
+});
+```
+
+**4. Automatic UI Update**:
+- Firestore update triggers local Isar sync (via repository sync method)
+- Isar `.watch()` stream emits new data
+- UI automatically updates to show transcription
+- "Transcription pending..." changes to actual transcribed text
+
+### Key Benefits of This Architecture
+
+1. **Separation of Concerns**: Client handles capture/upload, backend handles AI processing
+2. **Progressive Enhancement**: Feature works offline without AI, adds intelligence when online
+3. **Reactive Updates**: No polling needed, Firestore listeners + Isar streams handle updates automatically
+4. **Scalable**: Cloud Functions can process heavy workloads independently
+5. **Testable**: Can test AI features by manually writing to Firestore
+6. **Cost-Effective**: Only process files that are actually uploaded and need AI
+
+### Testing AI Integration (Before Cloud Functions)
+
+You can manually test the UI's reaction to AI updates:
+
+```dart
+// Manually update Firestore document to simulate Cloud Function
+await FirebaseFirestore.instance
+    .collection('journalEntries')
+    .doc(entryId)
+    .update({
+  'transcription': 'This is a test transcription from AI',
+  'aiProcessingStatus': 2, // completed
+});
+
+// Watch the UI update automatically via streams!
+```
 
 ## References
 
@@ -2717,6 +2958,45 @@ No existing data to migrate. New Firestore collection `journalEntries` and Stora
 
 ---
 
+## Plan Enhancements Summary
+
+This implementation plan incorporates the following improvements based on architectural best practices:
+
+### Storage & Upload
+✅ Dynamic path building: `users/{userId}/journals/{journalId}/{filename}`
+✅ Upload progress streams via `onProgress` callback
+✅ Rich metadata on uploaded files (uploadedAt, fileType, duration, entryId)
+✅ M4A/AAC audio encoding for optimal compression
+✅ Image compression (85-90% JPEG, max 1024px) before upload
+
+### Data Model & Sync
+✅ `needsSync` boolean flag for simplified retry queue management
+✅ `metadata` JSON field for future extensibility (AI tags, geolocation)
+✅ UTC timestamps everywhere to prevent sync conflicts
+✅ Exponential backoff (2s → 4s → 8s → 16s → 32s) for failed uploads
+✅ Manual "Sync All" button plus automatic 5-minute background sync
+
+### UI & UX
+✅ Visual sync badges with color-coded statuses (orange/blue/amber/red/green)
+✅ Instant thumbnail display for offline image preview
+✅ "Transcription pending..." placeholders for AI-ready entries
+✅ Reactive Isar `.watch()` streams trigger UI updates automatically
+✅ Discard confirmation (future enhancement noted)
+
+### AI Readiness
+✅ Complete Cloud Functions pipeline documented
+✅ Fields ready: `transcription`, `aiProcessingStatus`, `metadata`
+✅ Automatic UI updates when backend writes transcription results
+✅ Testing strategy for simulating AI updates before Cloud Functions exist
+
+### Testing & Stability
+✅ Unit tests for upload retry logic with exponential backoff
+✅ Integration tests for Isar-Firestore sync consistency
+✅ Tests for handling failed network states and offline behavior
+✅ Clear automated vs manual verification criteria for each phase
+
+---
+
 **End of Implementation Plan**
 
-This plan provides a complete roadmap for implementing the Journal feature following the app's existing architecture patterns. Each phase builds incrementally, ensuring testability and allowing for manual verification before proceeding. The final result will be a fully functional journal system with three entry types, offline support, and robust sync/retry mechanisms.
+This plan provides a complete, production-ready roadmap for implementing the Journal feature following the app's existing clean architecture patterns. Each phase builds incrementally with comprehensive testing, ensuring reliability and allowing for verification before proceeding. The final result will be a fully functional journal system with three entry types, robust offline support, intelligent sync/retry mechanisms, and readiness for future AI-powered features.
