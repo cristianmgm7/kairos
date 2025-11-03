@@ -11,8 +11,8 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 import 'package:kairos/features/auth/presentation/screens/login_screen.dart';
 import 'package:kairos/features/auth/presentation/screens/register_screen.dart';
 import 'package:kairos/features/home/presentation/screens/home_screen.dart';
-import 'package:kairos/features/journal/presentation/screens/create_text_entry_screen.dart';
-import 'package:kairos/features/journal/presentation/screens/journal_screen.dart';
+import 'package:kairos/features/journal/presentation/screens/thread_list_screen.dart';
+import 'package:kairos/features/journal/presentation/screens/thread_detail_screen.dart';
 import 'package:kairos/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
@@ -72,10 +72,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CreateProfileScreen(),
       ),
 
-      // Journal entry creation (authenticated but outside shell)
+      // Thread detail route (authenticated but outside shell)
       GoRoute(
-        path: '/journal/create-text',
-        builder: (context, state) => const CreateTextEntryScreen(),
+        path: '/journal/thread/:threadId',
+        builder: (context, state) {
+          final threadId = state.pathParameters['threadId'];
+          return ThreadDetailScreen(threadId: threadId);
+        },
+      ),
+      GoRoute(
+        path: '/journal/thread',
+        builder: (context, state) => const ThreadDetailScreen(),
       ),
 
       // Shell route (persistent bottom navigation for all main app routes)
@@ -94,7 +101,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.journal,
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: JournalScreen(),
+              child: ThreadListScreen(),
             ),
           ),
           GoRoute(

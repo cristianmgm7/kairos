@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'package:kairos/features/journal/data/models/journal_entry_model.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 import 'package:kairos/features/profile/data/models/user_profile_model.dart';
@@ -21,7 +20,6 @@ Future<Isar> initializeIsar() async {
     [
       UserProfileModelSchema,
       SettingsModelSchema,
-      JournalEntryModelSchema,
       JournalThreadModelSchema,
       JournalMessageModelSchema,
     ],

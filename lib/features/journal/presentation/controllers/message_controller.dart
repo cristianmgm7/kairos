@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
