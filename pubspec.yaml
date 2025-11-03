@@ -90,3 +90,8 @@ flutter:
     - .env.dev
     - .env.staging
     - .env.prod
+
+dependency_overrides:
+  # Fix compile error: record_linux 0.7.x is incompatible with record_platform_interface >=1.4.0
+  # Bump to a compatible version to satisfy the new startStream API
+  record_linux: ^1.2.1
