@@ -1,5 +1,6 @@
-import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 
 /// Remote data source using Firestore
 abstract class UserProfileRemoteDataSource {
@@ -79,7 +80,8 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     final querySnapshot = await _collection
         .where('userId', isEqualTo: userId)
         .where('modifiedAtMillis',
-            isGreaterThan: timestamp.millisecondsSinceEpoch)
+            isGreaterThan: timestamp.millisecondsSinceEpoch,
+        )
         .get();
 
     return querySnapshot.docs

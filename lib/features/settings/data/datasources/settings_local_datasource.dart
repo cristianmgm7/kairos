@@ -1,5 +1,6 @@
-import 'package:kairos/features/settings/data/models/settings_model.dart';
 import 'package:isar/isar.dart';
+
+import 'package:kairos/features/settings/data/models/settings_model.dart';
 
 abstract class SettingsLocalDataSource {
   Future<SettingsModel> getSettings();

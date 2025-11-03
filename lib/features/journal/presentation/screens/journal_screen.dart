@@ -1,5 +1,6 @@
-import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kairos/core/theme/app_spacing.dart';
 
 /// Journal screen - placeholder for future journal entry functionality.
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.
@@ -28,7 +29,7 @@ class JournalScreen extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .primary
-                            .withOpacity(0.5),
+                            .withAlpha(128),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       Text(
@@ -63,7 +64,8 @@ class JournalScreen extends StatelessWidget {
                     // TODO: Navigate to create journal entry
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Create journal entry - Coming soon')),
+                        content: Text('Create journal entry - Coming soon'),
+                      ),
                     );
                   },
                   child: const Icon(Icons.add),

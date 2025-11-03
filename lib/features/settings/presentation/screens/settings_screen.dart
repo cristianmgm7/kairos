@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kairos/l10n/app_localizations.dart';
+
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
 import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
-import 'package:kairos/features/settings/presentation/controllers/settings_controller.dart';
 import 'package:kairos/features/settings/presentation/providers/settings_providers.dart';
+import 'package:kairos/l10n/app_localizations.dart';
 
 /// Settings screen - allows user to change language and theme.
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.

@@ -1,5 +1,6 @@
-import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kairos/core/theme/app_spacing.dart';
 
 class GoogleSignInButton extends StatelessWidget {
   const GoogleSignInButton({

@@ -1,3 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:kairos/core/routing/app_routes.dart';
 import 'package:kairos/core/routing/auth_redirect.dart';
 import 'package:kairos/core/routing/pages/error_page.dart';
@@ -12,9 +16,6 @@ import 'package:kairos/features/notifications/presentation/screens/notifications
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();

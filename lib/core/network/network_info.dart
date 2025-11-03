@@ -1,6 +1,7 @@
-import 'package:kairos/core/providers/core_providers.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:kairos/core/providers/core_providers.dart';
 
 abstract class NetworkInfo {
   Future<bool> get isConnected;

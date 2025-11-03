@@ -1,6 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
 import 'package:kairos/features/settings/domain/repositories/settings_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Settings controller state
 class SettingsState {
@@ -80,6 +81,6 @@ class SettingsController extends StateNotifier<SettingsState> {
 
   /// Clear error
   void clearError() {
-    state = state.copyWith(error: null);
+    state = state.copyWith();
   }
 }

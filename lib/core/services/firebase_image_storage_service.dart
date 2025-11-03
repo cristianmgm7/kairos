@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:kairos/core/errors/failures.dart';
-import 'package:kairos/core/utils/result.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image/image.dart' as img;
+
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
 
 /// Service for handling Firebase Storage operations
 class FirebaseImageStorageService {
@@ -76,7 +77,7 @@ class FirebaseImageStorageService {
     } catch (e) {
       return Error(
         StorageFailure(
-          message: 'Failed to upload avatar: ${e.toString()}',
+          message: 'Failed to upload avatar: $e',
         ),
       );
     }
@@ -112,7 +113,7 @@ class FirebaseImageStorageService {
     } catch (e) {
       return Error(
         StorageFailure(
-          message: 'Failed to delete avatar: ${e.toString()}',
+          message: 'Failed to delete avatar: $e',
         ),
       );
     }

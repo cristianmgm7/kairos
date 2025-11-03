@@ -1,3 +1,9 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/providers/database_provider.dart';
 import 'package:kairos/core/services/firebase_image_storage_service.dart';
@@ -9,11 +15,6 @@ import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart
 import 'package:kairos/features/profile/domain/repositories/user_profile_repository.dart';
 import 'package:kairos/features/profile/domain/usecases/create_user_profile_usecase.dart';
 import 'package:kairos/features/profile/domain/usecases/get_user_profile_usecase.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Connectivity provider
 final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());

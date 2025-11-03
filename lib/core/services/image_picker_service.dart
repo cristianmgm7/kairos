@@ -1,8 +1,9 @@
 import 'dart:io';
 
+import 'package:image_picker/image_picker.dart';
+
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// Service for handling image picking from gallery or camera
 class ImagePickerService {
@@ -21,8 +22,8 @@ class ImagePickerService {
       );
 
       if (pickedFile == null) {
-        return Error(
-          const UserCancelledFailure(message: 'User cancelled image selection'),
+        return const Error(
+          UserCancelledFailure(message: 'User cancelled image selection'),
         );
       }
 
@@ -30,7 +31,7 @@ class ImagePickerService {
     } catch (e) {
       return Error(
         PermissionFailure(
-          message: 'Failed to pick image from gallery: ${e.toString()}',
+          message: 'Failed to pick image from gallery: $e',
         ),
       );
     }
@@ -47,8 +48,8 @@ class ImagePickerService {
       );
 
       if (pickedFile == null) {
-        return Error(
-          const UserCancelledFailure(message: 'User cancelled image capture'),
+        return const Error(
+          UserCancelledFailure(message: 'User cancelled image capture'),
         );
       }
 
@@ -56,7 +57,7 @@ class ImagePickerService {
     } catch (e) {
       return Error(
         PermissionFailure(
-          message: 'Failed to capture image from camera: ${e.toString()}',
+          message: 'Failed to capture image from camera: $e',
         ),
       );
     }

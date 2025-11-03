@@ -1,5 +1,6 @@
-import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+
+import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 
 class UserModel extends UserEntity {
   const UserModel({

@@ -1,5 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import 'package:kairos/core/routing/app_routes.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/widgets/app_button.dart';
@@ -7,9 +11,6 @@ import 'package:kairos/core/widgets/app_error_view.dart';
 import 'package:kairos/core/widgets/app_text.dart';
 import 'package:kairos/core/widgets/app_text_field.dart';
 import 'package:kairos/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
@@ -138,7 +139,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                 if (profileState is ProfileError)
                   AppErrorView(
                     message: profileState.message,
-                    onRetry: () => profileController.reset(),
+                    onRetry: profileController.reset,
                   ),
 
                 const SizedBox(height: AppSpacing.lg),
@@ -218,7 +219,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
           ),
           label: 'Date of Birth',
           hint: 'Select your date of birth',
-          suffixIcon: Icon(Icons.calendar_today),
+          suffixIcon: const Icon(Icons.calendar_today),
         ),
       ),
     );
@@ -226,7 +227,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
-      value: _genderController.text.isNotEmpty ? _genderController.text : null,
+      initialValue: _genderController.text.isNotEmpty ? _genderController.text : null,
       decoration: const InputDecoration(
         labelText: 'Gender',
         hintText: 'Select your gender',
@@ -236,7 +237,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         DropdownMenuItem(value: 'female', child: Text('Female')),
         DropdownMenuItem(value: 'non-binary', child: Text('Non-binary')),
         DropdownMenuItem(
-            value: 'prefer-not-to-say', child: Text('Prefer not to say')),
+          value: 'prefer-not-to-say', child: Text('Prefer not to say'),
+        ),
       ],
       onChanged: (value) {
         setState(() {
@@ -248,7 +250,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildExperienceLevelDropdown() {
     return DropdownButtonFormField<String>(
-      value: _experienceLevelController.text.isNotEmpty
+      initialValue: _experienceLevelController.text.isNotEmpty
           ? _experienceLevelController.text
           : null,
       decoration: const InputDecoration(
@@ -285,7 +287,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   }
 
   void _showAvatarPicker(ProfileController controller) {
-    showModalBottomSheet(
+    showModalBottomSheet<Widget>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
