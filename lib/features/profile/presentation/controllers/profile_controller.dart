@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/services/firebase_image_storage_service.dart';
 import 'package:kairos/core/services/image_picker_service.dart';
@@ -8,7 +10,6 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 import 'package:kairos/features/profile/domain/usecases/create_user_profile_usecase.dart';
 import 'package:kairos/features/profile/domain/usecases/get_user_profile_usecase.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// State for the profile creation flow
 sealed class ProfileState {}
@@ -109,7 +110,8 @@ class ProfileController extends StateNotifier<ProfileState> {
           success: (url) => avatarUrl = url,
           error: (failure) {
             state = ProfileError(
-                'Failed to upload avatar: ${_getErrorMessage(failure)}');
+              'Failed to upload avatar: ${_getErrorMessage(failure)}',
+            );
             return;
           },
         );
@@ -134,8 +136,9 @@ class ProfileController extends StateNotifier<ProfileState> {
         success: (profile) {
           state = ProfileSuccess();
           // Invalidate profile providers to refresh data
-          ref.invalidate(currentUserProfileProvider);
-          ref.invalidate(hasCompletedProfileProvider);
+          ref
+            ..invalidate(currentUserProfileProvider)
+            ..invalidate(hasCompletedProfileProvider);
         },
         error: (failure) {
           state = ProfileError(_getErrorMessage(failure));

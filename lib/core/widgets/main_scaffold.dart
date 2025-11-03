@@ -29,10 +29,10 @@ class _MainBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final String location = GoRouterState.of(context).matchedLocation;
+    final location = GoRouterState.of(context).matchedLocation;
 
     // Map routes to tab indices
-    int currentIndex = _getSelectedIndex(location);
+    final currentIndex = _getSelectedIndex(location);
 
     return NavigationBar(
       selectedIndex: currentIndex,
@@ -74,16 +74,12 @@ class _MainBottomNavigationBar extends StatelessWidget {
     switch (index) {
       case 0:
         context.go(AppRoutes.home);
-        break;
       case 1:
         context.go(AppRoutes.journal);
-        break;
       case 2:
         context.go(AppRoutes.notifications);
-        break;
       case 3:
         context.go(AppRoutes.settings);
-        break;
     }
   }
 }

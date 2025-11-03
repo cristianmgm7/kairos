@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/core/providers/database_provider.dart';
 import 'package:kairos/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:kairos/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
 import 'package:kairos/features/settings/domain/repositories/settings_repository.dart';
 import 'package:kairos/features/settings/presentation/controllers/settings_controller.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Local data source provider
 final settingsLocalDataSourceProvider =

@@ -1,6 +1,7 @@
-import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:isar/isar.dart';
 import 'package:uuid/uuid.dart';
+
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 
 part 'user_profile_model.g.dart';
 
@@ -103,28 +104,6 @@ class UserProfileModel {
       interests: interests,
       createdAtMillis: now.millisecondsSinceEpoch,
       modifiedAtMillis: now.millisecondsSinceEpoch,
-      version: 1,
-      isDeleted: false,
-    );
-  }
-
-  /// Convert to domain entity
-  UserProfileEntity toEntity() {
-    return UserProfileEntity(
-      id: id,
-      userId: userId,
-      name: name,
-      dateOfBirth: dateOfBirthMillis != null
-          ? DateTime.fromMillisecondsSinceEpoch(dateOfBirthMillis!)
-          : null,
-      country: country,
-      gender: gender,
-      avatarUrl: avatarUrl,
-      mainGoal: mainGoal,
-      experienceLevel: experienceLevel,
-      interests: interests,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis),
     );
   }
 
@@ -190,6 +169,26 @@ class UserProfileModel {
     );
   }
 
+  /// Convert to domain entity
+  UserProfileEntity toEntity() {
+    return UserProfileEntity(
+      id: id,
+      userId: userId,
+      name: name,
+      dateOfBirth: dateOfBirthMillis != null
+          ? DateTime.fromMillisecondsSinceEpoch(dateOfBirthMillis!)
+          : null,
+      country: country,
+      gender: gender,
+      avatarUrl: avatarUrl,
+      mainGoal: mainGoal,
+      experienceLevel: experienceLevel,
+      interests: interests,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis),
+    );
+  }
+
   /// Create a copy with updated fields
   UserProfileModel copyWith({
     String? id,
@@ -229,14 +228,14 @@ class UserProfileModel {
 
   /// Fast hash for Isar ID
   int fastHash(String string) {
-    var hash = 0xcbf29ce484222325;
+    var hash = 0xcbf29ce4;
     var i = 0;
     while (i < string.length) {
       final codeUnit = string.codeUnitAt(i++);
       hash ^= codeUnit >> 8;
-      hash *= 0x100000001b3;
+      hash *= 0x1000001b3;
       hash ^= codeUnit & 0xFF;
-      hash *= 0x100000001b3;
+      hash *= 0x1000001b3;
     }
     return hash;
   }

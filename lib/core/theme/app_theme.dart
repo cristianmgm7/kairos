@@ -1,7 +1,8 @@
+import 'package:flutter/material.dart';
+
 import 'package:kairos/core/theme/app_colors.dart';
 import 'package:kairos/core/theme/app_radii.dart';
 import 'package:kairos/core/theme/app_typography.dart';
-import 'package:flutter/material.dart';
 
 class AppTheme {
   AppTheme._();

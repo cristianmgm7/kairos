@@ -1,7 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/domain/repositories/auth_repository.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provider for auth controller
 final authControllerProvider =

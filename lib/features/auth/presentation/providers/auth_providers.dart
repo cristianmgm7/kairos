@@ -1,8 +1,9 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/auth/data/repositories/firebase_auth_repository.dart';
 import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 import 'package:kairos/features/auth/domain/repositories/auth_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// AuthRepository provider (direct Riverpod, no GetIt bridging)
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

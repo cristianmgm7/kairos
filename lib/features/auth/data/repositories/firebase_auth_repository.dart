@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:google_sign_in/google_sign_in.dart';
+
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/data/models/user_model.dart';
 import 'package:kairos/features/auth/domain/entities/user_entity.dart';
 import 'package:kairos/features/auth/domain/failures/auth_failure.dart';
 import 'package:kairos/features/auth/domain/repositories/auth_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._firebaseAuth, this._googleSignIn);

@@ -1,5 +1,6 @@
-import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
+
+import 'package:kairos/core/theme/app_spacing.dart';
 
 /// Notifications screen - placeholder for future notification functionality.
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.
@@ -24,7 +25,7 @@ class NotificationsScreen extends StatelessWidget {
                     Icons.notifications,
                     size: 80,
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        Theme.of(context).colorScheme.primary.withAlpha(128),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(

@@ -1,5 +1,6 @@
-import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
 import 'package:isar/isar.dart';
+
+import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
 
 part 'settings_model.g.dart';
 
@@ -19,14 +20,6 @@ class SettingsModel {
   @enumerated
   late AppThemeMode themeMode;
 
-  /// Convert to domain entity
-  SettingsEntity toEntity() {
-    return SettingsEntity(
-      language: language,
-      themeMode: themeMode,
-    );
-  }
-
   /// Create from domain entity
   factory SettingsModel.fromEntity(SettingsEntity entity) {
     return SettingsModel(
@@ -40,6 +33,14 @@ class SettingsModel {
     return SettingsModel(
       language: AppLanguage.english,
       themeMode: AppThemeMode.system,
+    );
+  }
+
+  /// Convert to domain entity
+  SettingsEntity toEntity() {
+    return SettingsEntity(
+      language: language,
+      themeMode: themeMode,
     );
   }
 }

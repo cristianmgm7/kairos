@@ -1,7 +1,8 @@
-import 'package:kairos/core/errors/exceptions.dart';
-import 'package:kairos/core/providers/core_providers.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:kairos/core/errors/exceptions.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 
 class ApiClient {
   ApiClient(this._dio);

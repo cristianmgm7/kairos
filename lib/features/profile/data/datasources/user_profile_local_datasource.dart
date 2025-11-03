@@ -1,5 +1,6 @@
-import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 import 'package:isar/isar.dart';
+
+import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 
 /// Local data source using Isar for offline storage
 abstract class UserProfileLocalDataSource {
@@ -38,7 +39,7 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
 
   @override
   Future<UserProfileModel?> getProfileByUserId(String userId) async {
-    return await isar.userProfileModels
+    return isar.userProfileModels
         .filter()
         .userIdEqualTo(userId)
         .and()
@@ -48,7 +49,7 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
 
   @override
   Future<UserProfileModel?> getProfileById(String profileId) async {
-    return await isar.userProfileModels
+    return isar.userProfileModels
         .where()
         .idEqualTo(profileId)
         .findFirst();
@@ -93,7 +94,7 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
 
   @override
   Future<List<UserProfileModel>> getAllProfiles() async {
-    return await isar.userProfileModels
+    return isar.userProfileModels
         .filter()
         .isDeletedEqualTo(false)
         .findAll();

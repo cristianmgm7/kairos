@@ -1,5 +1,6 @@
-import 'package:kairos/core/errors/failures.dart';
 import 'package:equatable/equatable.dart';
+
+import 'package:kairos/core/errors/failures.dart';
 
 sealed class Result<T> extends Equatable {
   const Result();

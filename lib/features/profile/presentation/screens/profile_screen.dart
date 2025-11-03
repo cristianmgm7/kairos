@@ -1,9 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Profile screen - displays user profile information.
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.
