@@ -11,7 +11,7 @@ import 'package:kairos/features/journal/presentation/screens/journal_screen.dart
 import 'package:kairos/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
-import 'package:kairos/features/profile/presentation/screens/profile_screen.dart';
+import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -96,9 +96,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: AppRoutes.profile,
+            path: AppRoutes.settings,
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: ProfileScreen(),
+              child: SettingsScreen(),
             ),
           ),
         ],

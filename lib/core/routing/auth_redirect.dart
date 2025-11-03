@@ -22,7 +22,7 @@ String? authRedirectLogic({
     AppRoutes.home,
     AppRoutes.journal,
     AppRoutes.notifications,
-    AppRoutes.profile,
+    AppRoutes.settings,
   ];
   final isProtectedRoute = protectedRoutes.any(
     (route) => currentLocation.startsWith(route),

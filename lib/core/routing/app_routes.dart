@@ -14,7 +14,7 @@ class AppRoutes {
   static const String home = '/home';
   static const String journal = '/journal';
   static const String notifications = '/notifications';
-  static const String profile = '/profile';
+  static const String settings = '/settings';
 
   // Error
   static const String error = '/error';

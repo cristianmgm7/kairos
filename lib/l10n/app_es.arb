@@ -1,0 +1,37 @@
+{
+  "@@locale": "es",
+
+  "appTitle": "Kairos",
+
+  "home": "Inicio",
+  "journal": "Diario",
+  "notifications": "Notificaciones",
+  "settings": "Ajustes",
+  "profile": "Perfil",
+
+  "language": "Idioma",
+  "theme": "Tema",
+
+  "themeLight": "Claro",
+  "themeDark": "Oscuro",
+  "themeSystem": "Sistema",
+
+  "english": "Inglés",
+  "spanish": "Español",
+
+  "logout": "Cerrar sesión",
+  "error": "Error",
+  "loading": "Cargando",
+
+  "noProfileFound": "No se encontró perfil",
+  "dateOfBirth": "Fecha de nacimiento",
+  "country": "País",
+  "gender": "Género",
+  "mainGoal": "Objetivo principal",
+  "experienceLevel": "Nivel de experiencia",
+  "interests": "Intereses",
+  "editProfile": "Editar perfil",
+  "editProfileComingSoon": "Editar perfil - Próximamente",
+  "notSet": "No establecido"
+}
+

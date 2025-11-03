@@ -2,8 +2,11 @@ import 'package:kairos/core/config/firebase_config.dart';
 import 'package:kairos/core/providers/database_provider.dart';
 import 'package:kairos/core/routing/router_provider.dart';
 import 'package:kairos/core/theme/app_theme.dart';
+import 'package:kairos/features/settings/presentation/providers/settings_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:kairos/l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,13 +71,27 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the router provider
     final router = ref.watch(routerProvider);
+    final locale = ref.watch(currentLocaleProvider);
+    final themeMode = ref.watch(currentThemeModeProvider);
 
     return MaterialApp.router(
       title: 'Kairos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      locale: locale,
       routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('es'), // Spanish
+      ],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:kairos/features/profile/data/models/user_profile_model.dart';
+import 'package:kairos/features/settings/data/models/settings_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,6 +16,7 @@ Future<Isar> initializeIsar() async {
   return Isar.open(
     [
       UserProfileModelSchema,
+      SettingsModelSchema,
     ],
     directory: dir.path,
     name: 'kairos_db',
