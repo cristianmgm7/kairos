@@ -11,6 +11,7 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 import 'package:kairos/features/auth/presentation/screens/login_screen.dart';
 import 'package:kairos/features/auth/presentation/screens/register_screen.dart';
 import 'package:kairos/features/home/presentation/screens/home_screen.dart';
+import 'package:kairos/features/journal/presentation/screens/create_text_entry_screen.dart';
 import 'package:kairos/features/journal/presentation/screens/journal_screen.dart';
 import 'package:kairos/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
@@ -69,6 +70,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.createProfile,
         builder: (context, state) => const CreateProfileScreen(),
+      ),
+
+      // Journal entry creation (authenticated but outside shell)
+      GoRoute(
+        path: '/journal/create-text',
+        builder: (context, state) => const CreateTextEntryScreen(),
       ),
 
       // Shell route (persistent bottom navigation for all main app routes)

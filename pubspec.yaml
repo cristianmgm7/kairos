@@ -54,6 +54,10 @@ dependencies:
   # Image Caching
   cached_network_image: ^3.4.1
 
+  # Audio Recording
+  record: ^5.0.0
+  audioplayers: ^5.0.0
+
   # Utilities
   uuid: ^4.5.1
 

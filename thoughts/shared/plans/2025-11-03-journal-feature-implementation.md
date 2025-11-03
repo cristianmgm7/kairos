@@ -926,8 +926,8 @@ dependencies:
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds after adding new models: `~/flutter/bin/flutter pub get && ~/flutter/bin/dart run build_runner build --delete-conflicting-outputs`
-- [ ] No type errors: `~/flutter/bin/flutter analyze`
+- [x] Build succeeds after adding new models: `~/flutter/bin/flutter pub get && ~/flutter/bin/dart run build_runner build --delete-conflicting-outputs`
+- [x] No type errors: `~/flutter/bin/flutter analyze`
 - [ ] Database initializes with new schema: Run app and check logs for "✅ Isar initialized"
 - [ ] Unit tests pass for entity, model conversions: `~/flutter/bin/flutter test test/features/journal/`
 
@@ -1260,8 +1260,8 @@ FloatingActionButton(
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get`
-- [ ] No analyzer errors: `~/flutter/bin/flutter analyze`
+- [x] Build succeeds: `~/flutter/bin/flutter pub get`
+- [x] No analyzer errors: `~/flutter/bin/flutter analyze`
 - [ ] Unit tests pass for use case: `~/flutter/bin/flutter test test/features/journal/domain/usecases/`
 - [ ] Controller tests pass: `~/flutter/bin/flutter test test/features/journal/presentation/controllers/`
 
