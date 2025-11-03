@@ -1,7 +1,7 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 
 part 'user_profile_model.g.dart';
 
@@ -9,61 +9,12 @@ part 'user_profile_model.g.dart';
 /// Note: Does not extend DatumEntity due to Isar incompatibility with Equatable
 @collection
 class UserProfileModel {
-  /// Isar ID (required for Isar collections)
-  Id get isarId => fastHash(id);
-
-  /// Unique profile ID (UUID)
-  @Index(unique: true)
-  final String id;
-
-  /// Firebase Auth user ID
-  @Index()
-  final String userId;
-
-  /// Display name
-  @Index()
-  final String name;
-
-  /// Date of birth (stored as milliseconds since epoch)
-  final int? dateOfBirthMillis;
-
-  /// Country
-  final String? country;
-
-  /// Gender
-  final String? gender;
-
-  /// Avatar URL (Firebase Storage or Google photo URL)
-  final String? avatarUrl;
-
-  /// Local avatar path (for offline display while upload pending)
-  final String? avatarLocalPath;
-
-  /// Main goal
-  final String? mainGoal;
-
-  /// Experience level
-  final String? experienceLevel;
-
-  /// Interests (stored as list)
-  final List<String>? interests;
-
-  /// Created at timestamp (milliseconds since epoch)
-  final int createdAtMillis;
-
-  /// Updated at timestamp (milliseconds since epoch)
-  final int modifiedAtMillis;
-
-  /// Soft delete flag (Datum requirement)
-  final bool isDeleted;
-
-  /// Version for optimistic locking (Datum requirement)
-  final int version;
-
   UserProfileModel({
     required this.id,
     required this.userId,
     required this.name,
+    required this.createdAtMillis,
+    required this.modifiedAtMillis,
     this.dateOfBirthMillis,
     this.country,
     this.gender,
@@ -72,8 +23,6 @@ class UserProfileModel {
     this.mainGoal,
     this.experienceLevel,
     this.interests,
-    required this.createdAtMillis,
-    required this.modifiedAtMillis,
     this.isDeleted = false,
     this.version = 1,
   });
@@ -125,27 +74,6 @@ class UserProfileModel {
     );
   }
 
-  /// Convert to Map for Datum sync
-  Map<String, dynamic> toDatumMap() {
-    return {
-      'id': id,
-      'userId': userId,
-      'name': name,
-      'dateOfBirthMillis': dateOfBirthMillis,
-      'country': country,
-      'gender': gender,
-      'avatarUrl': avatarUrl,
-      'avatarLocalPath': avatarLocalPath,
-      'mainGoal': mainGoal,
-      'experienceLevel': experienceLevel,
-      'interests': interests,
-      'createdAtMillis': createdAtMillis,
-      'modifiedAtMillis': modifiedAtMillis,
-      'isDeleted': isDeleted,
-      'version': version,
-    };
-  }
-
   /// Create from Map (for Firestore deserialization)
   factory UserProfileModel.fromMap(Map<String, dynamic> map) {
     return UserProfileModel(
@@ -167,6 +95,78 @@ class UserProfileModel {
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
     );
+  }
+
+  /// Unique profile ID (UUID)
+  @Index(unique: true)
+  final String id;
+
+  /// Firebase Auth user ID
+  @Index()
+  final String userId;
+
+  /// Display name
+  @Index()
+  final String name;
+
+  /// Date of birth (stored as milliseconds since epoch)
+  final int? dateOfBirthMillis;
+
+  /// Country
+  final String? country;
+
+  /// Gender
+  final String? gender;
+
+  /// Avatar URL (Firebase Storage or Google photo URL)
+  final String? avatarUrl;
+
+  /// Local avatar path (for offline display while upload pending)
+  final String? avatarLocalPath;
+
+  /// Main goal
+  final String? mainGoal;
+
+  /// Experience level
+  final String? experienceLevel;
+
+  /// Interests (stored as list)
+  final List<String>? interests;
+
+  /// Created at timestamp (milliseconds since epoch)
+  final int createdAtMillis;
+
+  /// Updated at timestamp (milliseconds since epoch)
+  final int modifiedAtMillis;
+
+  /// Soft delete flag (Datum requirement)
+  final bool isDeleted;
+
+  /// Version for optimistic locking (Datum requirement)
+  final int version;
+
+  /// Isar ID (required for Isar collections)
+  Id get isarId => fastHash(id);
+
+  /// Convert to Map for Datum sync
+  Map<String, dynamic> toDatumMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'name': name,
+      'dateOfBirthMillis': dateOfBirthMillis,
+      'country': country,
+      'gender': gender,
+      'avatarUrl': avatarUrl,
+      'avatarLocalPath': avatarLocalPath,
+      'mainGoal': mainGoal,
+      'experienceLevel': experienceLevel,
+      'interests': interests,
+      'createdAtMillis': createdAtMillis,
+      'modifiedAtMillis': modifiedAtMillis,
+      'isDeleted': isDeleted,
+      'version': version,
+    };
   }
 
   /// Convert to domain entity
