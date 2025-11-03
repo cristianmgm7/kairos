@@ -76,7 +76,8 @@ class JournalEntryLocalDataSourceImpl implements JournalEntryLocalDataSource {
         .and()
         .isDeletedEqualTo(false)
         .watch(fireImmediately: true)
-        .map((entries) => entries..sort((a, b) => b.createdAtMillis.compareTo(a.createdAtMillis)));
+        .map((entries) => entries
+          ..sort((a, b) => b.createdAtMillis.compareTo(a.createdAtMillis)));
   }
 
   @override
@@ -88,11 +89,11 @@ class JournalEntryLocalDataSourceImpl implements JournalEntryLocalDataSource {
         .isDeletedEqualTo(false)
         .and()
         .group(
-            (q) => q
-                .uploadStatusEqualTo(0) // notStarted
-                .or()
-                .uploadStatusEqualTo(3), // failed
-          )
+          (q) => q
+              .uploadStatusEqualTo(0) // notStarted
+              .or()
+              .uploadStatusEqualTo(3), // failed
+        )
         .findAll();
   }
 }

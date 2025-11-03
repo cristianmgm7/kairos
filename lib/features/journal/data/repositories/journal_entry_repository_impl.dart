@@ -25,7 +25,8 @@ class JournalEntryRepositoryImpl implements JournalEntryRepository {
   }
 
   @override
-  Future<Result<JournalEntryEntity>> createEntry(JournalEntryEntity entry) async {
+  Future<Result<JournalEntryEntity>> createEntry(
+      JournalEntryEntity entry) async {
     try {
       final model = JournalEntryModel.fromEntity(entry);
       await localDataSource.saveEntry(model);
@@ -33,7 +34,8 @@ class JournalEntryRepositoryImpl implements JournalEntryRepository {
       if (await _isOnline && entry.entryType == JournalEntryType.text) {
         try {
           await remoteDataSource.saveEntry(model);
-          final synced = model.copyWith(uploadStatus: UploadStatus.completed.index);
+          final synced =
+              model.copyWith(uploadStatus: UploadStatus.completed.index);
           await localDataSource.updateEntry(synced);
         } catch (e) {
           debugPrint('Failed to sync entry to remote: $e');
@@ -87,7 +89,8 @@ class JournalEntryRepositoryImpl implements JournalEntryRepository {
       for (final entry in pendingEntries) {
         try {
           await remoteDataSource.saveEntry(entry);
-          final synced = entry.copyWith(uploadStatus: UploadStatus.completed.index);
+          final synced =
+              entry.copyWith(uploadStatus: UploadStatus.completed.index);
           await localDataSource.updateEntry(synced);
         } catch (e) {
           debugPrint('Failed to sync entry ${entry.id}: $e');

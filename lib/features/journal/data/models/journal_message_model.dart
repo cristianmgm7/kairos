@@ -1,81 +1,91 @@
 import 'package:isar/isar.dart';
-import 'package:kairos/features/journal/domain/entities/journal_entry_entity.dart';
+import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:uuid/uuid.dart';
 
-part 'journal_entry_model.g.dart';
+part 'journal_message_model.g.dart';
 
 @collection
-class JournalEntryModel {
-  JournalEntryModel({
+class JournalMessageModel {
+  JournalMessageModel({
     required this.id,
+    required this.threadId,
     required this.userId,
-    required this.entryType,
+    required this.role,
+    required this.messageType,
     required this.createdAtMillis,
-    required this.modifiedAtMillis,
-    this.textContent,
+    this.content,
     this.storageUrl,
-    this.localFilePath,
     this.thumbnailUrl,
+    this.localFilePath,
     this.localThumbnailPath,
     this.audioDurationSeconds,
     this.transcription,
-    this.aiProcessingStatus = 0, // pending
-    this.uploadStatus = 0, // notStarted
+    this.aiProcessingStatus = 0,
+    this.uploadStatus = 0,
     this.uploadRetryCount = 0,
     this.lastUploadAttemptMillis,
-    this.needsSync = false,
     this.isDeleted = false,
     this.version = 1,
   });
 
-  factory JournalEntryModel.create({
+  factory JournalMessageModel.createUserMessage({
+    required String threadId,
     required String userId,
-    required JournalEntryType entryType,
-    String? textContent,
+    required MessageType messageType,
+    String? content,
     String? localFilePath,
     String? localThumbnailPath,
     int? audioDurationSeconds,
   }) {
-    final now = DateTime.now().toUtc(); // Always use UTC
-    return JournalEntryModel(
+    final now = DateTime.now().toUtc();
+    return JournalMessageModel(
       id: const Uuid().v4(),
+      threadId: threadId,
       userId: userId,
-      entryType: entryType.index,
-      textContent: textContent,
+      role: 0, // user
+      messageType: messageType.index,
+      content: content,
       localFilePath: localFilePath,
       localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: now.millisecondsSinceEpoch,
-      modifiedAtMillis: now.millisecondsSinceEpoch,
-      needsSync:
-          entryType != JournalEntryType.text, // Media entries need upload
+      uploadStatus: messageType == MessageType.text
+          ? 2
+          : 0, // text=completed, media=notStarted
     );
   }
 
-  factory JournalEntryModel.fromEntity(JournalEntryEntity entity) {
-    return JournalEntryModel(
+  factory JournalMessageModel.fromEntity(JournalMessageEntity entity) {
+    return JournalMessageModel(
       id: entity.id,
+      threadId: entity.threadId,
       userId: entity.userId,
-      entryType: entity.entryType.index,
-      textContent: entity.textContent,
+      role: entity.role.index,
+      messageType: entity.messageType.index,
+      content: entity.content,
       storageUrl: entity.storageUrl,
       thumbnailUrl: entity.thumbnailUrl,
+      localFilePath: entity.localFilePath,
+      localThumbnailPath: entity.localThumbnailPath,
       audioDurationSeconds: entity.audioDurationSeconds,
       transcription: entity.transcription,
       aiProcessingStatus: entity.aiProcessingStatus.index,
       uploadStatus: entity.uploadStatus.index,
-      needsSync: entity.needsSync,
+      uploadRetryCount: entity.uploadRetryCount,
+      lastUploadAttemptMillis:
+          entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
-      modifiedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
   }
 
-  factory JournalEntryModel.fromMap(Map<String, dynamic> map) {
-    return JournalEntryModel(
+  factory JournalMessageModel.fromMap(Map<String, dynamic> map) {
+    return JournalMessageModel(
       id: map['id'] as String,
+      threadId: map['threadId'] as String,
       userId: map['userId'] as String,
-      entryType: map['entryType'] as int,
-      textContent: map['textContent'] as String?,
+      role: map['role'] as int,
+      messageType: map['messageType'] as int,
+      content: map['content'] as String?,
       storageUrl: map['storageUrl'] as String?,
       thumbnailUrl: map['thumbnailUrl'] as String?,
       audioDurationSeconds: map['audioDurationSeconds'] as int?,
@@ -83,7 +93,6 @@ class JournalEntryModel {
       aiProcessingStatus: map['aiProcessingStatus'] as int? ?? 0,
       uploadStatus: map['uploadStatus'] as int? ?? 0,
       createdAtMillis: map['createdAtMillis'] as int,
-      modifiedAtMillis: map['modifiedAtMillis'] as int,
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
     );
@@ -93,26 +102,25 @@ class JournalEntryModel {
   final String id;
 
   @Index()
+  final String threadId;
+
+  @Index()
   final String userId;
 
-  final int entryType; // 0=text, 1=image, 2=audio
-  final String? textContent;
+  final int role;
+  final int messageType;
+  final String? content;
   final String? storageUrl;
-  final String? localFilePath; // For offline access
   final String? thumbnailUrl;
-  final String? localThumbnailPath; // For offline thumbnail
+  final String? localFilePath;
+  final String? localThumbnailPath;
   final int? audioDurationSeconds;
   final String? transcription;
-  final int
-      aiProcessingStatus; // 0=pending, 1=processing, 2=completed, 3=failed
-  final int
-      uploadStatus; // 0=notStarted, 1=uploading, 2=completed, 3=failed, 4=retrying
+  final int aiProcessingStatus;
+  final int uploadStatus;
   final int uploadRetryCount;
   final int? lastUploadAttemptMillis;
-  final bool needsSync;
-
   final int createdAtMillis;
-  final int modifiedAtMillis;
   final bool isDeleted;
   final int version;
 
@@ -121,47 +129,58 @@ class JournalEntryModel {
   Map<String, dynamic> toFirestoreMap() {
     return {
       'id': id,
+      'threadId': threadId,
       'userId': userId,
-      'entryType': entryType,
-      'textContent': textContent,
+      'role': role,
+      'messageType': messageType,
+      'content': content,
       'storageUrl': storageUrl,
       'thumbnailUrl': thumbnailUrl,
       'audioDurationSeconds': audioDurationSeconds,
       'transcription': transcription,
       'aiProcessingStatus': aiProcessingStatus,
       'createdAtMillis': createdAtMillis,
-      'modifiedAtMillis': modifiedAtMillis,
       'isDeleted': isDeleted,
       'version': version,
     };
   }
 
-  JournalEntryEntity toEntity() {
-    return JournalEntryEntity(
+  JournalMessageEntity toEntity() {
+    return JournalMessageEntity(
       id: id,
+      threadId: threadId,
       userId: userId,
-      entryType: JournalEntryType.values[entryType],
-      textContent: textContent,
+      role: MessageRole.values[role],
+      messageType: MessageType.values[messageType],
+      content: content,
       storageUrl: storageUrl,
       thumbnailUrl: thumbnailUrl,
+      localFilePath: localFilePath,
+      localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
       transcription: transcription,
       aiProcessingStatus: AiProcessingStatus.values[aiProcessingStatus],
       uploadStatus: UploadStatus.values[uploadStatus],
-      needsSync: needsSync,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis),
+      uploadRetryCount: uploadRetryCount,
+      lastUploadAttemptAt: lastUploadAttemptMillis != null
+          ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!,
+              isUtc: true)
+          : null,
+      createdAt:
+          DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
     );
   }
 
-  JournalEntryModel copyWith({
+  JournalMessageModel copyWith({
     String? id,
+    String? threadId,
     String? userId,
-    int? entryType,
-    String? textContent,
+    int? role,
+    int? messageType,
+    String? content,
     String? storageUrl,
-    String? localFilePath,
     String? thumbnailUrl,
+    String? localFilePath,
     String? localThumbnailPath,
     int? audioDurationSeconds,
     String? transcription,
@@ -169,20 +188,20 @@ class JournalEntryModel {
     int? uploadStatus,
     int? uploadRetryCount,
     int? lastUploadAttemptMillis,
-    bool? needsSync,
     int? createdAtMillis,
-    int? modifiedAtMillis,
     bool? isDeleted,
     int? version,
   }) {
-    return JournalEntryModel(
+    return JournalMessageModel(
       id: id ?? this.id,
+      threadId: threadId ?? this.threadId,
       userId: userId ?? this.userId,
-      entryType: entryType ?? this.entryType,
-      textContent: textContent ?? this.textContent,
+      role: role ?? this.role,
+      messageType: messageType ?? this.messageType,
+      content: content ?? this.content,
       storageUrl: storageUrl ?? this.storageUrl,
-      localFilePath: localFilePath ?? this.localFilePath,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      localFilePath: localFilePath ?? this.localFilePath,
       localThumbnailPath: localThumbnailPath ?? this.localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
@@ -191,23 +210,21 @@ class JournalEntryModel {
       uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
       lastUploadAttemptMillis:
           lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
-      needsSync: needsSync ?? this.needsSync,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
-      modifiedAtMillis: modifiedAtMillis ?? this.modifiedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,
       version: version ?? this.version,
     );
   }
 
   int fastHash(String string) {
-    var hash = 0xcbf29ce4;
+    var hash = 0xcbf29ce484222325;
     var i = 0;
     while (i < string.length) {
       final codeUnit = string.codeUnitAt(i++);
       hash ^= codeUnit >> 8;
-      hash *= 0x1000001b3;
+      hash *= 0x100000001b3;
       hash ^= codeUnit & 0xFF;
-      hash *= 0x1000001b3;
+      hash *= 0x100000001b3;
     }
     return hash;
   }

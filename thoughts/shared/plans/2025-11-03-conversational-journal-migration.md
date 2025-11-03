@@ -401,10 +401,10 @@ abstract class JournalMessageRepository {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter analyze`
-- [ ] No import errors
-- [ ] Entities are immutable and equatable
-- [ ] Repository interfaces compile without errors
+- [x] Build succeeds: `~/flutter/bin/flutter analyze`
+- [x] No import errors
+- [x] Entities are immutable and equatable
+- [x] Repository interfaces compile without errors
 
 #### Manual Verification:
 - [ ] Entity `copyWith` methods work correctly
@@ -836,10 +836,10 @@ Future<Isar> initializeIsar() async {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code generation succeeds: `~/flutter/bin/dart run build_runner build --delete-conflicting-outputs`
-- [ ] No analyzer errors: `~/flutter/bin/flutter analyze`
-- [ ] Isar schemas compile correctly
-- [ ] All conversion methods work (toEntity, fromEntity, toFirestoreMap, fromMap)
+- [x] Code generation succeeds: `~/flutter/bin/dart run build_runner build --delete-conflicting-outputs`
+- [x] No analyzer errors: `~/flutter/bin/flutter analyze`
+- [x] Isar schemas compile correctly
+- [x] All conversion methods work (toEntity, fromEntity, toFirestoreMap, fromMap)
 
 #### Manual Verification:
 - [ ] App launches without crashes
@@ -1418,7 +1418,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter analyze`
+- [x] Build succeeds: `~/flutter/bin/flutter analyze`
 - [ ] Unit tests pass for datasources (with mocked Isar): `~/flutter/bin/flutter test test/features/journal/data/datasources/`
 - [ ] Unit tests pass for repositories: `~/flutter/bin/flutter test test/features/journal/data/repositories/`
 
@@ -1746,10 +1746,10 @@ class CreateAudioMessageUseCase {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter analyze`
+- [x] Build succeeds: `~/flutter/bin/flutter analyze`
 - [ ] Unit tests pass for all use cases: `~/flutter/bin/flutter test test/features/journal/domain/usecases/`
-- [ ] Use cases properly validate inputs
-- [ ] Use cases correctly update thread metadata
+- [x] Use cases properly validate inputs
+- [x] Use cases correctly update thread metadata
 
 #### Manual Verification:
 - [ ] Creating text message in new thread → thread auto-created with title from content
