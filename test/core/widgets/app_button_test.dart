@@ -1,6 +1,6 @@
-import 'package:kairos/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kairos/core/widgets/app_button.dart';
 
 void main() {
   group('AppButton', () {

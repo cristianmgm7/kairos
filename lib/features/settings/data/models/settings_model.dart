@@ -11,14 +11,13 @@ class SettingsModel {
     required this.themeMode,
   });
 
-  /// Fixed ID to ensure only one settings object
-  final Id id = 1;
-
-  @enumerated
-  late AppLanguage language;
-
-  @enumerated
-  late AppThemeMode themeMode;
+  /// Default settings
+  factory SettingsModel.defaults() {
+    return SettingsModel(
+      language: AppLanguage.english,
+      themeMode: AppThemeMode.system,
+    );
+  }
 
   /// Create from domain entity
   factory SettingsModel.fromEntity(SettingsEntity entity) {
@@ -28,13 +27,15 @@ class SettingsModel {
     );
   }
 
-  /// Default settings
-  factory SettingsModel.defaults() {
-    return SettingsModel(
-      language: AppLanguage.english,
-      themeMode: AppThemeMode.system,
-    );
-  }
+  /// Fixed ID to ensure only one settings object
+  final Id id = 1;
+
+  @enumerated
+  late AppLanguage language;
+
+  @enumerated
+  late AppThemeMode themeMode;
+
 
   /// Convert to domain entity
   SettingsEntity toEntity() {
