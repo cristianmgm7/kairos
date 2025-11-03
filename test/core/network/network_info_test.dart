@@ -1,6 +1,6 @@
-import 'package:kairos/core/network/network_info.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kairos/core/network/network_info.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 

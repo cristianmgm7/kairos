@@ -21,14 +21,14 @@ class FirebaseImageStorageService {
   }) async {
     try {
       // 1. Validate inputs
-      if (!await imageFile.exists()) {
+      if (!imageFile.existsSync()) {
         return const Error(
           ValidationFailure(message: 'Image file does not exist'),
         );
       }
 
       // 2. Read and decode image
-      final imageBytes = await imageFile.readAsBytes();
+      final imageBytes = imageFile.readAsBytesSync();
       final originalImage = img.decodeImage(imageBytes);
 
       if (originalImage == null) {

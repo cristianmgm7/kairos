@@ -85,21 +85,23 @@ class _LanguageSelector extends ConsumerWidget {
     final controller = ref.read(settingsControllerProvider.notifier);
 
     return Card(
-      child: Column(
-        children: AppLanguage.values.map((language) {
-          return RadioListTile<AppLanguage>(
-            title: Text(
-              language == AppLanguage.english ? l10n.english : l10n.spanish,
-            ),
-            value: language,
-            groupValue: currentLanguage,
-            onChanged: (AppLanguage? value) {
-              if (value != null) {
-                controller.updateLanguage(value);
-              }
-            },
-          );
-        }).toList(),
+      child: RadioGroup<AppLanguage>(
+        groupValue: currentLanguage,
+        onChanged: (AppLanguage? value) {
+          if (value != null) {
+            controller.updateLanguage(value);
+          }
+        },
+        child: Column(
+          children: AppLanguage.values.map((language) {
+            return RadioListTile<AppLanguage>(
+              title: Text(
+                language == AppLanguage.english ? l10n.english : l10n.spanish,
+              ),
+              value: language,
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -116,39 +118,29 @@ class _ThemeSelector extends ConsumerWidget {
     final controller = ref.read(settingsControllerProvider.notifier);
 
     return Card(
-      child: Column(
-        children: [
-          RadioListTile<AppThemeMode>(
-            title: Text(l10n.themeLight),
-            value: AppThemeMode.light,
-            groupValue: currentThemeMode,
-            onChanged: (AppThemeMode? value) {
-              if (value != null) {
-                controller.updateThemeMode(value);
-              }
-            },
-          ),
-          RadioListTile<AppThemeMode>(
-            title: Text(l10n.themeDark),
-            value: AppThemeMode.dark,
-            groupValue: currentThemeMode,
-            onChanged: (AppThemeMode? value) {
-              if (value != null) {
-                controller.updateThemeMode(value);
-              }
-            },
-          ),
-          RadioListTile<AppThemeMode>(
-            title: Text(l10n.themeSystem),
-            value: AppThemeMode.system,
-            groupValue: currentThemeMode,
-            onChanged: (AppThemeMode? value) {
-              if (value != null) {
-                controller.updateThemeMode(value);
-              }
-            },
-          ),
-        ],
+      child: RadioGroup<AppThemeMode>(
+        groupValue: currentThemeMode,
+        onChanged: (AppThemeMode? value) {
+          if (value != null) {
+            controller.updateThemeMode(value);
+          }
+        },
+        child: Column(
+          children: [
+            RadioListTile<AppThemeMode>(
+              title: Text(l10n.themeLight),
+              value: AppThemeMode.light,
+            ),
+            RadioListTile<AppThemeMode>(
+              title: Text(l10n.themeDark),
+              value: AppThemeMode.dark,
+            ),
+            RadioListTile<AppThemeMode>(
+              title: Text(l10n.themeSystem),
+              value: AppThemeMode.system,
+            ),
+          ],
+        ),
       ),
     );
   }

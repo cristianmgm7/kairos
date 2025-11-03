@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:kairos/core/config/flavor_config.dart';
 import 'package:kairos/main.dart' as main_app;
-import 'package:flutter/material.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

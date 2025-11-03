@@ -1,6 +1,6 @@
+import 'package:flutter_test/flutter_test.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
-import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Result', () {

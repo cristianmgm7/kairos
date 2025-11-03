@@ -1,6 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -73,10 +72,10 @@ final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
   return ImagePickerService(picker);
 });
 
-/// Firebase storage service provider
+/// Firebase storage service provider for images
 final firebaseImageStorageServiceProvider =
     Provider<FirebaseImageStorageService>((ref) {
-  final storage = FirebaseStorage.instance;
+  final storage = ref.watch(firebaseStorageProvider);
   return FirebaseImageStorageService(storage);
 });
 
