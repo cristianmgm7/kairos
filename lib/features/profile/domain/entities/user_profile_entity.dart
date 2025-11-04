@@ -78,4 +78,3 @@ class UserProfileEntity extends Equatable {
 
 
 
-

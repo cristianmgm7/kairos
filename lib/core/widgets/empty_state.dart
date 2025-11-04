@@ -4,10 +4,10 @@ import 'package:kairos/core/theme/app_spacing.dart';
 /// A reusable empty state widget for displaying when there's no content
 class EmptyState extends StatelessWidget {
   const EmptyState({
-    super.key,
     required this.icon,
     required this.title,
     required this.message,
+    super.key,
     this.action,
   });
 

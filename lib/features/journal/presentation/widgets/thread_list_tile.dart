@@ -6,9 +6,9 @@ import 'package:timeago/timeago.dart' as timeago;
 /// Displays a single thread in the thread list
 class ThreadListTile extends StatelessWidget {
   const ThreadListTile({
-    super.key,
     required this.thread,
     required this.onTap,
+    super.key,
   });
 
   final JournalThreadEntity thread;
