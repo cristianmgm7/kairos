@@ -47,7 +47,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
       return Success(model.toEntity());
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to create message: $e'));
+      return Error(CacheFailure(message: 'Failed to save message locally: $e'));
     }
   }
 
@@ -57,7 +57,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final localMessage = await localDataSource.getMessageById(messageId);
       return Success(localMessage?.toEntity());
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to get message: $e'));
+      return Error(CacheFailure(message: 'Failed to retrieve message: $e'));
     }
   }
 
@@ -84,7 +84,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
       return const Success(null);
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to update message: $e'));
+      return Error(CacheFailure(message: 'Failed to update message: $e'));
     }
   }
 
@@ -103,7 +103,12 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
       return const Success(null);
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to sync messages: $e'));
+      if (e.toString().contains('network')) {
+        return Error(
+          NetworkFailure(message: 'Network error syncing messages: $e'),
+        );
+      }
+      return Error(ServerFailure(message: 'Failed to sync messages: $e'));
     }
   }
 
@@ -114,8 +119,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final messages = await localDataSource.getPendingUploads(userId);
       return Success(messages.map((m) => m.toEntity()).toList());
     } catch (e) {
-      return Error(
-          UnknownFailure(message: 'Failed to get pending uploads: $e'));
+      return Error(CacheFailure(message: 'Failed to query pending uploads: $e'));
     }
   }
 }

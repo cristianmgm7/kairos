@@ -42,7 +42,7 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
       return Success(model.toEntity());
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to create thread: $e'));
+      return Error(CacheFailure(message: 'Failed to save thread locally: $e'));
     }
   }
 
@@ -52,7 +52,7 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
       final localThread = await localDataSource.getThreadById(threadId);
       return Success(localThread?.toEntity());
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to get thread: $e'));
+      return Error(CacheFailure(message: 'Failed to retrieve thread: $e'));
     }
   }
 
@@ -79,7 +79,7 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
       return const Success(null);
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to update thread: $e'));
+      return Error(CacheFailure(message: 'Failed to update thread: $e'));
     }
   }
 
@@ -101,7 +101,7 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
       return const Success(null);
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to archive thread: $e'));
+      return Error(CacheFailure(message: 'Failed to archive thread: $e'));
     }
   }
 
@@ -119,7 +119,12 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
       return const Success(null);
     } catch (e) {
-      return Error(UnknownFailure(message: 'Failed to sync threads: $e'));
+      if (e.toString().contains('network')) {
+        return Error(
+          NetworkFailure(message: 'Network error syncing threads: $e'),
+        );
+      }
+      return Error(ServerFailure(message: 'Failed to sync threads: $e'));
     }
   }
 }

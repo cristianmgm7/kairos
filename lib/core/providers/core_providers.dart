@@ -5,10 +5,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kairos/core/config/firebase_config.dart';
 import 'package:kairos/core/config/flavor_config.dart';
+import 'package:kairos/core/services/audio_recorder_service.dart';
+import 'package:kairos/core/services/firebase_storage_service.dart';
+import 'package:kairos/core/services/image_picker_service.dart';
 import 'package:logger/logger.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:record/record.dart';
 
 // Export network providers
 export 'package:kairos/core/network/api_client.dart';
@@ -79,4 +84,22 @@ final dioProvider = Provider<Dio>((ref) {
   }
 
   return dio;
+});
+
+/// Firebase Storage Service provider - Generalized file upload with processing
+final firebaseStorageServiceProvider = Provider<FirebaseStorageService>((ref) {
+  final storage = ref.watch(firebaseStorageProvider);
+  return FirebaseStorageService(storage);
+});
+
+/// Image picker service provider
+final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
+  final picker = ImagePicker();
+  return ImagePickerService(picker);
+});
+
+/// Audio recorder service provider
+final audioRecorderServiceProvider = Provider<AudioRecorderService>((ref) {
+  final recorder = AudioRecorder();
+  return AudioRecorderService(recorder);
 });
