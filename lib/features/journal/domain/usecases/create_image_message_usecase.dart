@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/services/firebase_storage_service.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateImageMessageParams {
@@ -26,19 +29,47 @@ class CreateImageMessageUseCase {
   CreateImageMessageUseCase({
     required this.messageRepository,
     required this.threadRepository,
+    required this.storageService,
   });
 
   final JournalMessageRepository messageRepository;
   final JournalThreadRepository threadRepository;
+  final FirebaseStorageService storageService;
 
   Future<Result<JournalMessageEntity>> call(
-      CreateImageMessageParams params) async {
+    CreateImageMessageParams params,
+  ) async {
     if (!params.imageFile.existsSync()) {
       return const Error(
-          ValidationFailure(message: 'Image file does not exist'));
+        ValidationFailure(message: 'Image file does not exist'),
+      );
     }
 
     try {
+      // Generate thumbnail for instant preview
+      String? localThumbnailPath;
+      final thumbnailResult =
+          await storageService.generateThumbnail(params.imageFile);
+
+      if (thumbnailResult.isSuccess) {
+        try {
+          // Save thumbnail to temp file
+          final tempDir = await getTemporaryDirectory();
+          final thumbnailFile = File(
+            '${tempDir.path}/${const Uuid().v4()}_thumb.jpg',
+          );
+          await thumbnailFile.writeAsBytes(thumbnailResult.dataOrNull!);
+          localThumbnailPath = thumbnailFile.path;
+        } catch (e) {
+          debugPrint('Failed to save thumbnail: $e');
+          // Continue without thumbnail
+        }
+      } else {
+        debugPrint(
+          'Thumbnail generation failed: ${thumbnailResult.failureOrNull?.message}',
+        );
+      }
+
       String threadId;
       if (params.threadId != null) {
         threadId = params.threadId!;
@@ -68,9 +99,8 @@ class CreateImageMessageUseCase {
         role: MessageRole.user,
         messageType: MessageType.image,
         localFilePath: params.imageFile.path,
-        localThumbnailPath: params.thumbnailPath,
+        localThumbnailPath: localThumbnailPath,
         createdAt: now,
-        uploadStatus: UploadStatus.notStarted,
       );
 
       final messageResult = await messageRepository.createMessage(message);
@@ -92,7 +122,8 @@ class CreateImageMessageUseCase {
       return messageResult;
     } catch (e) {
       return Error(
-          UnknownFailure(message: 'Failed to create image message: $e'));
+        UnknownFailure(message: 'Failed to create image message: $e'),
+      );
     }
   }
 }

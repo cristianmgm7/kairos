@@ -1,12 +1,9 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/providers/database_provider.dart';
-import 'package:kairos/core/services/firebase_image_storage_service.dart';
-import 'package:kairos/core/services/image_picker_service.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_local_datasource.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_remote_datasource.dart';
 import 'package:kairos/features/profile/data/repositories/user_profile_repository_impl.dart';
@@ -64,19 +61,6 @@ final hasCompletedProfileProvider = Provider<bool>((ref) {
     data: (profile) => profile != null,
     orElse: () => false,
   );
-});
-
-/// Image picker service provider
-final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
-  final picker = ImagePicker();
-  return ImagePickerService(picker);
-});
-
-/// Firebase storage service provider for images
-final firebaseImageStorageServiceProvider =
-    Provider<FirebaseImageStorageService>((ref) {
-  final storage = ref.watch(firebaseStorageProvider);
-  return FirebaseImageStorageService(storage);
 });
 
 /// Create user profile use case provider

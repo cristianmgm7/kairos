@@ -11,6 +11,7 @@ import 'package:kairos/features/journal/domain/entities/journal_message_entity.d
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:kairos/features/journal/domain/services/journal_upload_service.dart';
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
@@ -66,6 +67,16 @@ final messageRepositoryProvider = Provider<JournalMessageRepository>((ref) {
   );
 });
 
+// Services
+final journalUploadServiceProvider = Provider<JournalUploadService>((ref) {
+  final storageService = ref.watch(firebaseStorageServiceProvider);
+  final messageRepository = ref.watch(messageRepositoryProvider);
+  return JournalUploadService(
+    storageService: storageService,
+    messageRepository: messageRepository,
+  );
+});
+
 // Use cases
 final createTextMessageUseCaseProvider =
     Provider<CreateTextMessageUseCase>((ref) {
@@ -81,9 +92,11 @@ final createImageMessageUseCaseProvider =
     Provider<CreateImageMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
+  final storageService = ref.watch(firebaseStorageServiceProvider);
   return CreateImageMessageUseCase(
     messageRepository: messageRepository,
     threadRepository: threadRepository,
+    storageService: storageService,
   );
 });
 
@@ -118,10 +131,16 @@ final messageControllerProvider =
       ref.watch(createImageMessageUseCaseProvider);
   final createAudioMessageUseCase =
       ref.watch(createAudioMessageUseCaseProvider);
+  final uploadService = ref.watch(journalUploadServiceProvider);
+  final imagePickerService = ref.watch(imagePickerServiceProvider);
+  final audioRecorderService = ref.watch(audioRecorderServiceProvider);
 
   return MessageController(
     createTextMessageUseCase: createTextMessageUseCase,
     createImageMessageUseCase: createImageMessageUseCase,
     createAudioMessageUseCase: createAudioMessageUseCase,
+    uploadService: uploadService,
+    imagePickerService: imagePickerService,
+    audioRecorderService: audioRecorderService,
   );
 });

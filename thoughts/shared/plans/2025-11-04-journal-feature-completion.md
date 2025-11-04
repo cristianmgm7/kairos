@@ -380,10 +380,10 @@ void main() {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get`
-- [ ] No analyzer errors: `~/flutter/bin/flutter analyze`
-- [ ] Service tests pass: `~/flutter/bin/flutter test test/core/services/audio_recorder_service_test.dart`
-- [ ] Service can be instantiated via provider
+- [x] Build succeeds: `~/flutter/bin/flutter pub get`
+- [x] No analyzer errors: `~/flutter/bin/flutter analyze`
+- [x] Service tests pass: `~/flutter/bin/flutter test test/core/services/audio_recorder_service_test.dart`
+- [x] Service can be instantiated via provider
 
 #### Manual Verification:
 - [ ] `AudioRecorderService` can be injected via Riverpod
@@ -1051,10 +1051,12 @@ final messageControllerProvider =
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
-- [ ] Use case tests pass: `~/flutter/bin/flutter test test/features/journal/domain/usecases/`
-- [ ] Repository tests pass: `~/flutter/bin/flutter test test/features/journal/data/repositories/`
-- [ ] Controller tests pass: `~/flutter/bin/flutter test test/features/journal/presentation/controllers/`
+- [x] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze` (31 lint warnings, none critical)
+- [x] Use case tests pass: N/A - test directories don't exist yet (covered in Phase 7)
+- [x] Repository tests pass: N/A - test directories don't exist yet (covered in Phase 7)
+- [x] Controller tests pass: N/A - test directories don't exist yet (covered in Phase 7)
+- [x] Journal upload service tests pass: `~/flutter/bin/flutter test test/features/journal/` (2/2 tests passed)
+- [x] Audio recorder service tests pass: `~/flutter/bin/flutter test test/core/services/audio_recorder_service_test.dart` (4/4 tests passed)
 
 #### Manual Verification:
 - [ ] Creating image message generates thumbnail locally
@@ -1519,9 +1521,9 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
-- [ ] No import errors
-- [ ] Provider dependency graph resolves correctly
+- [x] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
+- [x] No import errors
+- [x] Provider dependency graph resolves correctly
 
 #### Manual Verification:
 - [ ] Tapping attachment button shows modal with 3 options
@@ -1765,8 +1767,8 @@ Then in `MessageBubble`, listen to stream and show progress bar.
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
-- [ ] No widget errors in message bubble
+- [x] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
+- [x] No widget errors in message bubble
 
 #### Manual Verification:
 - [ ] Upload status shows "Waiting to upload" for queued messages
@@ -1886,10 +1888,10 @@ rm lib/core/services/firebase_image_storage_service.dart
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
-- [ ] No import errors referencing `FirebaseImageStorageService`
-- [ ] Profile controller tests pass (if they exist)
-- [ ] Grep shows no remaining references: `rg FirebaseImageStorageService lib/`
+- [x] Build succeeds: `~/flutter/bin/flutter pub get && ~/flutter/bin/flutter analyze`
+- [x] No import errors referencing `FirebaseImageStorageService`
+- [x] Profile controller tests pass (if they exist)
+- [x] Grep shows no remaining references: `rg FirebaseImageStorageService lib/`
 
 #### Manual Verification:
 - [ ] Profile creation with avatar upload still works

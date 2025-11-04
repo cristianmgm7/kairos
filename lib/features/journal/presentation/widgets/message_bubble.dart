@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 /// Displays a single message in a chat bubble
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends ConsumerWidget {
   const MessageBubble({
     super.key,
     required this.message,
@@ -15,7 +19,7 @@ class MessageBubble extends StatelessWidget {
   final bool isUserMessage;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final timeAgo = timeago.format(message.createdAt, locale: 'en_short');
 
@@ -57,8 +61,10 @@ class MessageBubble extends StatelessWidget {
                 const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Column(
+                    crossAxisAlignment: isUserMessage
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
                       Text(
                         timeAgo,
@@ -68,8 +74,8 @@ class MessageBubble extends StatelessWidget {
                         ),
                       ),
                       if (message.uploadStatus != UploadStatus.completed) ...[
-                        const SizedBox(width: 4),
-                        _buildUploadStatusIcon(context),
+                        const SizedBox(height: 2),
+                        _buildUploadStatusIndicator(context, ref),
                       ],
                     ],
                   ),
@@ -123,26 +129,10 @@ class MessageBubble extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (message.localFilePath != null ||
-                message.storageUrl != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  message.storageUrl ?? '',
-                  height: 200,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _buildImageWidget(context),
+            ),
             if (message.transcription != null) ...[
               const SizedBox(height: AppSpacing.sm),
               Text(
@@ -171,7 +161,7 @@ class MessageBubble extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  '${message.audioDurationSeconds ?? 0}s',
+                  _formatDuration(message.audioDurationSeconds ?? 0),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: isUserMessage
                         ? theme.colorScheme.onPrimaryContainer
@@ -194,33 +184,157 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  Widget _buildUploadStatusIcon(BuildContext context) {
+  Widget _buildImageWidget(BuildContext context) {
     final theme = Theme.of(context);
+
+    // Show uploaded image if available
+    if (message.storageUrl != null) {
+      return Image.network(
+        message.storageUrl!,
+        height: 200,
+        width: 200,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildImagePlaceholder(theme);
+        },
+      );
+    }
+
+    // Show local thumbnail if available (during upload or failed)
+    if (message.localThumbnailPath != null) {
+      final thumbnailFile = File(message.localThumbnailPath!);
+      if (thumbnailFile.existsSync()) {
+        return Image.file(
+          thumbnailFile,
+          height: 200,
+          width: 200,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildImagePlaceholder(theme);
+          },
+        );
+      }
+    }
+
+    // Show local file if no thumbnail
+    if (message.localFilePath != null) {
+      final localFile = File(message.localFilePath!);
+      if (localFile.existsSync()) {
+        return Image.file(
+          localFile,
+          height: 200,
+          width: 200,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildImagePlaceholder(theme);
+          },
+        );
+      }
+    }
+
+    return _buildImagePlaceholder(theme);
+  }
+
+  Widget _buildImagePlaceholder(ThemeData theme) {
+    return Container(
+      height: 200,
+      width: 200,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 48),
+      ),
+    );
+  }
+
+  Widget _buildUploadStatusIndicator(BuildContext context, WidgetRef ref) {
+    if (message.uploadStatus == UploadStatus.completed) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    IconData icon;
+    Color color;
+    String tooltip;
+    bool showRetry = false;
+
     switch (message.uploadStatus) {
-      case UploadStatus.uploading:
-        return SizedBox(
-          width: 10,
-          height: 10,
-          child: CircularProgressIndicator(
-            strokeWidth: 1.5,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        );
-      case UploadStatus.failed:
-        return Icon(
-          Icons.error_outline,
-          size: 12,
-          color: theme.colorScheme.error,
-        );
-      case UploadStatus.retrying:
-        return Icon(
-          Icons.refresh,
-          size: 12,
-          color: theme.colorScheme.onSurfaceVariant,
-        );
       case UploadStatus.notStarted:
+        icon = Icons.cloud_upload_outlined;
+        color = theme.colorScheme.onSurfaceVariant;
+        tooltip = 'Waiting to upload';
+      case UploadStatus.uploading:
+        icon = Icons.cloud_upload;
+        color = Colors.blue;
+        tooltip = 'Uploading...';
       case UploadStatus.completed:
         return const SizedBox.shrink();
+      case UploadStatus.failed:
+        icon = Icons.error_outline;
+        color = theme.colorScheme.error;
+        tooltip = 'Upload failed';
+        showRetry = true;
+      case UploadStatus.retrying:
+        icon = Icons.refresh;
+        color = Colors.orange;
+        tooltip = 'Retrying upload...';
     }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (message.uploadStatus == UploadStatus.uploading)
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: color,
+            ),
+          )
+        else
+          Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(
+          tooltip,
+          style: TextStyle(
+            fontSize: 10,
+            color: color,
+          ),
+        ),
+        if (showRetry) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              final controller = ref.read(messageControllerProvider.notifier);
+              controller.retryUpload(message);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.error,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: theme.colorScheme.onError,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 }

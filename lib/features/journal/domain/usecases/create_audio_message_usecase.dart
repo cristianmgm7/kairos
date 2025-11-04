@@ -32,10 +32,12 @@ class CreateAudioMessageUseCase {
   final JournalThreadRepository threadRepository;
 
   Future<Result<JournalMessageEntity>> call(
-      CreateAudioMessageParams params) async {
+    CreateAudioMessageParams params,
+  ) async {
     if (!params.audioFile.existsSync()) {
       return const Error(
-          ValidationFailure(message: 'Audio file does not exist'));
+        ValidationFailure(message: 'Audio file does not exist'),
+      );
     }
 
     try {
@@ -70,7 +72,6 @@ class CreateAudioMessageUseCase {
         localFilePath: params.audioFile.path,
         audioDurationSeconds: params.durationSeconds,
         createdAt: now,
-        uploadStatus: UploadStatus.notStarted,
       );
 
       final messageResult = await messageRepository.createMessage(message);
@@ -92,7 +93,8 @@ class CreateAudioMessageUseCase {
       return messageResult;
     } catch (e) {
       return Error(
-          UnknownFailure(message: 'Failed to create audio message: $e'));
+        UnknownFailure(message: 'Failed to create audio message: $e'),
+      );
     }
   }
 }
