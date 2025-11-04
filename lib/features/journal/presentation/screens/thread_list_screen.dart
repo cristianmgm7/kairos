@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
+import 'package:kairos/core/widgets/empty_state.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/thread_list_tile.dart';
-import 'package:kairos/core/widgets/empty_state.dart';
+import 'package:kairos/l10n/app_localizations.dart';
 
 /// Thread List Screen - Shows all journal conversation threads
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.
@@ -15,6 +16,7 @@ class ThreadListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final currentUser = ref.watch(currentUserProvider);
     final threadsAsync = currentUser != null
         ? ref.watch(threadsStreamProvider(currentUser.id))
@@ -23,7 +25,7 @@ class ThreadListScreen extends ConsumerWidget {
     return Column(
       children: [
         AppBar(
-          title: const Text('Journal'),
+          title: Text(l10n.journal),
           actions: [
             IconButton(
               icon: const Icon(Icons.search),

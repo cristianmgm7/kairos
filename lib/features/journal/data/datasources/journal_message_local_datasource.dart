@@ -34,7 +34,7 @@ class JournalMessageLocalDataSourceImpl
 
   @override
   Future<List<JournalMessageModel>> getMessagesByThreadId(
-      String threadId) async {
+      String threadId,) async {
     return isar.journalMessageModels
         .filter()
         .threadIdEqualTo(threadId)
@@ -63,7 +63,7 @@ class JournalMessageLocalDataSourceImpl
         .isDeletedEqualTo(false)
         .watch(fireImmediately: true)
         .map((messages) => messages
-          ..sort((a, b) => a.createdAtMillis.compareTo(b.createdAtMillis)));
+          ..sort((a, b) => a.createdAtMillis.compareTo(b.createdAtMillis)),);
   }
 
   @override
@@ -79,7 +79,7 @@ class JournalMessageLocalDataSourceImpl
         .group((q) => q
             .uploadStatusEqualTo(0) // notStarted
             .or()
-            .uploadStatusEqualTo(3)) // failed
+            .uploadStatusEqualTo(3),) // failed
         .findAll();
   }
 }
