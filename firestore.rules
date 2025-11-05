@@ -8,6 +8,27 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // User profiles - stored in userProfiles collection
+    // Users can access only their own profiles
+    match /userProfiles/{profileId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'id', 'userId', 'name', 'createdAtMillis', 'modifiedAtMillis'
+        ]);
+
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      // Allow soft deletes only by owner (actual delete is discouraged)
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }

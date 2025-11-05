@@ -10,9 +10,9 @@ import 'package:timeago/timeago.dart' as timeago;
 /// Displays a single message in a chat bubble
 class MessageBubble extends ConsumerWidget {
   const MessageBubble({
-    super.key,
     required this.message,
     required this.isUserMessage,
+    super.key,
   });
 
   final JournalMessageEntity message;

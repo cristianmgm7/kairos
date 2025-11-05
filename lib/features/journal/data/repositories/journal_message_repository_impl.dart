@@ -32,14 +32,16 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final model = JournalMessageModel.fromEntity(message);
       await localDataSource.saveMessage(model);
 
-      // Text messages and AI messages sync immediately
-      if (await _isOnline &&
-          (message.messageType == MessageType.text ||
-              message.role != MessageRole.user)) {
+      // Ensure a remote document exists for all messages when online.
+      // For text and non-user messages, also mark upload as completed locally.
+      if (await _isOnline) {
         try {
           await remoteDataSource.saveMessage(model);
-          final synced = model.copyWith(uploadStatus: 2); // completed
-          await localDataSource.updateMessage(synced);
+          if (message.messageType == MessageType.text ||
+              message.role != MessageRole.user) {
+            final synced = model.copyWith(uploadStatus: 2); // completed
+            await localDataSource.updateMessage(synced);
+          }
         } catch (e) {
           debugPrint('Failed to sync message to remote: $e');
         }

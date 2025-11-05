@@ -145,9 +145,12 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   }
 
   void _showAttachmentOptions(BuildContext context, WidgetRef ref) {
+    // Capture the parent context to use after closing the bottom sheet
+    final rootContext = context;
+
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -156,14 +159,14 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Photo from gallery'),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromGallery();
 
                   // If image selected, show it in preview
                   if (controller.selectedImage != null) {
-                    if (context.mounted) {
-                      _showImagePreview(context, ref);
+                    if (rootContext.mounted) {
+                      _showImagePreview(rootContext, ref);
                     }
                   }
                 },
@@ -172,13 +175,13 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 leading: const Icon(Icons.camera_alt),
                 title: const Text('Take photo'),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromCamera();
 
                   if (controller.selectedImage != null) {
-                    if (context.mounted) {
-                      _showImagePreview(context, ref);
+                    if (rootContext.mounted) {
+                      _showImagePreview(rootContext, ref);
                     }
                   }
                 },
@@ -187,7 +190,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 leading: const Icon(Icons.mic),
                 title: const Text('Voice message'),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   _showRecordingDialog(context, ref);
                 },
               ),
