@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_functions/cloud_functions.dart' as functions;
 import 'package:flutter/foundation.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/services/firebase_storage_service.dart';
@@ -178,6 +179,16 @@ class JournalUploadService {
           );
 
           await messageRepository.updateMessage(updatedMessage);
+
+          // Trigger transcription in background (don't await)
+          // The Cloud Function will handle this automatically via Firestore trigger
+          // But we can also call it explicitly for faster processing
+          transcribeAudio(updatedMessage).then((transcriptionResult) {
+            if (transcriptionResult.isError) {
+              debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
+            }
+          });
+
           return const Success(null);
         },
         error: (failure) async {
@@ -188,6 +199,32 @@ class JournalUploadService {
     } catch (e) {
       await _updateUploadStatus(message, UploadStatus.failed);
       return Error(UnknownFailure(message: 'Audio upload failed: $e'));
+    }
+  }
+
+  /// Transcribe audio message after upload
+  Future<Result<void>> transcribeAudio(JournalMessageEntity message) async {
+    try {
+      if (message.messageType != MessageType.audio) {
+        return const Error(ValidationFailure(message: 'Message is not audio type'));
+      }
+
+      if (message.storageUrl == null) {
+        return const Error(ValidationFailure(message: 'Audio not uploaded yet'));
+      }
+
+      // Call Cloud Function to transcribe
+      final callable = functions.FirebaseFunctions.instance.httpsCallable('transcribeAudio');
+      final result = await callable.call<Map<String, dynamic>>({
+        'audioUrl': message.storageUrl,
+        'messageId': message.id,
+      });
+
+      debugPrint('Transcription result: ${result.data}');
+      return const Success(null);
+    } catch (e) {
+      debugPrint('Transcription error: $e');
+      return Error(ServerFailure(message: 'Transcription failed: $e'));
     }
   }
 

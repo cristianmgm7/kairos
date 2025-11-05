@@ -1,6 +1,8 @@
 import * as admin from 'firebase-admin';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getAI, geminiApiKey } from './genkit-config';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -66,22 +68,6 @@ export const processUserMessage = onDocumentCreated(
           };
         });
 
-      // Get current message content
-      let userPrompt = messageData.content || '';
-
-      // Handle different message types
-      if (messageType === 1) { // Image
-        userPrompt = '[User sent an image]';
-        // TODO: Phase 3 - Add image analysis
-      } else if (messageType === 2) { // Audio
-        if (messageData.transcription) {
-          userPrompt = messageData.transcription;
-        } else {
-          userPrompt = '[User sent an audio message]';
-          // TODO: Phase 3 - Add audio transcription
-        }
-      }
-
       // Build conversation context
       const conversationContext = history
         .map(msg => `${msg.role}: ${msg.content}`)
@@ -94,14 +80,64 @@ Help users reflect on their thoughts and feelings.`;
 
       // Get AI instance with the secret value (only available at runtime)
       const ai = getAI(geminiApiKey.value());
-      
+
+      // Build multimodal prompt parts
+      const promptParts: any[] = [{ text: systemPrompt }];
+
+      // Add conversation history
+      if (conversationContext) {
+        promptParts.push({ text: `Conversation history:\n${conversationContext}` });
+      }
+
+      // Handle different message types
+      if (messageType === 1) { // Image
+        if (messageData.storageUrl) {
+          // Download image and convert to data URL
+          const imageDataUrl = await getFileAsDataUrl(messageData.storageUrl, 'image/jpeg');
+          
+          promptParts.push({
+            text: 'User sent this image:',
+          });
+          promptParts.push({
+            media: {
+              url: imageDataUrl,
+              contentType: 'image/jpeg',
+            },
+          });
+          promptParts.push({
+            text: 'Describe what you see and respond naturally to the user.',
+          });
+        } else {
+          // Image still uploading
+          promptParts.push({
+            text: 'User: [User is uploading an image...]',
+          });
+          console.log('Image still uploading, waiting...');
+          return;
+        }
+      } else if (messageType === 2) { // Audio
+        if (messageData.transcription) {
+          promptParts.push({
+            text: `User said: "${messageData.transcription}"`,
+          });
+        } else {
+          // Transcription not yet available
+          console.log('Waiting for audio transcription');
+          return;
+        }
+      } else {
+        // Text message
+        const userPrompt = messageData.content || '';
+        promptParts.push({
+          text: `User: ${userPrompt}`,
+        });
+      }
+
+      promptParts.push({ text: 'Assistant:' });
+
+      // Generate AI response
       const { text } = await ai.generate({
-        prompt: [
-          { text: systemPrompt },
-          { text: `Conversation history:\n${conversationContext}` },
-          { text: `User: ${userPrompt}` },
-          { text: 'Assistant:' },
-        ],
+        prompt: promptParts,
         config: {
           temperature: 0.7,
           maxOutputTokens: 500,
@@ -158,6 +194,175 @@ Help users reflect on their thoughts and feelings.`;
 
       // Optionally: Send error notification to user
       // TODO: Implement error notification mechanism
+    }
+  }
+);
+
+/**
+ * Helper function to extract storage path from Firebase Storage URL
+ */
+function extractStoragePath(url: string): string {
+  // Extract path from URLs like:
+  // https://firebasestorage.googleapis.com/v0/b/bucket/o/path%2Fto%2Ffile.m4a?alt=media&token=...
+  const match = url.match(/\/o\/(.+?)\?/);
+  if (!match) {
+    throw new Error('Invalid Firebase Storage URL');
+  }
+  return decodeURIComponent(match[1]);
+}
+
+/**
+ * Helper function to download file from Firebase Storage and convert to base64 data URL
+ * Works for both audio and image files
+ */
+async function getFileAsDataUrl(storageUrl: string, contentType: string): Promise<string> {
+  try {
+    const storagePath = extractStoragePath(storageUrl);
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(storagePath);
+
+    // Download file as buffer
+    const [buffer] = await file.download();
+    
+    // Convert to base64 data URL
+    const base64Data = buffer.toString('base64');
+    const dataUrl = `data:${contentType};base64,${base64Data}`;
+    
+    console.log(`Downloaded file: ${storagePath}, size: ${buffer.length} bytes`);
+    
+    return dataUrl;
+  } catch (error) {
+    console.error('Failed to download file:', error);
+    throw error;
+  }
+}
+
+/**
+ * Callable function to transcribe audio files using Gemini
+ * Called by client after audio upload completes
+ */
+export const transcribeAudio = onCall(
+  {
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+    memory: '1GiB',
+    timeoutSeconds: 120,
+  },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    const { audioUrl, messageId } = request.data as {
+      audioUrl: string;
+      messageId: string;
+    };
+
+    if (!audioUrl || !messageId) {
+      throw new HttpsError('invalid-argument', 'audioUrl and messageId required');
+    }
+
+    console.log(`Transcribing audio for message ${messageId}`);
+
+    try {
+      // Verify message ownership
+      const messageDoc = await db.collection('journalMessages').doc(messageId).get();
+      if (!messageDoc.exists || messageDoc.data()?.userId !== userId) {
+        throw new HttpsError('permission-denied', 'Message not found or access denied');
+      }
+
+      // Download audio file and convert to data URL
+      const audioDataUrl = await getFileAsDataUrl(audioUrl, 'audio/mp4');
+
+      // Get AI instance
+      const ai = getAI(geminiApiKey.value());
+
+      // Use Gemini for transcription (supports audio input)
+      // m4a files should use audio/mp4 content type
+      const { text } = await ai.generate({
+        model: googleAI.model('gemini-2.0-flash'),
+        prompt: [
+          { text: 'Transcribe this audio recording accurately. Output only the transcription text, no additional commentary.' },
+          {
+            media: {
+              url: audioDataUrl,
+              contentType: 'audio/mp4',
+            },
+          },
+        ],
+      });
+
+      // Update message with transcription
+      await db.collection('journalMessages').doc(messageId).update({
+        transcription: text,
+      });
+
+      console.log(`Transcription complete for message ${messageId}`);
+
+      return { success: true, transcription: text };
+    } catch (error) {
+      console.error(`Transcription failed for message ${messageId}:`, error);
+      throw new HttpsError('internal', `Transcription failed: ${error}`);
+    }
+  }
+);
+
+/**
+ * Firestore trigger: When audio message is updated with storageUrl,
+ * automatically trigger transcription
+ */
+export const triggerAudioTranscription = onDocumentUpdated(
+  {
+    document: 'journalMessages/{messageId}',
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+    memory: '1GiB',
+    timeoutSeconds: 120,
+  },
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) return;
+
+    // Check if this is an audio message with newly added storageUrl
+    const isAudioMessage = afterData.messageType === 2; // audio
+    const storageUrlAdded = !beforeData.storageUrl && afterData.storageUrl;
+    const noTranscription = !afterData.transcription;
+
+    if (isAudioMessage && storageUrlAdded && noTranscription) {
+      const messageId = event.params.messageId;
+      console.log(`Auto-transcribing audio message ${messageId}`);
+
+      try {
+        // Download audio file and convert to data URL
+        const audioDataUrl = await getFileAsDataUrl(afterData.storageUrl, 'audio/mp4');
+
+        // Get AI instance
+        const ai = getAI(geminiApiKey.value());
+
+        const { text } = await ai.generate({
+          model: googleAI.model('gemini-2.0-flash'),
+          prompt: [
+            { text: 'Transcribe this audio accurately. Output only the transcription text.' },
+            {
+              media: {
+                url: audioDataUrl,
+                contentType: 'audio/mp4',
+              },
+            },
+          ],
+        });
+
+        await db.collection('journalMessages').doc(messageId).update({
+          transcription: text,
+        });
+
+        console.log(`Auto-transcription complete for ${messageId}`);
+      } catch (error) {
+        console.error(`Auto-transcription failed for ${messageId}:`, error);
+      }
     }
   }
 );
