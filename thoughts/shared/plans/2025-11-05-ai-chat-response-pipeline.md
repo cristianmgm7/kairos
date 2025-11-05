@@ -585,8 +585,8 @@ service cloud.firestore {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Functions project initializes: `cd functions && npm install`
-- [ ] TypeScript compiles: `cd functions && npm run build`
+- [x] Functions project initializes: `cd functions && npm install`
+- [x] TypeScript compiles: `cd functions && npm run build`
 - [ ] Secrets are set: `firebase functions:secrets:access GEMINI_API_KEY`
 - [ ] Functions deploy successfully: `firebase deploy --only functions`
 - [ ] Firestore rules deploy: `firebase deploy --only firestore:rules,firestore:indexes`

@@ -64,15 +64,19 @@ service cloud.firestore {
     match /journalMessages/{messageId} {
       allow read: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
-      
+
+      // Users can create their own messages (role=user only)
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == 0  // user role only
         && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis']);
-      
+
+      // Users can update their own messages (for upload status, etc.)
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
-      
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == 0; // Can't change role to AI
+
       allow delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
     }
