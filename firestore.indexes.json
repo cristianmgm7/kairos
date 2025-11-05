@@ -1,7 +1,7 @@
 {
   "indexes": [
     {
-      "collectionGroup": "journal_threads",
+      "collectionGroup": "journalThreads",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -9,13 +9,13 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "updatedAt",
+          "fieldPath": "lastMessageAtMillis",
           "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "journal_messages",
+      "collectionGroup": "journalMessages",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -23,13 +23,13 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
+          "fieldPath": "createdAtMillis",
           "order": "ASCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "journal_messages",
+      "collectionGroup": "journalMessages",
       "queryScope": "COLLECTION",
       "fields": [
         {

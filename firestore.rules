@@ -12,30 +12,24 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    function isValidTimestamp(value) {
-      return value is timestamp;
-    }
-    
     // User profiles - users can only read/write their own profile
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) 
-        && request.resource.data.keys().hasAll(['id', 'email', 'createdAt'])
+        && request.resource.data.keys().hasAll(['id', 'email'])
         && request.resource.data.id == userId;
       allow update: if isOwner(userId);
       allow delete: if false; // Prevent accidental deletion
     }
     
     // Journal threads - users can only access their own threads
-    match /journal_threads/{threadId} {
+    match /journalThreads/{threadId} {
       allow read: if isAuthenticated() 
         && resource.data.userId == request.auth.uid;
       
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['id', 'userId', 'title', 'createdAt', 'updatedAt'])
-        && isValidTimestamp(request.resource.data.createdAt)
-        && isValidTimestamp(request.resource.data.updatedAt);
+        && request.resource.data.keys().hasAll(['id', 'userId', 'createdAtMillis', 'updatedAtMillis']);
       
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
@@ -46,14 +40,13 @@ service cloud.firestore {
     }
     
     // Journal messages - users can only access messages in their own threads
-    match /journal_messages/{messageId} {
+    match /journalMessages/{messageId} {
       allow read: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
       
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAt'])
-        && isValidTimestamp(request.resource.data.createdAt);
+        && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis']);
       
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
