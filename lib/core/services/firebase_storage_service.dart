@@ -52,7 +52,7 @@ class FirebaseStorageService {
 
         case FileType.audio:
           fileBytes = await file.readAsBytes();
-          contentType = 'audio/m4a'; // M4A/AAC for optimal compression
+          contentType = 'audio/mp4'; // M4A is typically served as MP4
 
         case FileType.document:
           fileBytes = await file.readAsBytes();

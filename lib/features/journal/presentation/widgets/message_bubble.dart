@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
@@ -385,12 +386,24 @@ class MessageBubble extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             InkWell(
-              onTap: () {
-                // TODO: Implement AI retry logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Retry AI response (coming soon)')),
-                );
+              onTap: () async {
+                try {
+                  final callable = FirebaseFunctions.instance
+                      .httpsCallable('retryAiResponse');
+                  await callable.call<Map<String, dynamic>>({'messageId': message.id});
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Retrying AI response...')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Retry failed: $e')),
+                    );
+                  }
+                }
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

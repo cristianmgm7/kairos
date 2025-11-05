@@ -223,6 +223,10 @@ class JournalUploadService {
       debugPrint('Transcription result: ${result.data}');
       return const Success(null);
     } catch (e) {
+      if (e is functions.FirebaseFunctionsException) {
+        debugPrint('Transcription error (${e.code}): ${e.message} ${e.details ?? ''}');
+        return Error(ServerFailure(message: 'Transcription failed: ${e.message}'));
+      }
       debugPrint('Transcription error: $e');
       return Error(ServerFailure(message: 'Transcription failed: $e'));
     }

@@ -3,6 +3,7 @@ import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/fire
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getAI, geminiApiKey } from './genkit-config';
 import { googleAI } from '@genkit-ai/google-genai';
+import { logAiMetrics } from './monitoring';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -41,6 +42,8 @@ export const processUserMessage = onDocumentCreated(
     const messageType = messageData.messageType as number;
 
     console.log(`Processing message ${messageId} from thread ${threadId}`);
+
+    const startTime = Date.now();
 
     try {
       // Update message status to processing
@@ -136,12 +139,27 @@ Help users reflect on their thoughts and feelings.`;
       promptParts.push({ text: 'Assistant:' });
 
       // Generate AI response
-      const { text } = await ai.generate({
+      const response = await ai.generate({
         prompt: promptParts,
         config: {
           temperature: 0.7,
           maxOutputTokens: 500,
         },
+      });
+
+      const text = response.text;
+      const latencyMs = Date.now() - startTime;
+
+      // Log metrics
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: messageType === 0 ? 'text' : messageType === 1 ? 'image' : 'audio',
+        inputTokens: response.usage?.inputTokens,
+        outputTokens: response.usage?.outputTokens,
+        latencyMs,
+        success: true,
       });
 
       // Save AI response to Firestore
@@ -186,6 +204,19 @@ Help users reflect on their thoughts and feelings.`;
       console.log(`AI response generated for message ${messageId}`);
     } catch (error) {
       console.error(`Error processing message ${messageId}:`, error);
+
+      const latencyMs = Date.now() - startTime;
+
+      // Log error metrics
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: messageType === 0 ? 'text' : messageType === 1 ? 'image' : 'audio',
+        latencyMs,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
 
       // Update message status to failed
       await db.collection('journalMessages').doc(messageId).update({
@@ -238,6 +269,31 @@ async function getFileAsDataUrl(storageUrl: string, contentType: string): Promis
 }
 
 /**
+ * Helper: generate a V4 signed URL for a Storage file (valid ~1 hour)
+ */
+async function getSignedFileUrl(storageUrl: string): Promise<string> {
+  try {
+    const storagePath = extractStoragePath(storageUrl);
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(storagePath);
+
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      version: 'v4',
+      expires: Date.now() + 60 * 60 * 1000, // 1 hour
+    });
+
+    console.log(`Generated signed URL for ${storagePath}`);
+    return signedUrl;
+  } catch (error) {
+    console.error('Failed to create signed URL:', error);
+    throw error;
+  }
+}
+
+// Removed inlineData helper; using data URL via getFileAsDataUrl for media parts
+
+/**
  * Callable function to transcribe audio files using Gemini
  * Called by client after audio upload completes
  */
@@ -272,8 +328,8 @@ export const transcribeAudio = onCall(
         throw new HttpsError('permission-denied', 'Message not found or access denied');
       }
 
-      // Download audio file and convert to data URL
-      const audioDataUrl = await getFileAsDataUrl(audioUrl, 'audio/mp4');
+      // Generate signed URL so Gemini can fetch the audio
+      const signedAudioUrl = await getSignedFileUrl(audioUrl);
 
       // Get AI instance
       const ai = getAI(geminiApiKey.value());
@@ -284,12 +340,7 @@ export const transcribeAudio = onCall(
         model: googleAI.model('gemini-2.0-flash'),
         prompt: [
           { text: 'Transcribe this audio recording accurately. Output only the transcription text, no additional commentary.' },
-          {
-            media: {
-              url: audioDataUrl,
-              contentType: 'audio/mp4',
-            },
-          },
+          { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
         ],
       });
 
@@ -303,7 +354,104 @@ export const transcribeAudio = onCall(
       return { success: true, transcription: text };
     } catch (error) {
       console.error(`Transcription failed for message ${messageId}:`, error);
-      throw new HttpsError('internal', `Transcription failed: ${error}`);
+
+      // Mark AI processing as failed so user can retry
+      await db.collection('journalMessages').doc(messageId).update({
+        aiProcessingStatus: 3, // failed
+      });
+
+      const message = error instanceof Error ? error.message : String(error);
+      throw new HttpsError('internal', `Transcription failed: ${message}`);
+    }
+  }
+);
+
+/**
+ * Callable function to retry AI response generation for a failed message
+ */
+export const retryAiResponse = onCall(
+  {
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+  },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) {
+      throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    const { messageId } = request.data as { messageId: string };
+
+    if (!messageId) {
+      throw new HttpsError('invalid-argument', 'messageId required');
+    }
+
+    console.log(`Retrying AI response for message ${messageId}`);
+
+    try {
+      // Get message
+      const messageDoc = await db.collection('journalMessages').doc(messageId).get();
+      if (!messageDoc.exists) {
+        throw new HttpsError('not-found', 'Message not found');
+      }
+
+      const messageData = messageDoc.data()!;
+
+      // Verify ownership
+      if (messageData.userId !== userId) {
+        throw new HttpsError('permission-denied', 'Access denied');
+      }
+
+      // Verify this is a user message
+      if (messageData.role !== 0) {
+        throw new HttpsError('invalid-argument', 'Can only retry user messages');
+      }
+
+      // If it's an audio message without transcription, retry transcription first
+      const messageType = messageData.messageType as number;
+      if (messageType === 2 && !messageData.transcription && messageData.storageUrl) {
+        console.log(`Retrying transcription for audio message ${messageId}`);
+
+        try {
+          const signedAudioUrl = await getSignedFileUrl(messageData.storageUrl);
+          const ai = getAI(geminiApiKey.value());
+
+          const { text } = await ai.generate({
+            model: googleAI.model('gemini-2.0-flash'),
+            prompt: [
+              { text: 'Transcribe this audio accurately. Output only the transcription text.' },
+              { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
+            ],
+          });
+
+          // Update with transcription and reset AI status to trigger processing
+          await messageDoc.ref.update({
+            transcription: text,
+            aiProcessingStatus: 0, // pending - will trigger AI response
+          });
+
+          console.log(`Transcription retry successful for ${messageId}`);
+        } catch (transcriptionError) {
+          console.error(`Transcription retry failed for ${messageId}:`, transcriptionError);
+          throw new HttpsError('internal', 'Transcription retry failed. Please try again.');
+        }
+      } else {
+        // For text/image messages or audio with transcription, just reset AI status
+        await messageDoc.ref.update({
+          aiProcessingStatus: 0, // pending
+        });
+      }
+
+      console.log(`Reset message ${messageId} to pending for retry`);
+
+      return { success: true, message: 'AI response retry initiated' };
+    } catch (error) {
+      console.error(`Retry AI response failed for message ${messageId}:`, error);
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new HttpsError('internal', `Retry failed: ${message}`);
     }
   }
 );
@@ -336,8 +484,8 @@ export const triggerAudioTranscription = onDocumentUpdated(
       console.log(`Auto-transcribing audio message ${messageId}`);
 
       try {
-        // Download audio file and convert to data URL
-        const audioDataUrl = await getFileAsDataUrl(afterData.storageUrl, 'audio/mp4');
+        // Generate signed URL so Gemini can fetch the audio
+        const signedAudioUrl = await getSignedFileUrl(afterData.storageUrl);
 
         // Get AI instance
         const ai = getAI(geminiApiKey.value());
@@ -346,12 +494,7 @@ export const triggerAudioTranscription = onDocumentUpdated(
           model: googleAI.model('gemini-2.0-flash'),
           prompt: [
             { text: 'Transcribe this audio accurately. Output only the transcription text.' },
-            {
-              media: {
-                url: audioDataUrl,
-                contentType: 'audio/mp4',
-              },
-            },
+            { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
           ],
         });
 
@@ -362,6 +505,11 @@ export const triggerAudioTranscription = onDocumentUpdated(
         console.log(`Auto-transcription complete for ${messageId}`);
       } catch (error) {
         console.error(`Auto-transcription failed for ${messageId}:`, error);
+
+        // Mark AI processing as failed so user can retry
+        await db.collection('journalMessages').doc(messageId).update({
+          aiProcessingStatus: 3, // failed
+        });
       }
     }
   }
