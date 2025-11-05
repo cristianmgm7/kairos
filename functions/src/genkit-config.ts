@@ -6,15 +6,22 @@ import { defineSecret } from 'firebase-functions/params';
 // Define secrets for API keys
 export const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
-// Initialize Genkit with Google AI plugin
-export const ai = genkit({
-  plugins: [
-    googleAI({
-      apiKey: geminiApiKey.value(),
-    }),
-  ],
-  model: googleAI.model('gemini-2.0-flash'),
-});
-
 // Enable Firebase telemetry for monitoring
 enableFirebaseTelemetry();
+
+// Lazy initialization to avoid accessing secret during deployment
+let aiInstance: ReturnType<typeof genkit> | null = null;
+
+export function getAI(apiKey: string) {
+  if (!aiInstance) {
+    aiInstance = genkit({
+      plugins: [
+        googleAI({
+          apiKey,
+        }),
+      ],
+      model: googleAI.model('gemini-2.0-flash'),
+    });
+  }
+  return aiInstance;
+}

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
@@ -64,10 +65,69 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   }
 
   @override
-  Stream<List<JournalMessageEntity>> watchMessagesByThreadId(String threadId) {
-    return localDataSource
-        .watchMessagesByThreadId(threadId)
-        .map((models) => models.map((m) => m.toEntity()).toList());
+  Stream<List<JournalMessageEntity>> watchMessagesByThreadId(String threadId) async* {
+    // Check if online
+    final isOnline = await _isOnline;
+
+    if (!isOnline) {
+      // Offline: just watch local DB
+      yield* localDataSource
+          .watchMessagesByThreadId(threadId)
+          .map((models) => models.map((m) => m.toEntity()).toList());
+      return;
+    }
+
+    // Get userId from local messages (needed for Firestore query)
+    final localMessages = await localDataSource.getMessagesByThreadId(threadId);
+    if (localMessages.isEmpty) {
+      // No messages yet, just watch local
+      yield* localDataSource
+          .watchMessagesByThreadId(threadId)
+          .map((models) => models.map((m) => m.toEntity()).toList());
+      return;
+    }
+    final userId = localMessages.first.userId;
+
+    // Online: Set up bidirectional sync between Firestore and local DB
+    StreamSubscription<List<JournalMessageModel>>? remoteSub;
+
+    try {
+      // Listen to Firestore and sync to local DB in background
+      remoteSub = remoteDataSource.watchMessagesByThreadId(threadId, userId).listen(
+        (remoteModels) async {
+          // Get current local messages to compare
+          final localMessages = await localDataSource.getMessagesByThreadId(threadId);
+          final localIds = localMessages.map((m) => m.id).toSet();
+
+          for (final remoteModel in remoteModels) {
+            if (!localIds.contains(remoteModel.id)) {
+              // New message from remote (e.g., AI response)
+              await localDataSource.saveMessage(remoteModel);
+              debugPrint('Synced new AI message: ${remoteModel.id}');
+            } else {
+              // Check if we need to update (e.g., processing status changed)
+              final localModel = await localDataSource.getMessageById(remoteModel.id);
+              if (localModel != null &&
+                  localModel.aiProcessingStatus != remoteModel.aiProcessingStatus) {
+                await localDataSource.updateMessage(remoteModel);
+                debugPrint('Updated message status: ${remoteModel.id}');
+              }
+            }
+          }
+        },
+        onError: (Object error) {
+          debugPrint('Remote sync error: $error');
+        },
+      );
+
+      // Yield the local stream (which gets updated by the remote listener above)
+      yield* localDataSource
+          .watchMessagesByThreadId(threadId)
+          .map((models) => models.map((m) => m.toEntity()).toList());
+    } finally {
+      // Clean up subscription when stream is cancelled
+      await remoteSub?.cancel();
+    }
   }
 
   @override

@@ -6,7 +6,7 @@ abstract class JournalMessageRemoteDataSource {
   Future<JournalMessageModel?> getMessageById(String messageId);
   Future<List<JournalMessageModel>> getMessagesByThreadId(String threadId);
   Future<void> updateMessage(JournalMessageModel message);
-  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId);
+  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId, String userId);
 }
 
 class JournalMessageRemoteDataSourceImpl
@@ -49,9 +49,10 @@ class JournalMessageRemoteDataSourceImpl
   }
 
   @override
-  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId) {
+  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId, String userId) {
     return _collection
         .where('threadId', isEqualTo: threadId)
+        .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
         .orderBy('createdAtMillis', descending: false)
         .snapshots()

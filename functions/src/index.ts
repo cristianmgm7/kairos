@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import { ai, geminiApiKey } from './genkit-config';
+import { getAI, geminiApiKey } from './genkit-config';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -92,6 +92,9 @@ export const processUserMessage = onDocumentCreated(
 Be empathetic, supportive, and encouraging. Keep responses concise (2-3 sentences) unless the user asks for more detail.
 Help users reflect on their thoughts and feelings.`;
 
+      // Get AI instance with the secret value (only available at runtime)
+      const ai = getAI(geminiApiKey.value());
+      
       const { text } = await ai.generate({
         prompt: [
           { text: systemPrompt },
@@ -128,18 +131,21 @@ Help users reflect on their thoughts and feelings.`;
         aiProcessingStatus: 2, // completed
       });
 
-      // Update thread metadata
+      // Update thread metadata - recalculate accurate message count
       const threadRef = db.collection('journalThreads').doc(threadId);
-      const threadDoc = await threadRef.get();
+      const messageCount = await db
+        .collection('journalMessages')
+        .where('threadId', '==', threadId)
+        .where('userId', '==', userId)
+        .where('isDeleted', '==', false)
+        .count()
+        .get();
 
-      if (threadDoc.exists) {
-        const threadData = threadDoc.data()!;
-        await threadRef.update({
-          messageCount: (threadData.messageCount || 0) + 1,
-          lastMessageAt: now,
-          updatedAtMillis: now,
-        });
-      }
+      await threadRef.update({
+        messageCount: messageCount.data().count,
+        lastMessageAt: now,
+        updatedAtMillis: now,
+      });
 
       console.log(`AI response generated for message ${messageId}`);
     } catch (error) {
