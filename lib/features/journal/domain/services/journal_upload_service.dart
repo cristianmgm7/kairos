@@ -92,7 +92,10 @@ class JournalUploadService {
           'type': 'image',
         },
         onProgress: (progress) {
-          debugPrint('Image upload progress: ${(progress * 100).toInt()}%');
+          // Validate progress before converting to int
+          if (progress.isFinite && progress >= 0 && progress <= 1) {
+            debugPrint('Image upload progress: ${(progress * 100).toInt()}%');
+          }
           // Could emit to stream for UI updates
         },
       );
@@ -159,7 +162,10 @@ class JournalUploadService {
           'durationSeconds': message.audioDurationSeconds?.toString() ?? '0',
         },
         onProgress: (progress) {
-          debugPrint('Audio upload progress: ${(progress * 100).toInt()}%');
+          // Validate progress before converting to int
+          if (progress.isFinite && progress >= 0 && progress <= 1) {
+            debugPrint('Audio upload progress: ${(progress * 100).toInt()}%');
+          }
         },
       );
 

@@ -76,8 +76,15 @@ class FirebaseStorageService {
       // Listen to upload progress
       if (onProgress != null) {
         uploadTask.snapshotEvents.listen((snapshot) {
-          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-          onProgress(progress);
+          // Prevent division by zero and handle invalid progress values
+          final totalBytes = snapshot.totalBytes;
+          if (totalBytes > 0) {
+            final progress = snapshot.bytesTransferred / totalBytes;
+            // Ensure progress is a valid number between 0 and 1
+            if (progress.isFinite && progress >= 0 && progress <= 1) {
+              onProgress(progress);
+            }
+          }
         });
       }
 

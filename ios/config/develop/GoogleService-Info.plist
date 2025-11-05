@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>1002168272777-3mj1sr9dnajdp5gl75ldbk50dudh5dk4.apps.googleusercontent.com</string>
+	<string>854546904017-fd2m67ls1li4l1dluska32bddkh74bd5.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.1002168272777-3mj1sr9dnajdp5gl75ldbk50dudh5dk4</string>
+	<string>com.googleusercontent.apps.854546904017-fd2m67ls1li4l1dluska32bddkh74bd5</string>
 	<key>API_KEY</key>
-	<string>AIzaSyB4BRQAq5nn5kCpk2bOXWl8B2bfAdSccUY</string>
+	<string>AIzaSyAqF44qS0ZI4_YOnRysk-kFmfTPJ8895EU</string>
 	<key>GCM_SENDER_ID</key>
-	<string>1002168272777</string>
+	<string>854546904017</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.kairos-app.staging</string>
+	<string>com.kairos-app.dev</string>
 	<key>PROJECT_ID</key>
-	<string>kairos-staging-dbd31</string>
+	<string>kairos-develop</string>
 	<key>STORAGE_BUCKET</key>
-	<string>kairos-staging-dbd31.firebasestorage.app</string>
+	<string>kairos-develop.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1002168272777:ios:2f0c9bfe044951d0e74358</string>
+	<string>1:854546904017:ios:a85b2990d37438545866f0</string>
 </dict>
 </plist>

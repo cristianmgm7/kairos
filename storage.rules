@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidAudioType() {
+      return request.resource.contentType.matches('audio/.*');
+    }
+    
+    function isValidFileSize(maxSizeMB) {
+      return request.resource.size <= maxSizeMB * 1024 * 1024;
+    }
+    
+    // Journal files: users/{userId}/journals/{journalId}/{filename}
+    // Users can only access their own journal files
+    match /users/{userId}/journals/{journalId}/{filename} {
+      // Read: user can read their own files
+      allow read: if isOwner(userId);
+      
+      // Write: user can upload images (max 10MB) or audio files (max 50MB)
+      allow write: if isOwner(userId) 
+        && (
+          (isValidImageType() && isValidFileSize(10))
+          || (isValidAudioType() && isValidFileSize(50))
+        );
+      
+      // Delete: user can delete their own files
+      allow delete: if isOwner(userId);
+    }
+    
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
+
+
