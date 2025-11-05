@@ -76,6 +76,11 @@ class MessageBubble extends ConsumerWidget {
                       if (message.uploadStatus != UploadStatus.completed) ...[
                         const SizedBox(height: 2),
                         _buildUploadStatusIndicator(context, ref),
+                      ] else if (message.role == MessageRole.user &&
+                          message.aiProcessingStatus !=
+                              AiProcessingStatus.completed) ...[
+                        const SizedBox(height: 2),
+                        _buildProcessingStatusIndicator(context),
                       ],
                     ],
                   ),
@@ -330,6 +335,85 @@ class MessageBubble extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Widget _buildProcessingStatusIndicator(BuildContext context) {
+    if (message.role != MessageRole.user) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+
+    // Show AI processing status for user messages
+    switch (message.aiProcessingStatus) {
+      case AiProcessingStatus.pending:
+      case AiProcessingStatus.processing:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'AI is thinking...',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        );
+
+      case AiProcessingStatus.failed:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 12, color: theme.colorScheme.error),
+            const SizedBox(width: 4),
+            Text(
+              'AI response failed',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () {
+                // TODO: Implement AI retry logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Retry AI response (coming soon)')),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.error,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.colorScheme.onError,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case AiProcessingStatus.completed:
+        return const SizedBox.shrink();
+    }
   }
 
   String _formatDuration(int seconds) {

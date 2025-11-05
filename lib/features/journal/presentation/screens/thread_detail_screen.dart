@@ -10,6 +10,7 @@ import 'package:kairos/features/journal/presentation/controllers/message_control
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_bubble.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_input.dart';
+import 'package:kairos/features/journal/presentation/widgets/ai_typing_indicator.dart';
 
 /// Thread Detail Screen - Displays a chat-like conversation thread
 class ThreadDetailScreen extends ConsumerStatefulWidget {
@@ -33,6 +34,24 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   void initState() {
     super.initState();
     _currentThreadId = widget.threadId;
+  }
+
+  bool get hasAiPending {
+    final messagesAsync = _currentThreadId != null
+        ? ref.watch(messagesStreamProvider(_currentThreadId!))
+        : const AsyncValue<List<JournalMessageEntity>>.data([]);
+
+    return messagesAsync.maybeWhen(
+      data: (messages) {
+        // Check if last message is from user and has pending/processing AI status
+        if (messages.isEmpty) return false;
+        final lastMessage = messages.last;
+        return lastMessage.role == MessageRole.user &&
+            (lastMessage.aiProcessingStatus == AiProcessingStatus.pending ||
+                lastMessage.aiProcessingStatus == AiProcessingStatus.processing);
+      },
+      orElse: () => false,
+    );
   }
 
   @override
@@ -92,6 +111,48 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         ref.read(messageControllerProvider.notifier).reset();
       }
     });
+
+    // Listen for AI processing failures
+    if (_currentThreadId != null) {
+      ref.listen<AsyncValue<List<JournalMessageEntity>>>(
+        messagesStreamProvider(_currentThreadId!),
+        (previous, next) {
+          next.whenData((messages) {
+            // Check if any message just failed AI processing
+            final previousMessages = previous?.valueOrNull ?? [];
+            for (final message in messages) {
+              if (message.role == MessageRole.user &&
+                  message.aiProcessingStatus == AiProcessingStatus.failed) {
+                // Check if this is a new failure
+                final previousMessage = previousMessages.firstWhere(
+                  (m) => m.id == message.id,
+                  orElse: () => message,
+                );
+
+                if (previousMessage.aiProcessingStatus !=
+                    AiProcessingStatus.failed) {
+                  // Show error snackbar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          const Text('AI response failed. Please try again.'),
+                      backgroundColor: Colors.red,
+                      action: SnackBarAction(
+                        label: 'Retry',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          // TODO(Phase 3): Implement retry logic
+                        },
+                      ),
+                    ),
+                  );
+                }
+              }
+            }
+          });
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -194,8 +255,13 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                     horizontal: AppSpacing.pagePadding,
                     vertical: AppSpacing.md,
                   ),
-                  itemCount: messages.length,
+                  itemCount: messages.length + (hasAiPending ? 1 : 0),
                   itemBuilder: (context, index) {
+                    // Show typing indicator at the end if AI is processing
+                    if (index == messages.length) {
+                      return const AiTypingIndicator();
+                    }
+
                     final message = messages[index];
                     final isUserMessage = message.role == MessageRole.user;
 

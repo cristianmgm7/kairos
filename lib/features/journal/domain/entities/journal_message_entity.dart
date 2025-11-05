@@ -47,6 +47,7 @@ class JournalMessageEntity extends Equatable {
     this.uploadRetryCount = 0,
     this.lastUploadAttemptAt,
     this.metadata,
+    this.isTemporary = false,
   });
 
   final String id;
@@ -74,6 +75,9 @@ class JournalMessageEntity extends Equatable {
   // Extensibility
   final Map<String, dynamic>? metadata;
 
+  /// Indicates if this is a temporary local-only message (e.g., typing indicator)
+  final bool isTemporary;
+
   @override
   List<Object?> get props => [
         id,
@@ -94,6 +98,7 @@ class JournalMessageEntity extends Equatable {
         uploadRetryCount,
         lastUploadAttemptAt,
         metadata,
+        isTemporary,
       ];
 
   JournalMessageEntity copyWith({
@@ -115,6 +120,7 @@ class JournalMessageEntity extends Equatable {
     int? uploadRetryCount,
     DateTime? lastUploadAttemptAt,
     Map<String, dynamic>? metadata,
+    bool? isTemporary,
   }) {
     return JournalMessageEntity(
       id: id ?? this.id,
@@ -135,6 +141,7 @@ class JournalMessageEntity extends Equatable {
       uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
       lastUploadAttemptAt: lastUploadAttemptAt ?? this.lastUploadAttemptAt,
       metadata: metadata ?? this.metadata,
+      isTemporary: isTemporary ?? this.isTemporary,
     );
   }
 }
