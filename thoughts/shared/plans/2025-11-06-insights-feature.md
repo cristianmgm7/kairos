@@ -592,18 +592,31 @@ export async function analyzeMessagesWithAI(
     })
     .join('\n');
 
-  const prompt = `Analyze the following journal conversation and provide a psychological insight.
+  const prompt = `You are an empathetic journaling companion analyzing a user's emotional journey in the Kairos app. Your role is to provide supportive, encouraging insights that help users understand their progress.
 
-Conversation:
+IMPORTANT GUIDELINES:
+- Be warm, supportive, and encouraging (never diagnostic or clinical)
+- Focus on growth, progress, and positive patterns
+- Acknowledge challenges with compassion
+- Use "you" language to make it personal and supportive
+- Return a direct numerical mood score (0.0 to 1.0)
+
+Conversation to analyze:
 ${conversationText}
 
-Provide your analysis in the following JSON format (respond with ONLY valid JSON, no markdown):
+Provide your analysis in the following JSON format (respond with ONLY valid JSON, no markdown or code blocks):
 {
-  "moodScore": <number between 0.0 and 1.0, where 0 is very negative and 1 is very positive>,
+  "moodScore": <number between 0.0 and 1.0, where 0.0 is very low/difficult and 1.0 is very high/positive>,
   "dominantEmotion": <number: 0=joy, 1=calm, 2=neutral, 3=sadness, 4=stress, 5=anger, 6=fear, 7=excitement>,
-  "aiThemes": [<array of 3-5 key psychological themes as strings>],
-  "summary": "<2-3 sentence natural language summary of the user's emotional state and progress>"
-}`;
+  "aiThemes": [<array of 3-5 supportive themes like "Building resilience" or "Practicing self-compassion">],
+  "summary": "<2-3 sentence supportive summary emphasizing growth, progress, and emotional awareness. Use warm, encouraging language.>"
+}
+
+Example of good summary tone:
+"You've been showing great self-awareness in your reflections this week. Even when facing challenges, you're taking time to process your feelings thoughtfully. This kind of mindful engagement with your emotions is a powerful step in your journey."
+
+Example of bad summary tone (too clinical):
+"Patient exhibits moderate anxiety symptoms with occasional depressive episodes. Cognitive patterns suggest need for intervention."`;
 
   const response = await ai.generate({
     prompt: [{ text: prompt }],
@@ -725,9 +738,10 @@ import {
  * Firestore trigger: When a new AI message is created,
  * generate or update insights for the thread and global view
  *
- * Hybrid approach:
+ * Hybrid approach with debouncing:
  * - Updates existing insight if within 2-3 day window
  * - Creates new insight if no recent insight exists
+ * - Debounces to max once per hour per user to prevent over-firing
  */
 export const generateInsight = onDocumentCreated(
   {
@@ -751,10 +765,25 @@ export const generateInsight = onDocumentCreated(
     const userId = messageData.userId as string;
     const now = Date.now();
     const threeDaysAgo = now - 3 * 24 * 60 * 60 * 1000;
+    const oneHourAgo = now - 60 * 60 * 1000;
 
     console.log(`Generating insight for thread ${threadId}`);
 
     try {
+      // 0. Debounce check: Skip if insight was updated within last hour
+      const recentUpdateSnapshot = await db
+        .collection('insights')
+        .where('userId', '==', userId)
+        .where('threadId', '==', threadId)
+        .where('updatedAtMillis', '>=', oneHourAgo)
+        .limit(1)
+        .get();
+
+      if (!recentUpdateSnapshot.empty) {
+        console.log(`Skipping insight generation - updated within last hour for thread ${threadId}`);
+        return;
+      }
+
       // 1. Query recent messages from this thread (last 3 days)
       const messagesSnapshot = await db
         .collection('journalMessages')
@@ -826,6 +855,7 @@ export const generateInsight = onDocumentCreated(
         await insightRef.set({
           id: insightId,
           userId,
+          type: 0, // thread insight
           threadId,
           periodStartMillis: periodStart,
           periodEndMillis: periodEnd,
@@ -923,6 +953,7 @@ async function generateGlobalInsight(userId: string, now: number) {
       await globalRef.set({
         id: globalInsightId,
         userId,
+        type: 1, // global insight
         threadId: null,
         periodStartMillis: periodStart,
         periodEndMillis: now,
@@ -1672,10 +1703,28 @@ InsightModel _generateMockInsight({
   required DateTime periodEnd,
   required Random random,
 }) {
-  // Randomly generate mood and emotion
-  final moodScore = 0.2 + random.nextDouble() * 0.7; // 0.2 to 0.9
-  final emotions = EmotionType.values;
-  final dominantEmotion = emotions[random.nextInt(emotions.length)];
+  // Generate realistic mood distribution:
+  // 40% positive (0.6-0.9), 30% neutral (0.4-0.6), 30% challenging (0.1-0.4)
+  final moodCategory = random.nextDouble();
+  final double moodScore;
+  final EmotionType dominantEmotion;
+
+  if (moodCategory < 0.4) {
+    // Positive mood
+    moodScore = 0.6 + random.nextDouble() * 0.3; // 0.6 to 0.9
+    final positiveEmotions = [EmotionType.joy, EmotionType.calm, EmotionType.excitement];
+    dominantEmotion = positiveEmotions[random.nextInt(positiveEmotions.length)];
+  } else if (moodCategory < 0.7) {
+    // Neutral mood
+    moodScore = 0.4 + random.nextDouble() * 0.2; // 0.4 to 0.6
+    final neutralEmotions = [EmotionType.neutral, EmotionType.calm];
+    dominantEmotion = neutralEmotions[random.nextInt(neutralEmotions.length)];
+  } else {
+    // Challenging mood
+    moodScore = 0.15 + random.nextDouble() * 0.25; // 0.15 to 0.4
+    final challengingEmotions = [EmotionType.sadness, EmotionType.stress, EmotionType.fear, EmotionType.anger];
+    dominantEmotion = challengingEmotions[random.nextInt(challengingEmotions.length)];
+  }
 
   // Generate keywords based on thread
   final keywords = _generateKeywords(threadId, random);
