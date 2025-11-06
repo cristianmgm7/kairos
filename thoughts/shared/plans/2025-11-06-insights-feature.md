@@ -498,10 +498,10 @@ Future<Isar> initializeIsar() async {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Build runner generates `insight_model.g.dart` without errors
-- [ ] Dart analyzer passes: `~/flutter/bin/flutter analyze`
-- [ ] No import errors in the codebase
-- [ ] Isar database initializes with InsightModelSchema
+- [x] Build runner generates `insight_model.g.dart` without errors
+- [x] Dart analyzer passes: `~/flutter/bin/flutter analyze`
+- [x] No import errors in the codebase
+- [x] Isar database initializes with InsightModelSchema
 
 #### Manual Verification:
 - [ ] InsightEntity can be created and serialized correctly
