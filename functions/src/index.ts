@@ -268,30 +268,7 @@ async function getFileAsDataUrl(storageUrl: string, contentType: string): Promis
   }
 }
 
-/**
- * Helper: generate a V4 signed URL for a Storage file (valid ~1 hour)
- */
-async function getSignedFileUrl(storageUrl: string): Promise<string> {
-  try {
-    const storagePath = extractStoragePath(storageUrl);
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(storagePath);
-
-    const [signedUrl] = await file.getSignedUrl({
-      action: 'read',
-      version: 'v4',
-      expires: Date.now() + 60 * 60 * 1000, // 1 hour
-    });
-
-    console.log(`Generated signed URL for ${storagePath}`);
-    return signedUrl;
-  } catch (error) {
-    console.error('Failed to create signed URL:', error);
-    throw error;
-  }
-}
-
-// Removed inlineData helper; using data URL via getFileAsDataUrl for media parts
+// Using data URL via getFileAsDataUrl for media parts (images and audio)
 
 /**
  * Callable function to transcribe audio files using Gemini
@@ -328,8 +305,8 @@ export const transcribeAudio = onCall(
         throw new HttpsError('permission-denied', 'Message not found or access denied');
       }
 
-      // Generate signed URL so Gemini can fetch the audio
-      const signedAudioUrl = await getSignedFileUrl(audioUrl);
+      // Download audio and convert to data URL for Gemini
+      const audioDataUrl = await getFileAsDataUrl(audioUrl, 'audio/mp4');
 
       // Get AI instance
       const ai = getAI(geminiApiKey.value());
@@ -340,7 +317,7 @@ export const transcribeAudio = onCall(
         model: googleAI.model('gemini-2.0-flash'),
         prompt: [
           { text: 'Transcribe this audio recording accurately. Output only the transcription text, no additional commentary.' },
-          { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
+          { media: { url: audioDataUrl, contentType: 'audio/mp4' } },
         ],
       });
 
@@ -413,14 +390,15 @@ export const retryAiResponse = onCall(
         console.log(`Retrying transcription for audio message ${messageId}`);
 
         try {
-          const signedAudioUrl = await getSignedFileUrl(messageData.storageUrl);
+          // Download audio and convert to data URL for Gemini
+          const audioDataUrl = await getFileAsDataUrl(messageData.storageUrl, 'audio/mp4');
           const ai = getAI(geminiApiKey.value());
 
           const { text } = await ai.generate({
             model: googleAI.model('gemini-2.0-flash'),
             prompt: [
               { text: 'Transcribe this audio accurately. Output only the transcription text.' },
-              { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
+              { media: { url: audioDataUrl, contentType: 'audio/mp4' } },
             ],
           });
 
@@ -484,8 +462,8 @@ export const triggerAudioTranscription = onDocumentUpdated(
       console.log(`Auto-transcribing audio message ${messageId}`);
 
       try {
-        // Generate signed URL so Gemini can fetch the audio
-        const signedAudioUrl = await getSignedFileUrl(afterData.storageUrl);
+        // Download audio and convert to data URL for Gemini
+        const audioDataUrl = await getFileAsDataUrl(afterData.storageUrl, 'audio/mp4');
 
         // Get AI instance
         const ai = getAI(geminiApiKey.value());
@@ -494,7 +472,7 @@ export const triggerAudioTranscription = onDocumentUpdated(
           model: googleAI.model('gemini-2.0-flash'),
           prompt: [
             { text: 'Transcribe this audio accurately. Output only the transcription text.' },
-            { media: { url: signedAudioUrl, contentType: 'audio/mp4' } },
+            { media: { url: audioDataUrl, contentType: 'audio/mp4' } },
           ],
         });
 

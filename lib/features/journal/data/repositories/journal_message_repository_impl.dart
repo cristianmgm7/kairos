@@ -109,8 +109,16 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
               final localModel = await localDataSource.getMessageById(remoteModel.id);
               if (localModel != null &&
                   localModel.aiProcessingStatus != remoteModel.aiProcessingStatus) {
-                await localDataSource.updateMessage(remoteModel);
-                debugPrint('Updated message status: ${remoteModel.id}');
+                // Merge: preserve local-only fields (uploadStatus, localFilePath, etc.)
+                final mergedModel = remoteModel.copyWith(
+                  uploadStatus: localModel.uploadStatus,
+                  uploadRetryCount: localModel.uploadRetryCount,
+                  localFilePath: localModel.localFilePath,
+                  localThumbnailPath: localModel.localThumbnailPath,
+                  audioDurationSeconds: localModel.audioDurationSeconds,
+                );
+                await localDataSource.updateMessage(mergedModel);
+                debugPrint('Updated message status: ${remoteModel.id} (uploadStatus preserved: ${localModel.uploadStatus})');
               }
             }
           }
