@@ -230,16 +230,217 @@ Help users reflect on their thoughts and feelings.`;
 );
 
 /**
+ * Firestore trigger: When transcription is added to an audio message,
+ * generate the AI response.
+ *
+ * This handles the case where audio messages are created without transcription,
+ * and transcription is added later by triggerAudioTranscription.
+ */
+export const processTranscribedMessage = onDocumentUpdated(
+  {
+    document: 'journalMessages/{messageId}',
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 60,
+  },
+  async (event) => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) {
+      return;
+    }
+
+    // Only trigger if:
+    // 1. Message is from user (role = 0)
+    // 2. Message is audio (messageType = 2)
+    // 3. Transcription was just added (before had no transcription, after has transcription)
+    // 4. AI processing hasn't completed yet (status != 2)
+    if (
+      afterData.role !== 0 ||
+      afterData.messageType !== 2 ||
+      beforeData.transcription ||
+      !afterData.transcription ||
+      afterData.aiProcessingStatus === 2
+    ) {
+      return;
+    }
+
+    const messageId = event.params.messageId;
+    const threadId = afterData.threadId as string;
+    const userId = afterData.userId as string;
+
+    console.log(`Transcription added to message ${messageId}, generating AI response`);
+
+    const startTime = Date.now();
+
+    try {
+      // Update message status to processing
+      await db.collection('journalMessages').doc(messageId).update({
+        aiProcessingStatus: 1, // processing
+      });
+
+      // Get conversation history
+      const conversationSnapshot = await db
+        .collection('journalMessages')
+        .where('threadId', '==', threadId)
+        .where('userId', '==', userId)
+        .where('isDeleted', '==', false)
+        .orderBy('createdAtMillis', 'asc')
+        .limit(10)
+        .get();
+
+      let conversationContext = '';
+      for (const doc of conversationSnapshot.docs) {
+        if (doc.id === messageId) break; // Don't include current message
+        const msg = doc.data();
+        const roleLabel = msg.role === 0 ? 'User' : 'Assistant';
+        const content = msg.content || msg.transcription || '[media message]';
+        conversationContext += `${roleLabel}: ${content}\n`;
+      }
+
+      const systemPrompt = `You are a helpful AI assistant in a personal journaling app called Kairos.
+Be empathetic, supportive, and encouraging. Keep responses concise (2-3 sentences) unless the user asks for more detail.
+Help users reflect on their thoughts and feelings.`;
+
+      // Get AI instance
+      const ai = getAI(geminiApiKey.value());
+
+      // Build prompt with transcription
+      const promptParts: any[] = [{ text: systemPrompt }];
+
+      if (conversationContext) {
+        promptParts.push({ text: `Conversation history:\n${conversationContext}` });
+      }
+
+      promptParts.push({
+        text: `User said: "${afterData.transcription}"`,
+      });
+
+      promptParts.push({ text: 'Assistant:' });
+
+      // Generate AI response
+      const response = await ai.generate({
+        prompt: promptParts,
+        config: {
+          temperature: 0.7,
+          maxOutputTokens: 500,
+        },
+      });
+
+      const text = response.text;
+      const latencyMs = Date.now() - startTime;
+
+      // Log metrics
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: 'audio',
+        inputTokens: response.usage?.inputTokens,
+        outputTokens: response.usage?.outputTokens,
+        latencyMs,
+        success: true,
+      });
+
+      // Create AI response message
+      const now = Date.now();
+      await db.collection('journalMessages').add({
+        threadId,
+        userId,
+        role: 1, // assistant
+        content: text,
+        messageType: 0, // text
+        createdAtMillis: now,
+        updatedAtMillis: now,
+        isDeleted: false,
+        aiProcessingStatus: 0, // not applicable for AI messages
+        version: 1,
+      });
+
+      // Update original message status to completed
+      await db.collection('journalMessages').doc(messageId).update({
+        aiProcessingStatus: 2, // completed
+      });
+
+      // Update thread metadata
+      const threadRef = db.collection('journalThreads').doc(threadId);
+      const messageCount = await db
+        .collection('journalMessages')
+        .where('threadId', '==', threadId)
+        .where('userId', '==', userId)
+        .where('isDeleted', '==', false)
+        .count()
+        .get();
+
+      await threadRef.update({
+        messageCount: messageCount.data().count,
+        lastMessageAt: now,
+        updatedAtMillis: now,
+      });
+
+      console.log(`AI response generated for transcribed message ${messageId}`);
+    } catch (error) {
+      console.error(`Error processing transcribed message ${messageId}:`, error);
+
+      const latencyMs = Date.now() - startTime;
+
+      // Log error metrics
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: 'audio',
+        latencyMs,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+
+      // Update message status to failed
+      await db.collection('journalMessages').doc(messageId).update({
+        aiProcessingStatus: 3, // failed
+      });
+    }
+  }
+);
+
+/**
  * Helper function to extract storage path from Firebase Storage URL
  */
 function extractStoragePath(url: string): string {
+  console.log(`Extracting storage path from URL: ${url}`);
+
   // Extract path from URLs like:
   // https://firebasestorage.googleapis.com/v0/b/bucket/o/path%2Fto%2Ffile.m4a?alt=media&token=...
-  const match = url.match(/\/o\/(.+?)\?/);
-  if (!match) {
-    throw new Error('Invalid Firebase Storage URL');
+  // https://storage.googleapis.com/bucket/path/to/file.m4a?X-Goog-...
+  // https://firebasestorage.app/v0/b/bucket/o/path%2Fto%2Ffile.m4a?alt=media&token=...
+
+  let match = url.match(/\/o\/(.+?)\?/);
+  if (match) {
+    const path = decodeURIComponent(match[1]);
+    console.log(`Extracted path (format 1): ${path}`);
+    return path;
   }
-  return decodeURIComponent(match[1]);
+
+  // Try direct Google Storage URL format
+  match = url.match(/storage\.googleapis\.com\/([^/]+)\/(.+?)(?:\?|$)/);
+  if (match) {
+    const path = decodeURIComponent(match[2]);
+    console.log(`Extracted path (format 2): ${path}`);
+    return path;
+  }
+
+  // Try firebasestorage.app format
+  match = url.match(/firebasestorage\.app\/v0\/b\/[^/]+\/o\/(.+?)(?:\?|$)/);
+  if (match) {
+    const path = decodeURIComponent(match[1]);
+    console.log(`Extracted path (format 3): ${path}`);
+    return path;
+  }
+
+  console.error(`Failed to extract path from URL: ${url}`);
+  throw new Error(`Invalid Firebase Storage URL format: ${url}`);
 }
 
 /**
@@ -249,18 +450,36 @@ function extractStoragePath(url: string): string {
 async function getFileAsDataUrl(storageUrl: string, contentType: string): Promise<string> {
   try {
     const storagePath = extractStoragePath(storageUrl);
+    console.log(`Attempting to download from path: ${storagePath}`);
+
     const bucket = admin.storage().bucket();
     const file = bucket.file(storagePath);
 
+    // Check if file exists
+    const [exists] = await file.exists();
+    if (!exists) {
+      console.error(`File does not exist at path: ${storagePath}`);
+      throw new Error(`File not found: ${storagePath}`);
+    }
+
+    // Get file metadata
+    const [metadata] = await file.getMetadata();
+    console.log(`File metadata - size: ${metadata.size}, contentType: ${metadata.contentType}`);
+
     // Download file as buffer
     const [buffer] = await file.download();
-    
+
+    console.log(`Downloaded file: ${storagePath}, size: ${buffer.length} bytes`);
+
+    // Log first few bytes to debug
+    if (buffer.length < 100) {
+      console.warn(`File is suspiciously small (${buffer.length} bytes). Content: ${buffer.toString('utf8').substring(0, 100)}`);
+    }
+
     // Convert to base64 data URL
     const base64Data = buffer.toString('base64');
     const dataUrl = `data:${contentType};base64,${base64Data}`;
-    
-    console.log(`Downloaded file: ${storagePath}, size: ${buffer.length} bytes`);
-    
+
     return dataUrl;
   } catch (error) {
     console.error('Failed to download file:', error);

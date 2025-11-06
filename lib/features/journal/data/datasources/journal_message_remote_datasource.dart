@@ -26,12 +26,15 @@ class JournalMessageRemoteDataSourceImpl
   Future<JournalMessageModel?> getMessageById(String messageId) async {
     final doc = await _collection.doc(messageId).get();
     if (!doc.exists) return null;
-    return JournalMessageModel.fromMap(doc.data()!);
+    // Include document ID in the data map
+    final data = doc.data()!;
+    data['id'] = doc.id;
+    return JournalMessageModel.fromMap(data);
   }
 
   @override
   Future<List<JournalMessageModel>> getMessagesByThreadId(
-      String threadId) async {
+      String threadId,) async {
     final querySnapshot = await _collection
         .where('threadId', isEqualTo: threadId)
         .where('isDeleted', isEqualTo: false)
@@ -39,7 +42,12 @@ class JournalMessageRemoteDataSourceImpl
         .get();
 
     return querySnapshot.docs
-        .map((doc) => JournalMessageModel.fromMap(doc.data()))
+        .map((doc) {
+          // Include document ID in the data map
+          final data = doc.data();
+          data['id'] = doc.id;
+          return JournalMessageModel.fromMap(data);
+        })
         .toList();
   }
 
@@ -49,7 +57,8 @@ class JournalMessageRemoteDataSourceImpl
   }
 
   @override
-  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId, String userId) {
+  Stream<List<JournalMessageModel>> watchMessagesByThreadId(
+      String threadId, String userId,) {
     return _collection
         .where('threadId', isEqualTo: threadId)
         .where('userId', isEqualTo: userId)
@@ -57,7 +66,12 @@ class JournalMessageRemoteDataSourceImpl
         .orderBy('createdAtMillis', descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => JournalMessageModel.fromMap(doc.data()))
-            .toList());
+            .map((doc) {
+              // Include document ID in the data map
+              final data = doc.data();
+              data['id'] = doc.id;
+              return JournalMessageModel.fromMap(data);
+            })
+            .toList(),);
   }
 }

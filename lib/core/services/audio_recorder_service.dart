@@ -71,6 +71,39 @@ class AudioRecorderService {
         );
       }
 
+      // CRITICAL FIX: Poll file size until it's stable
+      // The record package may return before file is fully written
+      // Wait for file size to stop changing (indicates write is complete)
+      var previousSize = 0;
+      var stableCount = 0;
+      const maxAttempts = 20; // Max 2 seconds
+
+      for (var i = 0; i < maxAttempts; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        final currentSize = await file.length();
+
+        if (currentSize == previousSize && currentSize > 1000) {
+          // Size hasn't changed and is large enough
+          stableCount++;
+          if (stableCount >= 3) {
+            // Stable for 300ms, consider it done
+            break;
+          }
+        } else {
+          stableCount = 0;
+        }
+
+        previousSize = currentSize;
+      }
+
+      // Final size check
+      final fileSize = await file.length();
+      if (fileSize < 1000) {
+        return Error(
+          UnknownFailure(message: 'Recording file is too small ($fileSize bytes). Please try recording again with a longer message.'),
+        );
+      }
+
       // Calculate duration
       var durationSeconds = 0;
       if (_recordingStartTime != null) {

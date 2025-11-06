@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart' as functions;
@@ -183,11 +184,13 @@ class JournalUploadService {
           // Trigger transcription in background (don't await)
           // The Cloud Function will handle this automatically via Firestore trigger
           // But we can also call it explicitly for faster processing
-          transcribeAudio(updatedMessage).then((transcriptionResult) {
-            if (transcriptionResult.isError) {
-              debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
-            }
-          });
+          unawaited(
+            transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
+              if (transcriptionResult.isError) {
+                debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
+              }
+            }),
+          );
 
           return const Success(null);
         },

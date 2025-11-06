@@ -105,20 +105,25 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
               await localDataSource.saveMessage(remoteModel);
               debugPrint('Synced new AI message: ${remoteModel.id}');
             } else {
-              // Check if we need to update (e.g., processing status changed)
+              // Check if we need to update (e.g., processing status or transcription changed)
               final localModel = await localDataSource.getMessageById(remoteModel.id);
-              if (localModel != null &&
-                  localModel.aiProcessingStatus != remoteModel.aiProcessingStatus) {
-                // Merge: preserve local-only fields (uploadStatus, localFilePath, etc.)
-                final mergedModel = remoteModel.copyWith(
-                  uploadStatus: localModel.uploadStatus,
-                  uploadRetryCount: localModel.uploadRetryCount,
-                  localFilePath: localModel.localFilePath,
-                  localThumbnailPath: localModel.localThumbnailPath,
-                  audioDurationSeconds: localModel.audioDurationSeconds,
-                );
-                await localDataSource.updateMessage(mergedModel);
-                debugPrint('Updated message status: ${remoteModel.id} (uploadStatus preserved: ${localModel.uploadStatus})');
+              if (localModel != null) {
+                final needsUpdate =
+                    localModel.aiProcessingStatus != remoteModel.aiProcessingStatus ||
+                    localModel.transcription != remoteModel.transcription;
+
+                if (needsUpdate) {
+                  // Merge: preserve local-only fields (uploadStatus, localFilePath, etc.)
+                  final mergedModel = remoteModel.copyWith(
+                    uploadStatus: localModel.uploadStatus,
+                    uploadRetryCount: localModel.uploadRetryCount,
+                    localFilePath: localModel.localFilePath,
+                    localThumbnailPath: localModel.localThumbnailPath,
+                    audioDurationSeconds: localModel.audioDurationSeconds,
+                  );
+                  await localDataSource.updateMessage(mergedModel);
+                  debugPrint('Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, uploadStatus preserved: ${localModel.uploadStatus})');
+                }
               }
             }
           }
