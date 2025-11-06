@@ -7,6 +7,8 @@ flutter_*.png
 flutter_*.jpeg
 flutter_*.webp
 coverage/
+.flutter-plugins-dependencies
+.flutter-plugins
 
 # iOS
 ios/Pods/
@@ -98,3 +100,10 @@ build/
 flutter_*.png
 flutter_*.jpeg
 flutter_*.webp
+
+
+# Generated
+lib/**/*.freezed.dart
+lib/**/*.g.dart
+lib/**/*.gen.dart
+lib/**/*.gr.dart
