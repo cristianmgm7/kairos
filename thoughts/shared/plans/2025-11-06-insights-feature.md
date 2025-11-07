@@ -1579,9 +1579,9 @@ final currentUserGlobalInsightsProvider =
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Dart analyzer passes: `~/flutter/bin/flutter analyze`
-- [ ] No circular dependency errors
-- [ ] All providers resolve correctly
+- [x] Dart analyzer passes: `~/flutter/bin/flutter analyze`
+- [x] No circular dependency errors
+- [x] All providers resolve correctly
 
 #### Manual Verification:
 - [ ] Providers can be watched in widgets
@@ -1936,8 +1936,8 @@ chmod +x scripts/seed_mock_insights.sh
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Script runs without errors: `./scripts/seed_mock_insights.sh`
-- [ ] No Isar write transaction failures
+- [x] Script runs without errors: `./scripts/seed_mock_insights.sh`
+- [x] No Isar write transaction failures
 
 #### Manual Verification:
 - [ ] Script creates 20+ mock insights in local database
@@ -2439,9 +2439,9 @@ Widget build(BuildContext context, WidgetRef ref) {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Charts render without errors: `~/flutter/bin/flutter build apk --debug`
-- [ ] No UI overflow errors
-- [ ] Dart analyzer passes: `~/flutter/bin/flutter analyze`
+- [x] Charts render without errors: `~/flutter/bin/flutter build apk --debug`
+- [x] No UI overflow errors
+- [x] Dart analyzer passes: `~/flutter/bin/flutter analyze`
 
 #### Manual Verification:
 - [ ] Bar chart displays mood scores over time

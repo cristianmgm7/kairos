@@ -85,6 +85,27 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
     
+    // Insights - users can only access their own insights
+    match /insights/{insightId} {
+      // Allow reading insights that belong to the authenticated user
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Allow queries that filter by userId matching the authenticated user
+      allow list: if isAuthenticated();
+      
+      // Insights are created/updated by Cloud Functions, so users don't need write access
+      // But we allow it in case we need client-side updates in the future
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      allow delete: if false; // Insights are soft-deleted only
+    }
+    
     // Deny all other access by default
     match /{document=**} {
       allow read, write: if false;

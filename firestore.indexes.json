@@ -113,6 +113,46 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "insights",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "threadId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDeleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodEndMillis",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "insights",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDeleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodEndMillis",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
