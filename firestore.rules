@@ -76,10 +76,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis']);
 
       // Users can update their own messages (for upload status, etc.)
+      // Allow updates as long as userId and role don't change
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.role == 0; // Can't change role to AI
+        && request.resource.data.role == resource.data.role; // Role must not change
 
       allow delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;

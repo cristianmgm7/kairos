@@ -137,29 +137,39 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
               await localDataSource.saveMessage(normalized);
               debugPrint('Synced new AI message: ${remoteModel.id}');
             } else {
-              // Check if we need to update (e.g., processing status or transcription changed)
+              // Check if we need to update (e.g., processing status, transcription, or storageUrl changed)
               final localModel = await localDataSource.getMessageById(remoteModel.id);
               if (localModel != null) {
                 final needsUpdate =
                     localModel.aiProcessingStatus != remoteModel.aiProcessingStatus ||
-                    localModel.transcription != remoteModel.transcription;
+                    localModel.transcription != remoteModel.transcription ||
+                    localModel.storageUrl != remoteModel.storageUrl;
 
                 if (needsUpdate) {
                   // Merge: preserve local-only fields (uploadStatus, localFilePath, etc.)
                   // For non-user or text messages, force uploadStatus to completed
+                  // For user messages with media, use remote uploadStatus if it's more advanced
                   final isNonUser = remoteModel.role != MessageRole.user.index;
                   final isText = remoteModel.messageType == MessageType.text.index;
+                  final int uploadStatusToUse;
+                  if (isNonUser || isText) {
+                    uploadStatusToUse = UploadStatus.completed.index;
+                  } else if (remoteModel.uploadStatus > localModel.uploadStatus) {
+                    // Use remote status if it's more advanced (e.g., remote is COMPLETED, local is UPLOADING)
+                    uploadStatusToUse = remoteModel.uploadStatus;
+                  } else {
+                    uploadStatusToUse = localModel.uploadStatus;
+                  }
+                  
                   final mergedModel = remoteModel.copyWith(
-                    uploadStatus: (isNonUser || isText)
-                        ? UploadStatus.completed.index
-                        : localModel.uploadStatus,
+                    uploadStatus: uploadStatusToUse,
                     uploadRetryCount: localModel.uploadRetryCount,
                     localFilePath: localModel.localFilePath,
                     localThumbnailPath: localModel.localThumbnailPath,
                     audioDurationSeconds: localModel.audioDurationSeconds,
                   );
                   await localDataSource.updateMessage(mergedModel);
-                  debugPrint('Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, uploadStatus preserved: ${localModel.uploadStatus})');
+                  debugPrint('Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, storageUrl: ${remoteModel.storageUrl != null}, uploadStatus: $uploadStatusToUse)');
                 }
               }
             }
@@ -183,15 +193,21 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   @override
   Future<Result<void>> updateMessage(JournalMessageEntity message) async {
     try {
+      debugPrint('updateMessage called for: ${message.id}');
       final model = JournalMessageModel.fromEntity(message);
       await localDataSource.updateMessage(model);
+      debugPrint('Local update completed for: ${message.id}');
 
-      if (await _isOnline) {
-        try {
-          await remoteDataSource.updateMessage(model);
-        } catch (e) {
-          debugPrint('Failed to sync message update to remote: $e');
-        }
+      // Always attempt remote update - don't rely on connectivity check
+      // The connectivity package can lag behind actual network state
+      try {
+        debugPrint('Attempting remote update for: ${message.id}');
+        await remoteDataSource.updateMessage(model);
+        debugPrint('✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}');
+      } catch (e) {
+        debugPrint('⚠️ Failed to sync message update to remote (will retry later): $e');
+        // Don't fail the whole operation - local update succeeded
+        // The message will be synced later when connectivity is restored
       }
 
       return const Success(null);

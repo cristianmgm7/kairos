@@ -149,6 +149,133 @@ export const processUserMessage = onDocumentCreated(
 );
 
 /**
+ * Firestore trigger: When storageUrl is added to an image message,
+ * generate the AI response.
+ */
+export const processImageUpload = onDocumentUpdated(
+  {
+    document: 'journalMessages/{messageId}',
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 60,
+  },
+  async event => {
+    const beforeData = event.data?.before.data();
+    const afterData = event.data?.after.data();
+
+    if (!beforeData || !afterData) return;
+
+    // Debug logging
+    console.log('processImageUpload triggered for message:', event.params.messageId);
+    console.log('Before storageUrl:', beforeData.storageUrl);
+    console.log('After storageUrl:', afterData.storageUrl);
+    console.log('Role:', afterData.role, 'Expected:', MessageRole.USER);
+    console.log('MessageType:', afterData.messageType, 'Expected:', MessageType.IMAGE);
+    console.log('AiProcessingStatus:', afterData.aiProcessingStatus, 'Completed?:', afterData.aiProcessingStatus === AiProcessingStatus.COMPLETED);
+
+    // Only trigger if:
+    // 1. Message is from user
+    // 2. Message is image type
+    // 3. storageUrl was just added (before had no storageUrl, after has storageUrl)
+    // 4. AI processing hasn't completed yet
+    if (
+      afterData.role !== MessageRole.USER ||
+      afterData.messageType !== MessageType.IMAGE ||
+      beforeData.storageUrl ||
+      !afterData.storageUrl ||
+      afterData.aiProcessingStatus === AiProcessingStatus.COMPLETED
+    ) {
+      console.log('Skipping processImageUpload - conditions not met');
+      return;
+    }
+
+    const messageId = event.params.messageId;
+    const threadId = afterData.threadId as string;
+    const userId = afterData.userId as string;
+
+    console.log(`Image uploaded for message ${messageId}, generating AI response`);
+
+    const startTime = Date.now();
+    const messageRepo = getMessageRepository(db);
+    const threadRepo = getThreadRepository(db);
+    const conversationBuilder = createConversationBuilder(db);
+    const aiService = createAiService(geminiApiKey.value());
+
+    try {
+      await messageRepo.update(messageId, {
+        aiProcessingStatus: AiProcessingStatus.PROCESSING,
+      });
+
+      // Build conversation context
+      const conversationContext = await conversationBuilder.buildConversationContext(
+        threadId,
+        userId,
+        messageId
+      );
+
+      // Generate AI response for image
+      const aiResponse = await aiService.generateImageResponse(
+        afterData.storageUrl,
+        conversationContext
+      );
+
+      const latencyMs = Date.now() - startTime;
+
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: 'image',
+        inputTokens: aiResponse.usage?.inputTokens,
+        outputTokens: aiResponse.usage?.outputTokens,
+        latencyMs,
+        success: true,
+      });
+
+      // Create AI response message
+      await messageRepo.create({
+        threadId,
+        userId,
+        role: MessageRole.AI,
+        messageType: MessageType.TEXT,
+        content: aiResponse.text,
+        aiProcessingStatus: AiProcessingStatus.COMPLETED,
+      });
+
+      // Update original message
+      await messageRepo.update(messageId, {
+        aiProcessingStatus: AiProcessingStatus.COMPLETED,
+      });
+
+      // Update thread
+      const messageCount = await messageRepo.countMessagesInThread(threadId, userId);
+      await threadRepo.updateWithMessageCount(threadId, messageCount, Date.now());
+
+      console.log(`AI response generated for image message ${messageId}`);
+    } catch (error) {
+      console.error(`Error processing image message ${messageId}:`, error);
+
+      const latencyMs = Date.now() - startTime;
+
+      logAiMetrics({
+        messageId,
+        userId,
+        threadId,
+        messageType: 'image',
+        latencyMs,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+
+      await messageRepo.update(messageId, {
+        aiProcessingStatus: AiProcessingStatus.FAILED,
+      });
+    }
+  }
+);
+
+/**
  * Firestore trigger: When transcription is added to an audio message,
  * generate the AI response.
  */

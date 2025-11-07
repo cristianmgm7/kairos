@@ -21,6 +21,7 @@ class JournalUploadService {
 
   /// Upload image message with thumbnail
   Future<Result<void>> uploadImageMessage(JournalMessageEntity message) async {
+    debugPrint('🚀 uploadImageMessage called for: ${message.id}');
     try {
       // Validate local file exists
       if (message.localFilePath == null) {
@@ -63,6 +64,7 @@ class JournalUploadService {
               'type': 'thumbnail',
             },
           );
+          debugPrint('Thumbnail upload result: ${thumbResult.dataOrNull}');
 
           if (thumbResult.isError) {
             debugPrint(
@@ -82,6 +84,7 @@ class JournalUploadService {
         filename: '${message.id}.jpg',
       );
 
+      debugPrint('📤 Starting image upload for: ${message.id}');
       final uploadResult = await storageService.uploadFile(
         file: file,
         storagePath: imagePath,
@@ -102,6 +105,9 @@ class JournalUploadService {
         },
       );
 
+      debugPrint('📦 Upload completed, processing result for: ${message.id}');
+      debugPrint('📦 Upload result type: ${uploadResult.isSuccess ? "SUCCESS" : "ERROR"}');
+      
       return uploadResult.when(
         success: (downloadUrl) async {
           // Update message with URLs and completed status
@@ -111,8 +117,19 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          await messageRepository.updateMessage(updatedMessage);
-          return const Success(null);
+          debugPrint('Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+          final updateResult = await messageRepository.updateMessage(updatedMessage);
+          
+          return updateResult.when(
+            success: (_) {
+              debugPrint('Successfully updated message in repository: ${updatedMessage.id}');
+              return const Success(null);
+            },
+            error: (failure) {
+              debugPrint('Failed to update message in repository: $failure');
+              return Error(failure);
+            },
+          );
         },
         error: (failure) async {
           await _updateUploadStatus(message, UploadStatus.failed);
@@ -179,20 +196,31 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          await messageRepository.updateMessage(updatedMessage);
-
-          // Trigger transcription in background (don't await)
-          // The Cloud Function will handle this automatically via Firestore trigger
-          // But we can also call it explicitly for faster processing
-          unawaited(
-            transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
-              if (transcriptionResult.isError) {
-                debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
-              }
-            }),
+          debugPrint('Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+          final updateResult = await messageRepository.updateMessage(updatedMessage);
+          
+          return updateResult.when(
+            success: (_) {
+              debugPrint('Successfully updated audio message in repository: ${updatedMessage.id}');
+              
+              // Trigger transcription in background (don't await)
+              // The Cloud Function will handle this automatically via Firestore trigger
+              // But we can also call it explicitly for faster processing
+              unawaited(
+                transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
+                  if (transcriptionResult.isError) {
+                    debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
+                  }
+                }),
+              );
+              
+              return const Success(null);
+            },
+            error: (failure) {
+              debugPrint('Failed to update audio message in repository: $failure');
+              return Error(failure);
+            },
           );
-
-          return const Success(null);
         },
         error: (failure) async {
           await _updateUploadStatus(message, UploadStatus.failed);

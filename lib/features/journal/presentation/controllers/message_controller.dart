@@ -98,13 +98,19 @@ class MessageController extends StateNotifier<MessageState> {
         state = MessageSuccess(message);
 
         // Trigger background upload
+        debugPrint('🎬 Triggering background upload for: ${message.id}');
         uploadService.uploadImageMessage(message).then((uploadResult) {
-          if (uploadResult.isError) {
-            debugPrint(
-              'Upload failed: ${uploadResult.failureOrNull?.message}',
-            );
-            // Message saved locally, will retry later
-          }
+          uploadResult.when(
+            success: (_) {
+              debugPrint('✅ Image upload completed successfully for: ${message.id}');
+            },
+            error: (failure) {
+              debugPrint('❌ Upload failed: ${failure.message}');
+              // Message saved locally, will retry later
+            },
+          );
+        }).catchError((Object error) {
+          debugPrint('❌ Unexpected error in upload: $error');
         });
       },
       error: (Failure failure) {

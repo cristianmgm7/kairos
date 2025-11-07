@@ -4,7 +4,11 @@ import * as admin from 'firebase-admin';
 admin.initializeApp();
 
 // Export all Cloud Functions
-export { processUserMessage, processTranscribedMessage } from './functions/message-triggers';
+export {
+  processUserMessage,
+  processImageUpload,
+  processTranscribedMessage,
+} from './functions/message-triggers';
 export {
   transcribeAudio,
   triggerAudioTranscription,
