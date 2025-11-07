@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { logAiMetrics } from '../monitoring.js';
+import { logAiMetrics } from '../monitoring/metrics.js';
 import {
   processUserMessage,
   transcribeAudio,

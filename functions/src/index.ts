@@ -1,14 +1,21 @@
 import * as admin from 'firebase-admin';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getAI, geminiApiKey } from './genkit-config';
+import { getAI, geminiApiKey } from './config/genkit';
 import { googleAI } from '@genkit-ai/google-genai';
-import { logAiMetrics } from './monitoring';
+import { logAiMetrics } from './monitoring/metrics';
 import {
   extractKeywords,
   analyzeMessagesWithAI,
   aggregateInsights,
 } from './insights-helper';
+import {
+  MessageRole,
+  MessageType,
+  AiProcessingStatus,
+  SYSTEM_PROMPT,
+  AI_CONFIG,
+} from './config/constants';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -36,7 +43,7 @@ export const processUserMessage = onDocumentCreated(
     }
 
     // RECURSION PREVENTION: Only process user messages
-    if (messageData.role !== 0) { // 0 = MessageRole.user
+    if (messageData.role !== MessageRole.USER) {
       console.log('Skipping non-user message');
       return;
     }
@@ -53,7 +60,7 @@ export const processUserMessage = onDocumentCreated(
     try {
       // Update message status to processing
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 1, // processing
+        aiProcessingStatus: AiProcessingStatus.PROCESSING,
       });
 
       // Load conversation history from Firestore
@@ -62,7 +69,7 @@ export const processUserMessage = onDocumentCreated(
         .where('threadId', '==', threadId)
         .where('userId', '==', userId)
         .orderBy('createdAtMillis', 'asc')
-        .limit(20) // Last 20 messages for context
+        .limit(AI_CONFIG.conversationHistoryLimit)
         .get();
 
       const history = historySnapshot.docs
@@ -82,9 +89,7 @@ export const processUserMessage = onDocumentCreated(
         .join('\n');
 
       // Generate AI response using Genkit
-      const systemPrompt = `You are a helpful AI assistant in a personal journaling app called Kairos.
-Be empathetic, supportive, and encouraging. Keep responses concise (2-3 sentences) unless the user asks for more detail.
-Help users reflect on their thoughts and feelings.`;
+      const systemPrompt = SYSTEM_PROMPT;
 
       // Get AI instance with the secret value (only available at runtime)
       const ai = getAI(geminiApiKey.value());
@@ -98,7 +103,7 @@ Help users reflect on their thoughts and feelings.`;
       }
 
       // Handle different message types
-      if (messageType === 1) { // Image
+      if (messageType === MessageType.IMAGE) {
         if (messageData.storageUrl) {
           // Download image and convert to data URL
           const imageDataUrl = await getFileAsDataUrl(messageData.storageUrl, 'image/jpeg');
@@ -123,7 +128,7 @@ Help users reflect on their thoughts and feelings.`;
           console.log('Image still uploading, waiting...');
           return;
         }
-      } else if (messageType === 2) { // Audio
+      } else if (messageType === MessageType.AUDIO) {
         if (messageData.transcription) {
           promptParts.push({
             text: `User said: "${messageData.transcription}"`,
@@ -147,8 +152,8 @@ Help users reflect on their thoughts and feelings.`;
       const response = await ai.generate({
         prompt: promptParts,
         config: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
+          temperature: AI_CONFIG.temperature,
+          maxOutputTokens: AI_CONFIG.maxOutputTokens,
         },
       });
 
@@ -160,7 +165,7 @@ Help users reflect on their thoughts and feelings.`;
         messageId,
         userId,
         threadId,
-        messageType: messageType === 0 ? 'text' : messageType === 1 ? 'image' : 'audio',
+        messageType: messageType === MessageType.TEXT ? 'text' : messageType === MessageType.IMAGE ? 'image' : 'audio',
         inputTokens: response.usage?.inputTokens,
         outputTokens: response.usage?.outputTokens,
         latencyMs,
@@ -175,11 +180,11 @@ Help users reflect on their thoughts and feelings.`;
         id: aiMessageRef.id,
         threadId: threadId,
         userId: userId,
-        role: 1, // ai
-        messageType: 0, // text
+        role: MessageRole.AI,
+        messageType: MessageType.TEXT,
         content: text,
         createdAtMillis: now,
-        aiProcessingStatus: 2, // completed
+        aiProcessingStatus: AiProcessingStatus.COMPLETED,
         uploadStatus: 2, // completed
         isDeleted: false,
         version: 1,
@@ -187,7 +192,7 @@ Help users reflect on their thoughts and feelings.`;
 
       // Update original message status to completed
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 2, // completed
+        aiProcessingStatus: AiProcessingStatus.COMPLETED,
       });
 
       // Update thread metadata - recalculate accurate message count
@@ -217,7 +222,7 @@ Help users reflect on their thoughts and feelings.`;
         messageId,
         userId,
         threadId,
-        messageType: messageType === 0 ? 'text' : messageType === 1 ? 'image' : 'audio',
+        messageType: messageType === MessageType.TEXT ? 'text' : messageType === MessageType.IMAGE ? 'image' : 'audio',
         latencyMs,
         success: false,
         errorMessage: error instanceof Error ? error.message : String(error),
@@ -225,7 +230,7 @@ Help users reflect on their thoughts and feelings.`;
 
       // Update message status to failed
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 3, // failed
+        aiProcessingStatus: AiProcessingStatus.FAILED,
       });
 
       // Optionally: Send error notification to user
@@ -263,11 +268,11 @@ export const processTranscribedMessage = onDocumentUpdated(
     // 3. Transcription was just added (before had no transcription, after has transcription)
     // 4. AI processing hasn't completed yet (status != 2)
     if (
-      afterData.role !== 0 ||
-      afterData.messageType !== 2 ||
+      afterData.role !== MessageRole.USER ||
+      afterData.messageType !== MessageType.AUDIO ||
       beforeData.transcription ||
       !afterData.transcription ||
-      afterData.aiProcessingStatus === 2
+      afterData.aiProcessingStatus === AiProcessingStatus.COMPLETED
     ) {
       return;
     }
@@ -283,7 +288,7 @@ export const processTranscribedMessage = onDocumentUpdated(
     try {
       // Update message status to processing
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 1, // processing
+        aiProcessingStatus: AiProcessingStatus.PROCESSING,
       });
 
       // Get conversation history
@@ -305,9 +310,7 @@ export const processTranscribedMessage = onDocumentUpdated(
         conversationContext += `${roleLabel}: ${content}\n`;
       }
 
-      const systemPrompt = `You are a helpful AI assistant in a personal journaling app called Kairos.
-Be empathetic, supportive, and encouraging. Keep responses concise (2-3 sentences) unless the user asks for more detail.
-Help users reflect on their thoughts and feelings.`;
+      const systemPrompt = SYSTEM_PROMPT;
 
       // Get AI instance
       const ai = getAI(geminiApiKey.value());
@@ -329,8 +332,8 @@ Help users reflect on their thoughts and feelings.`;
       const response = await ai.generate({
         prompt: promptParts,
         config: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
+          temperature: AI_CONFIG.temperature,
+          maxOutputTokens: AI_CONFIG.maxOutputTokens,
         },
       });
 
@@ -354,19 +357,19 @@ Help users reflect on their thoughts and feelings.`;
       await db.collection('journalMessages').add({
         threadId,
         userId,
-        role: 1, // assistant
+        role: MessageRole.AI,
         content: text,
-        messageType: 0, // text
+        messageType: MessageType.TEXT,
         createdAtMillis: now,
         updatedAtMillis: now,
         isDeleted: false,
-        aiProcessingStatus: 0, // not applicable for AI messages
+        aiProcessingStatus: AiProcessingStatus.PENDING,
         version: 1,
       });
 
       // Update original message status to completed
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 2, // completed
+        aiProcessingStatus: AiProcessingStatus.COMPLETED,
       });
 
       // Update thread metadata
@@ -404,7 +407,7 @@ Help users reflect on their thoughts and feelings.`;
 
       // Update message status to failed
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 3, // failed
+        aiProcessingStatus: AiProcessingStatus.FAILED,
       });
     }
   }
@@ -558,7 +561,7 @@ export const transcribeAudio = onCall(
 
       // Mark AI processing as failed so user can retry
       await db.collection('journalMessages').doc(messageId).update({
-        aiProcessingStatus: 3, // failed
+        aiProcessingStatus: AiProcessingStatus.FAILED,
       });
 
       const message = error instanceof Error ? error.message : String(error);
@@ -604,13 +607,13 @@ export const retryAiResponse = onCall(
       }
 
       // Verify this is a user message
-      if (messageData.role !== 0) {
+      if (messageData.role !== MessageRole.USER) {
         throw new HttpsError('invalid-argument', 'Can only retry user messages');
       }
 
       // If it's an audio message without transcription, retry transcription first
       const messageType = messageData.messageType as number;
-      if (messageType === 2 && !messageData.transcription && messageData.storageUrl) {
+      if (messageType === MessageType.AUDIO && !messageData.transcription && messageData.storageUrl) {
         console.log(`Retrying transcription for audio message ${messageId}`);
 
         try {
@@ -629,7 +632,7 @@ export const retryAiResponse = onCall(
           // Update with transcription and reset AI status to trigger processing
           await messageDoc.ref.update({
             transcription: text,
-            aiProcessingStatus: 0, // pending - will trigger AI response
+            aiProcessingStatus: AiProcessingStatus.PENDING,
           });
 
           console.log(`Transcription retry successful for ${messageId}`);
@@ -640,7 +643,7 @@ export const retryAiResponse = onCall(
       } else {
         // For text/image messages or audio with transcription, just reset AI status
         await messageDoc.ref.update({
-          aiProcessingStatus: 0, // pending
+          aiProcessingStatus: AiProcessingStatus.PENDING,
         });
       }
 
@@ -677,7 +680,7 @@ export const triggerAudioTranscription = onDocumentUpdated(
     if (!beforeData || !afterData) return;
 
     // Check if this is an audio message with newly added storageUrl
-    const isAudioMessage = afterData.messageType === 2; // audio
+    const isAudioMessage = afterData.messageType === MessageType.AUDIO;
     const storageUrlAdded = !beforeData.storageUrl && afterData.storageUrl;
     const noTranscription = !afterData.transcription;
 
@@ -710,7 +713,7 @@ export const triggerAudioTranscription = onDocumentUpdated(
 
         // Mark AI processing as failed so user can retry
         await db.collection('journalMessages').doc(messageId).update({
-          aiProcessingStatus: 3, // failed
+          aiProcessingStatus: AiProcessingStatus.FAILED,
         });
       }
     }
@@ -739,7 +742,7 @@ export const generateInsight = onDocumentCreated(
     if (!messageData) return;
 
     // Only process AI messages (role = 1)
-    if (messageData.role !== 1) {
+    if (messageData.role !== MessageRole.AI) {
       console.log('Skipping non-AI message for insight generation');
       return;
     }
