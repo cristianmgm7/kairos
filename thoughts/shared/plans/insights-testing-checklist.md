@@ -62,3 +62,4 @@
 - [ ] Offline-first sync works correctly
 - [ ] App handles no insights state gracefully
 
+
