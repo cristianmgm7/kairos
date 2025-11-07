@@ -37,6 +37,7 @@ class _MainBottomNavigationBar extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: (int index) => _onItemTapped(index, context),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
       destinations: [
         NavigationDestination(
           icon: const Icon(Icons.home_outlined),
