@@ -4,6 +4,11 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getAI, geminiApiKey } from './genkit-config';
 import { googleAI } from '@genkit-ai/google-genai';
 import { logAiMetrics } from './monitoring';
+import {
+  extractKeywords,
+  analyzeMessagesWithAI,
+  aggregateInsights,
+} from './insights-helper';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -711,3 +716,246 @@ export const triggerAudioTranscription = onDocumentUpdated(
     }
   }
 );
+
+/**
+ * Firestore trigger: When a new AI message is created,
+ * generate or update insights for the thread and global view
+ *
+ * Hybrid approach with debouncing:
+ * - Updates existing insight if within 2-3 day window
+ * - Creates new insight if no recent insight exists
+ * - Debounces to max once per hour per user to prevent over-firing
+ */
+export const generateInsight = onDocumentCreated(
+  {
+    document: 'journalMessages/{messageId}',
+    secrets: [geminiApiKey],
+    region: 'us-central1',
+    memory: '512MiB',
+    timeoutSeconds: 60,
+  },
+  async (event) => {
+    const messageData = event.data?.data();
+    if (!messageData) return;
+
+    // Only process AI messages (role = 1)
+    if (messageData.role !== 1) {
+      console.log('Skipping non-AI message for insight generation');
+      return;
+    }
+
+    const threadId = messageData.threadId as string;
+    const userId = messageData.userId as string;
+    const now = Date.now();
+    const threeDaysAgo = now - 3 * 24 * 60 * 60 * 1000;
+    const oneHourAgo = now - 60 * 60 * 1000;
+
+    console.log(`Generating insight for thread ${threadId}`);
+
+    try {
+      // 0. Debounce check: Skip if insight was updated within last hour
+      const recentUpdateSnapshot = await db
+        .collection('insights')
+        .where('userId', '==', userId)
+        .where('threadId', '==', threadId)
+        .where('updatedAtMillis', '>=', oneHourAgo)
+        .limit(1)
+        .get();
+
+      if (!recentUpdateSnapshot.empty) {
+        console.log(`Skipping insight generation - updated within last hour for thread ${threadId}`);
+        return;
+      }
+
+      // 1. Query recent messages from this thread (last 3 days)
+      const messagesSnapshot = await db
+        .collection('journalMessages')
+        .where('threadId', '==', threadId)
+        .where('userId', '==', userId)
+        .where('isDeleted', '==', false)
+        .where('createdAtMillis', '>=', threeDaysAgo)
+        .orderBy('createdAtMillis', 'asc')
+        .get();
+
+      if (messagesSnapshot.empty) {
+        console.log('No recent messages found for insight generation');
+        return;
+      }
+
+      const messages = messagesSnapshot.docs.map(doc => ({
+        content: doc.data().content || doc.data().transcription || '',
+        role: doc.data().role,
+        createdAtMillis: doc.data().createdAtMillis,
+      }));
+
+      // 2. Extract keywords using frequency analysis
+      const keywords = extractKeywords(messages);
+
+      // 3. Analyze with AI
+      const ai = getAI(geminiApiKey.value());
+      const analysis = await analyzeMessagesWithAI(ai, messages);
+      analysis.keywords = keywords;
+
+      // 4. Determine period start/end
+      const periodStart = messages[0].createdAtMillis;
+      const periodEnd = now;
+
+      // 5. Check if recent per-thread insight exists (within last 24 hours)
+      const recentInsightSnapshot = await db
+        .collection('insights')
+        .where('userId', '==', userId)
+        .where('threadId', '==', threadId)
+        .where('periodEndMillis', '>=', now - 24 * 60 * 60 * 1000)
+        .limit(1)
+        .get();
+
+      let insightId: string;
+      let insightRef: admin.firestore.DocumentReference;
+
+      if (!recentInsightSnapshot.empty) {
+        // Update existing insight
+        const existingInsight = recentInsightSnapshot.docs[0];
+        insightId = existingInsight.id;
+        insightRef = existingInsight.ref;
+
+        await insightRef.update({
+          periodEndMillis: periodEnd,
+          moodScore: analysis.moodScore,
+          dominantEmotion: analysis.dominantEmotion,
+          keywords: analysis.keywords,
+          aiThemes: analysis.aiThemes,
+          summary: analysis.summary,
+          messageCount: messages.length,
+          updatedAtMillis: now,
+        });
+
+        console.log(`Updated existing insight ${insightId}`);
+      } else {
+        // Create new per-thread insight
+        insightId = `${userId}_${threadId}_${periodStart}`;
+        insightRef = db.collection('insights').doc(insightId);
+
+        await insightRef.set({
+          id: insightId,
+          userId,
+          type: 0, // thread insight
+          threadId,
+          periodStartMillis: periodStart,
+          periodEndMillis: periodEnd,
+          moodScore: analysis.moodScore,
+          dominantEmotion: analysis.dominantEmotion,
+          keywords: analysis.keywords,
+          aiThemes: analysis.aiThemes,
+          summary: analysis.summary,
+          messageCount: messages.length,
+          createdAtMillis: now,
+          updatedAtMillis: now,
+          isDeleted: false,
+          version: 1,
+        });
+
+        console.log(`Created new insight ${insightId}`);
+      }
+
+      // 6. Generate or update global insight
+      await generateGlobalInsight(userId, now);
+
+      console.log(`Insight generation complete for thread ${threadId}`);
+    } catch (error) {
+      console.error('Error generating insight:', error);
+    }
+  }
+);
+
+/**
+ * Helper function to generate global aggregated insight
+ */
+async function generateGlobalInsight(userId: string, now: number) {
+  try {
+    const threeDaysAgo = now - 3 * 24 * 60 * 60 * 1000;
+
+    // Get all per-thread insights from last 3 days
+    const threadInsightsSnapshot = await db
+      .collection('insights')
+      .where('userId', '==', userId)
+      .where('threadId', '!=', null)
+      .where('periodEndMillis', '>=', threeDaysAgo)
+      .get();
+
+    if (threadInsightsSnapshot.empty) {
+      console.log('No thread insights found for global aggregation');
+      return;
+    }
+
+    const threadInsights = threadInsightsSnapshot.docs.map(doc => doc.data());
+
+    // Aggregate thread insights
+    const aggregated = aggregateInsights(threadInsights);
+    if (!aggregated) return;
+
+    // Find earliest periodStart among thread insights
+    const periodStart = Math.min(
+      ...threadInsights.map(ins => ins.periodStartMillis)
+    );
+
+    // Check if recent global insight exists (within last 24 hours)
+    const recentGlobalSnapshot = await db
+      .collection('insights')
+      .where('userId', '==', userId)
+      .where('threadId', '==', null)
+      .where('periodEndMillis', '>=', now - 24 * 60 * 60 * 1000)
+      .limit(1)
+      .get();
+
+    let globalInsightId: string;
+    let globalRef: admin.firestore.DocumentReference;
+
+    if (!recentGlobalSnapshot.empty) {
+      // Update existing global insight
+      const existingGlobal = recentGlobalSnapshot.docs[0];
+      globalInsightId = existingGlobal.id;
+      globalRef = existingGlobal.ref;
+
+      await globalRef.update({
+        periodEndMillis: now,
+        moodScore: aggregated.moodScore,
+        dominantEmotion: aggregated.dominantEmotion,
+        keywords: aggregated.keywords,
+        aiThemes: aggregated.aiThemes,
+        summary: aggregated.summary,
+        messageCount: aggregated.messageCount,
+        updatedAtMillis: now,
+      });
+
+      console.log(`Updated global insight ${globalInsightId}`);
+    } else {
+      // Create new global insight
+      globalInsightId = `${userId}_global_${periodStart}`;
+      globalRef = db.collection('insights').doc(globalInsightId);
+
+      await globalRef.set({
+        id: globalInsightId,
+        userId,
+        type: 1, // global insight
+        threadId: null,
+        periodStartMillis: periodStart,
+        periodEndMillis: now,
+        moodScore: aggregated.moodScore,
+        dominantEmotion: aggregated.dominantEmotion,
+        keywords: aggregated.keywords,
+        aiThemes: aggregated.aiThemes,
+        summary: aggregated.summary,
+        messageCount: aggregated.messageCount,
+        createdAtMillis: now,
+        updatedAtMillis: now,
+        isDeleted: false,
+        version: 1,
+      });
+
+      console.log(`Created global insight ${globalInsightId}`);
+    }
+  } catch (error) {
+    console.error('Error generating global insight:', error);
+  }
+}
+

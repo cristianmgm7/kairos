@@ -984,10 +984,10 @@ async function generateGlobalInsight(userId: string, now: number) {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compiles without errors: `npm run build` in functions directory
-- [ ] Linting passes: `npm run lint` in functions directory
-- [ ] Function deploys successfully: `firebase deploy --only functions:generateInsight`
-- [ ] Cloud Function appears in Firebase Console
+- [x] TypeScript compiles without errors: `npm run build` in functions directory
+- [x] Linting passes: `npm run lint` in functions directory (no lint script - TypeScript validation passed)
+- [x] Function deploys successfully: `firebase deploy --only functions:generateInsight`
+- [x] Cloud Function appears in Firebase Console
 
 #### Manual Verification:
 - [ ] Create a test journal message with AI response
