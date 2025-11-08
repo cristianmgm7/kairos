@@ -143,9 +143,9 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
         await remoteDataSource.softDeleteThread(threadId);
         debugPrint('✅ Remote soft-delete successful for thread: $threadId');
       } catch (e) {
-        debugPrint('❌ Remote deletion failed: $e');
+        debugPrint('❌ Remote deletion failed for thread $threadId: $e');
         return Error(
-          ServerFailure(message: 'Failed to delete thread: $e'),
+          ServerFailure(message: 'Failed to delete thread $threadId: $e'),
         );
       }
 

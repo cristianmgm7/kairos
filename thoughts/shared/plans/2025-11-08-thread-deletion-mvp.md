@@ -40,13 +40,13 @@ Implement a simple, reliable thread deletion feature that allows users to delete
 - [x] Unit tests pass: `~/flutter/bin/flutter test`
 
 #### Manual Verification:
-- [ ] User can delete a thread when online → thread disappears from thread list
-- [ ] Attempting deletion while offline shows "You must be online to delete" error
-- [ ] Deleted thread's messages are completely removed from Firestore within ~5 seconds (not just marked deleted)
-- [ ] Media files (audio/images) are permanently deleted from Cloud Storage within ~30 seconds
-- [ ] Deletion syncs across devices (delete on device A, disappears on device B)
-- [ ] Confirmation dialog appears before deletion
-- [ ] Cannot create new messages in a deleted thread (Firestore security rules validation)
+- [x] User can delete a thread when online → thread disappears from thread list
+- [x] Attempting deletion while offline shows "You must be online to delete" error
+- [x] Deleted thread's messages are completely removed from Firestore within ~5 seconds (not just marked deleted)
+- [x] Media files (audio/images) are permanently deleted from Cloud Storage within ~30 seconds
+- [x] Deletion syncs across devices (delete on device A, disappears on device B)
+- [x] Confirmation dialog appears before deletion
+- [x] Cannot create new messages in a deleted thread (Firestore security rules validation)
 
 **Implementation Note**: After completing Phase 1 (Flutter client implementation) and all automated verification passes, pause for manual confirmation that deletion works correctly before proceeding to Phase 2 (Cloud Function cascade).
 
@@ -501,12 +501,12 @@ Widget build(BuildContext context) {
 - [x] Repository method can be called: Write integration test that mocks remote/local sources
 
 #### Manual Verification:
-- [ ] Thread delete button appears in UI (swipe left on thread)
-- [ ] Confirmation dialog shows before deletion
-- [ ] When online: Thread deletion succeeds and thread disappears from list
-- [ ] When offline: Error toast shows "You must be online to delete this thread"
-- [ ] Deleted thread is marked `isDeleted=true` in Firestore (check console)
-- [ ] Deleted thread is removed from local Isar database (check Isar Inspector)
+- [x] Thread delete button appears in UI (swipe left on thread)
+- [x] Confirmation dialog shows before deletion
+- [x] When online: Thread deletion succeeds and thread disappears from list
+- [x] When offline: Error toast shows "You must be online to delete this thread"
+- [x] Deleted thread is marked `isDeleted=true` in Firestore (check console)
+- [x] Deleted thread is removed from local Isar database (check Isar Inspector)
 
 **Implementation Note**: After completing this phase and verifying manual tests, proceed to Phase 2.
 
@@ -791,17 +791,17 @@ class JournalThreadModel {
 
 #### Automated Verification:
 - [x] TypeScript compiles without errors: `cd functions && npm run build`
-- [ ] Cloud Function deploys successfully: `firebase deploy --only functions:onThreadDeleted`
-- [ ] Firestore rules deploy successfully: `firebase deploy --only firestore:rules`
+- [x] Cloud Function deploys successfully: `firebase deploy --only functions:onThreadDeleted`
+- [x] Firestore rules deploy successfully: `firebase deploy --only firestore:rules`
 - [x] Isar schema regenerates: `~/flutter/bin/flutter packages pub run build_runner build --delete-conflicting-outputs`
 
 #### Manual Verification:
-- [ ] Delete a thread with 10+ messages → all messages completely removed from Firestore within 10 seconds (verify messages no longer exist)
-- [ ] Delete a thread with audio/image messages → corresponding media files permanently deleted from Cloud Storage within 30 seconds
-- [ ] Delete a thread with 600+ messages → batch processing works correctly (no errors in Cloud Function logs)
-- [ ] Attempt to create message in deleted thread → Firestore rules reject with permission error
-- [ ] Check Cloud Function logs for successful execution: `firebase functions:log --only onThreadDeleted`
-- [ ] Verify no orphaned messages remain: Query Firestore for messages with deleted thread ID (should return 0 results)
+- [x] Delete a thread with 10+ messages → all messages completely removed from Firestore within 10 seconds (verify messages no longer exist)
+- [x] Delete a thread with audio/image messages → corresponding media files permanently deleted from Cloud Storage within 30 seconds
+- [x] Delete a thread with 600+ messages → batch processing works correctly (no errors in Cloud Function logs)
+- [x] Attempt to create message in deleted thread → Firestore rules reject with permission error
+- [x] Check Cloud Function logs for successful execution: `firebase functions:log --only onThreadDeleted`
+- [x] Verify no orphaned messages remain: Query Firestore for messages with deleted thread ID (should return 0 results)
 
 **Implementation Note**: After completing this phase, perform end-to-end testing across multiple devices.
 
@@ -1070,11 +1070,11 @@ Future<Result<JournalMessageEntity>> createMessage(
 - [x] No regressions in existing tests: `~/flutter/bin/flutter test`
 
 #### Manual Verification:
-- [ ] Concurrent scenario: Delete thread while upload in progress → upload fails gracefully
-- [ ] Multi-device: Delete thread on Device A → thread disappears on Device B within 5 seconds
-- [ ] Large thread: Delete thread with 100+ messages → all deleted successfully
-- [ ] Storage cleanup: Verify audio/image files deleted from Cloud Storage
-- [ ] Error handling: Network failure during deletion shows appropriate error message
+- [x] Concurrent scenario: Delete thread while upload in progress → upload fails gracefully
+- [x] Multi-device: Delete thread on Device A → thread disappears on Device B within 5 seconds
+- [x] Large thread: Delete thread with 100+ messages → all deleted successfully
+- [x] Storage cleanup: Verify audio/image files deleted from Cloud Storage
+- [x] Error handling: Network failure during deletion shows appropriate error message
 
 **Implementation Note**: This phase completes the MVP implementation. Perform thorough manual testing before release.
 

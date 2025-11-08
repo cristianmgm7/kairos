@@ -2,6 +2,7 @@ import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { logger } from 'firebase-functions/v2';
+import { extractStoragePath } from '../utils/storage-utils';
 
 /**
  * Cloud Function triggered when a thread document is updated.
@@ -82,12 +83,10 @@ export const onThreadDeleted = onDocumentUpdated(
         logger.info(`Deleting ${storageFilesToDelete.length} storage file(s)`);
         const deletePromises = storageFilesToDelete.map(async (url) => {
           try {
-            // Extract file path from URL
-            const filePath = extractFilePathFromUrl(url);
-            if (filePath) {
-              await bucket.file(filePath).delete();
-              logger.info(`Deleted storage file: ${filePath}`);
-            }
+            // Extract file path from URL using shared utility
+            const filePath = extractStoragePath(url);
+            await bucket.file(filePath).delete();
+            logger.info(`Deleted storage file: ${filePath}`);
           } catch (error) {
             logger.error(`Failed to delete storage file ${url}:`, error);
             // Don't fail the entire operation if one file fails
@@ -105,30 +104,3 @@ export const onThreadDeleted = onDocumentUpdated(
   }
 );
 
-/**
- * Extracts the file path from a Firebase Storage URL.
- * Handles both https:// and gs:// URL formats.
- */
-function extractFilePathFromUrl(url: string): string | null {
-  try {
-    if (url.startsWith('gs://')) {
-      // Format: gs://bucket-name/path/to/file
-      const match = url.match(/^gs:\/\/[^/]+\/(.+)$/);
-      return match ? match[1] : null;
-    } else if (url.includes('storage.googleapis.com')) {
-      // Format: https://storage.googleapis.com/bucket-name/path/to/file
-      const match = url.match(/storage\.googleapis\.com\/[^/]+\/(.+)$/);
-      return match ? match[1] : null;
-    } else if (url.includes('firebasestorage.googleapis.com')) {
-      // Format: https://firebasestorage.googleapis.com/v0/b/bucket-name/o/encoded-path
-      const match = url.match(/\/o\/(.+?)(\?|$)/);
-      if (match) {
-        return decodeURIComponent(match[1]);
-      }
-    }
-    return null;
-  } catch (error) {
-    logger.error(`Failed to parse storage URL ${url}:`, error);
-    return null;
-  }
-}
