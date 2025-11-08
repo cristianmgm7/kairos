@@ -32,7 +32,13 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
+
+    // Helper function to check if thread is deleted
+    function isThreadDeleted(threadId) {
+      return exists(/databases/$(database)/documents/journalThreads/$(threadId))
+        && get(/databases/$(database)/documents/journalThreads/$(threadId)).data.isDeleted == true;
+    }
+
     // User profiles - users can only read/write their own profile
     match /users/{userId} {
       allow read: if isOwner(userId);
@@ -52,9 +58,11 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasAll(['id', 'userId', 'createdAtMillis', 'updatedAtMillis']);
       
+      // Allow updates including soft-deletion (setting isDeleted=true)
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId; // userId cannot change
       
       allow delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
@@ -70,10 +78,12 @@ service cloud.firestore {
       allow list: if isAuthenticated();
 
       // Users can create their own messages (role=user only)
+      // Prevent creating messages in deleted threads
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.role == 0  // user role only
-        && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis']);
+        && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis'])
+        && !isThreadDeleted(request.resource.data.threadId);
 
       // Users can update their own messages (for upload status, etc.)
       // Allow updates as long as userId and role don't change

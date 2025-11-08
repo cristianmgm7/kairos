@@ -36,7 +36,6 @@ class SettingsModel {
   @enumerated
   late AppThemeMode themeMode;
 
-
   /// Convert to domain entity
   SettingsEntity toEntity() {
     return SettingsEntity(

@@ -97,7 +97,7 @@ void main() {
 
     test('Mood score clamping in entity', () {
       final now = DateTime.now();
-      
+
       // Test that entity can store boundary values
       final highEntity = InsightEntity(
         id: 'test_high',
@@ -213,4 +213,3 @@ void main() {
     });
   });
 }
-

@@ -9,8 +9,7 @@ import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 import 'package:kairos/features/insights/domain/repositories/insight_repository.dart';
 
 // Data source providers
-final insightLocalDataSourceProvider =
-    Provider<InsightLocalDataSource>((ref) {
+final insightLocalDataSourceProvider = Provider<InsightLocalDataSource>((ref) {
   final isar = ref.watch(isarProvider);
   return InsightLocalDataSourceImpl(isar);
 });

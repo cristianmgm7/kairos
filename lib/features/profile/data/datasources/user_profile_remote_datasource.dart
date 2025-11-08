@@ -79,8 +79,9 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   ) async {
     final querySnapshot = await _collection
         .where('userId', isEqualTo: userId)
-        .where('modifiedAtMillis',
-            isGreaterThan: timestamp.millisecondsSinceEpoch,
+        .where(
+          'modifiedAtMillis',
+          isGreaterThan: timestamp.millisecondsSinceEpoch,
         )
         .get();
 

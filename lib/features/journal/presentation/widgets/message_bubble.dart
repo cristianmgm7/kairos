@@ -390,7 +390,8 @@ class MessageBubble extends ConsumerWidget {
                 try {
                   final callable = FirebaseFunctions.instance
                       .httpsCallable('retryAiResponse');
-                  await callable.call<Map<String, dynamic>>({'messageId': message.id});
+                  await callable
+                      .call<Map<String, dynamic>>({'messageId': message.id});
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

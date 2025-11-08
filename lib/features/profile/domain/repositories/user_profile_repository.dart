@@ -24,13 +24,3 @@ abstract class UserProfileRepository {
   /// Manually trigger sync
   Future<Result<void>> syncProfile();
 }
-
-
-
-
-
-
-
-
-
-

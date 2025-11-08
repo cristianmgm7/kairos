@@ -127,4 +127,43 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
       return Error(ServerFailure(message: 'Failed to sync threads: $e'));
     }
   }
+
+  @override
+  Future<Result<void>> deleteThread(String threadId) async {
+    try {
+      // Pre-check: Must be online for deletion
+      if (!await _isOnline) {
+        return const Error(
+          NetworkFailure(message: 'You must be online to delete this thread'),
+        );
+      }
+
+      // Step 1: Remote soft-delete first (sets isDeleted=true in Firestore)
+      try {
+        await remoteDataSource.softDeleteThread(threadId);
+        debugPrint('✅ Remote soft-delete successful for thread: $threadId');
+      } catch (e) {
+        debugPrint('❌ Remote deletion failed for thread $threadId: $e');
+        return Error(
+          ServerFailure(message: 'Failed to delete thread $threadId: $e'),
+        );
+      }
+
+      // Step 2: Local hard-delete after remote success
+      try {
+        await localDataSource.hardDeleteThreadAndMessages(threadId);
+        debugPrint('✅ Local hard-delete successful for thread: $threadId');
+      } catch (e) {
+        debugPrint('⚠️ Local deletion failed (remote already deleted): $e');
+        // Don't fail the operation - remote deletion succeeded
+        // Local data will be cleaned up on next sync
+      }
+
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(message: 'Unexpected error deleting thread: $e'),
+      );
+    }
+  }
 }

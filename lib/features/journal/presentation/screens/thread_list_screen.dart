@@ -5,6 +5,7 @@ import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/widgets/empty_state.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
+import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/thread_list_tile.dart';
 import 'package:kairos/l10n/app_localizations.dart';
@@ -22,6 +23,24 @@ class ThreadListScreen extends ConsumerWidget {
         ? ref.watch(threadsStreamProvider(currentUser.id))
         : const AsyncValue<List<JournalThreadEntity>>.data([]);
 
+    // Listen for delete state changes
+    ref.listen<ThreadState>(threadControllerProvider, (previous, next) {
+      if (next is ThreadDeleteError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+        ref.read(threadControllerProvider.notifier).reset();
+      } else if (next is ThreadDeleteSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thread deleted successfully')),
+        );
+        ref.read(threadControllerProvider.notifier).reset();
+      }
+    });
+
     return Column(
       children: [
         AppBar(
@@ -30,7 +49,6 @@ class ThreadListScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () {
-                // TODO: Implement search functionality
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Search coming soon')),
                 );
@@ -73,10 +91,7 @@ class ThreadListScreen extends ConsumerWidget {
                           const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final thread = threads[index];
-                        return ThreadListTile(
-                          thread: thread,
-                          onTap: () => _openThread(context, thread.id),
-                        );
+                        return _buildThreadItem(context, ref, thread);
                       },
                     ),
                   );
@@ -124,6 +139,56 @@ class ThreadListScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildThreadItem(
+      BuildContext context, WidgetRef ref, JournalThreadEntity thread) {
+    return Dismissible(
+      key: Key(thread.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        return await _showDeleteConfirmationDialog(context);
+      },
+      onDismissed: (direction) {
+        ref.read(threadControllerProvider.notifier).deleteThread(thread.id);
+      },
+      background: Container(
+        color: Colors.red,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: ThreadListTile(
+        thread: thread,
+        onTap: () => _openThread(context, thread.id),
+      ),
+    );
+  }
+
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Thread'),
+            content: const Text(
+              'Are you sure you want to delete this thread? '
+              'This will also delete all messages and media files. '
+              'This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   void _createNewThread(BuildContext context) {

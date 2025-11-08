@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 
 abstract class JournalThreadLocalDataSource {
@@ -8,6 +9,10 @@ abstract class JournalThreadLocalDataSource {
   Future<void> updateThread(JournalThreadModel thread);
   Future<void> archiveThread(String threadId);
   Stream<List<JournalThreadModel>> watchThreadsByUserId(String userId);
+
+  /// Hard-deletes a thread and all its messages from local storage.
+  /// This physically removes the data from Isar to free up space.
+  Future<void> hardDeleteThreadAndMessages(String threadId);
 }
 
 class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
@@ -84,5 +89,30 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
             final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
             return bTime.compareTo(aTime);
           }));
+  }
+
+  @override
+  Future<void> hardDeleteThreadAndMessages(String threadId) async {
+    await isar.writeTxn(() async {
+      // Delete the thread
+      final thread = await isar.journalThreadModels
+          .filter()
+          .idEqualTo(threadId)
+          .findFirst();
+
+      if (thread != null) {
+        await isar.journalThreadModels.delete(thread.isarId);
+      }
+
+      // Delete all messages for this thread
+      final messages = await isar.journalMessageModels
+          .filter()
+          .threadIdEqualTo(threadId)
+          .findAll();
+
+      for (final message in messages) {
+        await isar.journalMessageModels.delete(message.isarId);
+      }
+    });
   }
 }

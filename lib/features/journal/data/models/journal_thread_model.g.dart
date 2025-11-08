@@ -23,48 +23,53 @@ const JournalThreadModelSchema = CollectionSchema(
       name: r'createdAtMillis',
       type: IsarType.long,
     ),
-    r'id': PropertySchema(
+    r'deletedAtMillis': PropertySchema(
       id: 1,
+      name: r'deletedAtMillis',
+      type: IsarType.long,
+    ),
+    r'id': PropertySchema(
+      id: 2,
       name: r'id',
       type: IsarType.string,
     ),
     r'isArchived': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'isArchived',
       type: IsarType.bool,
     ),
     r'isDeleted': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isDeleted',
       type: IsarType.bool,
     ),
     r'lastMessageAtMillis': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'lastMessageAtMillis',
       type: IsarType.long,
     ),
     r'messageCount': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'messageCount',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'title',
       type: IsarType.string,
     ),
     r'updatedAtMillis': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'updatedAtMillis',
       type: IsarType.long,
     ),
     r'userId': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'userId',
       type: IsarType.string,
     ),
     r'version': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'version',
       type: IsarType.long,
     )
@@ -134,15 +139,16 @@ void _journalThreadModelSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeLong(offsets[0], object.createdAtMillis);
-  writer.writeString(offsets[1], object.id);
-  writer.writeBool(offsets[2], object.isArchived);
-  writer.writeBool(offsets[3], object.isDeleted);
-  writer.writeLong(offsets[4], object.lastMessageAtMillis);
-  writer.writeLong(offsets[5], object.messageCount);
-  writer.writeString(offsets[6], object.title);
-  writer.writeLong(offsets[7], object.updatedAtMillis);
-  writer.writeString(offsets[8], object.userId);
-  writer.writeLong(offsets[9], object.version);
+  writer.writeLong(offsets[1], object.deletedAtMillis);
+  writer.writeString(offsets[2], object.id);
+  writer.writeBool(offsets[3], object.isArchived);
+  writer.writeBool(offsets[4], object.isDeleted);
+  writer.writeLong(offsets[5], object.lastMessageAtMillis);
+  writer.writeLong(offsets[6], object.messageCount);
+  writer.writeString(offsets[7], object.title);
+  writer.writeLong(offsets[8], object.updatedAtMillis);
+  writer.writeString(offsets[9], object.userId);
+  writer.writeLong(offsets[10], object.version);
 }
 
 JournalThreadModel _journalThreadModelDeserialize(
@@ -153,15 +159,16 @@ JournalThreadModel _journalThreadModelDeserialize(
 ) {
   final object = JournalThreadModel(
     createdAtMillis: reader.readLong(offsets[0]),
-    id: reader.readString(offsets[1]),
-    isArchived: reader.readBoolOrNull(offsets[2]) ?? false,
-    isDeleted: reader.readBoolOrNull(offsets[3]) ?? false,
-    lastMessageAtMillis: reader.readLongOrNull(offsets[4]),
-    messageCount: reader.readLongOrNull(offsets[5]) ?? 0,
-    title: reader.readStringOrNull(offsets[6]),
-    updatedAtMillis: reader.readLong(offsets[7]),
-    userId: reader.readString(offsets[8]),
-    version: reader.readLongOrNull(offsets[9]) ?? 1,
+    deletedAtMillis: reader.readLongOrNull(offsets[1]),
+    id: reader.readString(offsets[2]),
+    isArchived: reader.readBoolOrNull(offsets[3]) ?? false,
+    isDeleted: reader.readBoolOrNull(offsets[4]) ?? false,
+    lastMessageAtMillis: reader.readLongOrNull(offsets[5]),
+    messageCount: reader.readLongOrNull(offsets[6]) ?? 0,
+    title: reader.readStringOrNull(offsets[7]),
+    updatedAtMillis: reader.readLong(offsets[8]),
+    userId: reader.readString(offsets[9]),
+    version: reader.readLongOrNull(offsets[10]) ?? 1,
   );
   return object;
 }
@@ -176,22 +183,24 @@ P _journalThreadModelDeserializeProp<P>(
     case 0:
       return (reader.readLong(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 2:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readString(offset)) as P;
     case 3:
       return (reader.readBoolOrNull(offset) ?? false) as P;
     case 4:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 5:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 7:
-      return (reader.readLong(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
       return (reader.readLongOrNull(offset) ?? 1) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -486,6 +495,80 @@ extension JournalThreadModelQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'createdAtMillis',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deletedAtMillis',
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deletedAtMillis',
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deletedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deletedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterFilterCondition>
+      deletedAtMillisBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deletedAtMillis',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1262,6 +1345,20 @@ extension JournalThreadModelQuerySortBy
   }
 
   QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterSortBy>
+      sortByDeletedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAtMillis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterSortBy>
+      sortByDeletedAtMillisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAtMillis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterSortBy>
       sortById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1401,6 +1498,20 @@ extension JournalThreadModelQuerySortThenBy
       thenByCreatedAtMillisDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAtMillis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterSortBy>
+      thenByDeletedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAtMillis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QAfterSortBy>
+      thenByDeletedAtMillisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedAtMillis', Sort.desc);
     });
   }
 
@@ -1554,6 +1665,13 @@ extension JournalThreadModelQueryWhereDistinct
     });
   }
 
+  QueryBuilder<JournalThreadModel, JournalThreadModel, QDistinct>
+      distinctByDeletedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedAtMillis');
+    });
+  }
+
   QueryBuilder<JournalThreadModel, JournalThreadModel, QDistinct> distinctById(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1630,6 +1748,13 @@ extension JournalThreadModelQueryProperty
       createdAtMillisProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAtMillis');
+    });
+  }
+
+  QueryBuilder<JournalThreadModel, int?, QQueryOperations>
+      deletedAtMillisProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedAtMillis');
     });
   }
 

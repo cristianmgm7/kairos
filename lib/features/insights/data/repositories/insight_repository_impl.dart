@@ -140,8 +140,7 @@ class InsightRepositoryImpl implements InsightRepository {
     StreamSubscription<List<InsightModel>>? remoteSub;
 
     try {
-      remoteSub =
-          remoteDataSource.watchThreadInsights(userId, threadId).listen(
+      remoteSub = remoteDataSource.watchThreadInsights(userId, threadId).listen(
         (remoteModels) async {
           final localInsights =
               await localDataSource.getThreadInsights(threadId);

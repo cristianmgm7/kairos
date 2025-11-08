@@ -45,15 +45,18 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
             await localDataSource.updateMessage(synced);
           }
         } catch (e) {
-          Logger().e('Error log', error: 'Failed to sync message to remote: $e');
+          Logger()
+              .e('Error log', error: 'Failed to sync message to remote: $e');
           // Mark message as failed locally to enable retry
           final failed = model.copyWith(
             uploadStatus: UploadStatus.failed.index, // 3
             uploadRetryCount: model.uploadRetryCount + 1,
-            lastUploadAttemptMillis: DateTime.now().toUtc().millisecondsSinceEpoch,
+            lastUploadAttemptMillis:
+                DateTime.now().toUtc().millisecondsSinceEpoch,
           );
           await localDataSource.updateMessage(failed);
-          return Error(CacheFailure(message: 'Failed to sync message to remote: $e'));
+          return Error(
+              CacheFailure(message: 'Failed to sync message to remote: $e'));
         }
       } else {
         // Offline feedback:
@@ -75,7 +78,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
           }
         }
       }
-      
+
       return Success(model.toEntity());
     } catch (e) {
       return Error(CacheFailure(message: 'Failed to save message locally: $e'));
@@ -93,7 +96,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   }
 
   @override
-  Stream<List<JournalMessageEntity>> watchMessagesByThreadId(String threadId) async* {
+  Stream<List<JournalMessageEntity>> watchMessagesByThreadId(
+      String threadId) async* {
     // Check if online
     final isOnline = await _isOnline;
 
@@ -121,10 +125,12 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
     try {
       // Listen to Firestore and sync to local DB in background
-      remoteSub = remoteDataSource.watchMessagesByThreadId(threadId, userId).listen(
+      remoteSub =
+          remoteDataSource.watchMessagesByThreadId(threadId, userId).listen(
         (remoteModels) async {
           // Get current local messages to compare
-          final localMessages = await localDataSource.getMessagesByThreadId(threadId);
+          final localMessages =
+              await localDataSource.getMessagesByThreadId(threadId);
           final localIds = localMessages.map((m) => m.id).toSet();
 
           for (final remoteModel in remoteModels) {
@@ -138,10 +144,11 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
               debugPrint('Synced new AI message: ${remoteModel.id}');
             } else {
               // Check if we need to update (e.g., processing status, transcription, or storageUrl changed)
-              final localModel = await localDataSource.getMessageById(remoteModel.id);
+              final localModel =
+                  await localDataSource.getMessageById(remoteModel.id);
               if (localModel != null) {
-                final needsUpdate =
-                    localModel.aiProcessingStatus != remoteModel.aiProcessingStatus ||
+                final needsUpdate = localModel.aiProcessingStatus !=
+                        remoteModel.aiProcessingStatus ||
                     localModel.transcription != remoteModel.transcription ||
                     localModel.storageUrl != remoteModel.storageUrl;
 
@@ -150,17 +157,19 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
                   // For non-user or text messages, force uploadStatus to completed
                   // For user messages with media, use remote uploadStatus if it's more advanced
                   final isNonUser = remoteModel.role != MessageRole.user.index;
-                  final isText = remoteModel.messageType == MessageType.text.index;
+                  final isText =
+                      remoteModel.messageType == MessageType.text.index;
                   final int uploadStatusToUse;
                   if (isNonUser || isText) {
                     uploadStatusToUse = UploadStatus.completed.index;
-                  } else if (remoteModel.uploadStatus > localModel.uploadStatus) {
+                  } else if (remoteModel.uploadStatus >
+                      localModel.uploadStatus) {
                     // Use remote status if it's more advanced (e.g., remote is COMPLETED, local is UPLOADING)
                     uploadStatusToUse = remoteModel.uploadStatus;
                   } else {
                     uploadStatusToUse = localModel.uploadStatus;
                   }
-                  
+
                   final mergedModel = remoteModel.copyWith(
                     uploadStatus: uploadStatusToUse,
                     uploadRetryCount: localModel.uploadRetryCount,
@@ -169,7 +178,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
                     audioDurationSeconds: localModel.audioDurationSeconds,
                   );
                   await localDataSource.updateMessage(mergedModel);
-                  debugPrint('Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, storageUrl: ${remoteModel.storageUrl != null}, uploadStatus: $uploadStatusToUse)');
+                  debugPrint(
+                      'Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, storageUrl: ${remoteModel.storageUrl != null}, uploadStatus: $uploadStatusToUse)');
                 }
               }
             }
@@ -203,9 +213,11 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       try {
         debugPrint('Attempting remote update for: ${message.id}');
         await remoteDataSource.updateMessage(model);
-        debugPrint('✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}');
+        debugPrint(
+            '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}');
       } catch (e) {
-        debugPrint('⚠️ Failed to sync message update to remote (will retry later): $e');
+        debugPrint(
+            '⚠️ Failed to sync message update to remote (will retry later): $e');
         // Don't fail the whole operation - local update succeeded
         // The message will be synced later when connectivity is restored
       }
@@ -247,7 +259,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final messages = await localDataSource.getPendingUploads(userId);
       return Success(messages.map((m) => m.toEntity()).toList());
     } catch (e) {
-      return Error(CacheFailure(message: 'Failed to query pending uploads: $e'));
+      return Error(
+          CacheFailure(message: 'Failed to query pending uploads: $e'));
     }
   }
 }

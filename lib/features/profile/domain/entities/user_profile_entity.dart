@@ -75,6 +75,3 @@ class UserProfileEntity extends Equatable {
     return 'UserProfileEntity(id: $id, userId: $userId, name: $name)';
   }
 }
-
-
-

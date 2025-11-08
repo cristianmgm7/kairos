@@ -227,7 +227,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: _genderController.text.isNotEmpty ? _genderController.text : null,
+      initialValue:
+          _genderController.text.isNotEmpty ? _genderController.text : null,
       decoration: const InputDecoration(
         labelText: 'Gender',
         hintText: 'Select your gender',
@@ -237,7 +238,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         DropdownMenuItem(value: 'female', child: Text('Female')),
         DropdownMenuItem(value: 'non-binary', child: Text('Non-binary')),
         DropdownMenuItem(
-          value: 'prefer-not-to-say', child: Text('Prefer not to say'),
+          value: 'prefer-not-to-say',
+          child: Text('Prefer not to say'),
         ),
       ],
       onChanged: (value) {

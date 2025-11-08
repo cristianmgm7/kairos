@@ -15,3 +15,4 @@ export {
   retryAiResponse,
 } from './functions/transcription';
 export { generateInsight } from './functions/insights-triggers';
+export { onThreadDeleted } from './functions/thread-deletion';

@@ -2,7 +2,6 @@ import 'package:isar/isar.dart';
 import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:uuid/uuid.dart';
 
-
 part 'user_profile_model.g.dart';
 
 /// Data model for user profile with Isar persistence
