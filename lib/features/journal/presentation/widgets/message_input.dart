@@ -160,7 +160,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Photo from gallery'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller = ref.read(messageControllerProvider.notifier);
+                  final controller =
+                      ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromGallery();
 
                   // If image selected, show it in preview
@@ -176,7 +177,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Take photo'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller = ref.read(messageControllerProvider.notifier);
+                  final controller =
+                      ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromCamera();
 
                   if (controller.selectedImage != null) {
@@ -242,7 +244,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                   threadId: widget.threadId,
                 );
                 controller.clearSelectedImage();
-                
+
                 // Trigger onSendMessage callback to scroll to bottom
                 widget.onSendMessage('');
               }

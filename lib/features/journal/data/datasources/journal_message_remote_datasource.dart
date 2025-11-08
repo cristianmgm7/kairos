@@ -6,7 +6,8 @@ abstract class JournalMessageRemoteDataSource {
   Future<JournalMessageModel?> getMessageById(String messageId);
   Future<List<JournalMessageModel>> getMessagesByThreadId(String threadId);
   Future<void> updateMessage(JournalMessageModel message);
-  Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId, String userId);
+  Stream<List<JournalMessageModel>> watchMessagesByThreadId(
+      String threadId, String userId);
 }
 
 class JournalMessageRemoteDataSourceImpl
@@ -34,21 +35,20 @@ class JournalMessageRemoteDataSourceImpl
 
   @override
   Future<List<JournalMessageModel>> getMessagesByThreadId(
-      String threadId,) async {
+    String threadId,
+  ) async {
     final querySnapshot = await _collection
         .where('threadId', isEqualTo: threadId)
         .where('isDeleted', isEqualTo: false)
         .orderBy('createdAtMillis', descending: false)
         .get();
 
-    return querySnapshot.docs
-        .map((doc) {
-          // Include document ID in the data map
-          final data = doc.data();
-          data['id'] = doc.id;
-          return JournalMessageModel.fromMap(data);
-        })
-        .toList();
+    return querySnapshot.docs.map((doc) {
+      // Include document ID in the data map
+      final data = doc.data();
+      data['id'] = doc.id;
+      return JournalMessageModel.fromMap(data);
+    }).toList();
   }
 
   @override
@@ -58,20 +58,22 @@ class JournalMessageRemoteDataSourceImpl
 
   @override
   Stream<List<JournalMessageModel>> watchMessagesByThreadId(
-      String threadId, String userId,) {
+    String threadId,
+    String userId,
+  ) {
     return _collection
         .where('threadId', isEqualTo: threadId)
         .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
         .orderBy('createdAtMillis', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) {
-              // Include document ID in the data map
-              final data = doc.data();
-              data['id'] = doc.id;
-              return JournalMessageModel.fromMap(data);
-            })
-            .toList(),);
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            // Include document ID in the data map
+            final data = doc.data();
+            data['id'] = doc.id;
+            return JournalMessageModel.fromMap(data);
+          }).toList(),
+        );
   }
 }

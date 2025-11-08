@@ -48,7 +48,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         final lastMessage = messages.last;
         return lastMessage.role == MessageRole.user &&
             (lastMessage.aiProcessingStatus == AiProcessingStatus.pending ||
-                lastMessage.aiProcessingStatus == AiProcessingStatus.processing);
+                lastMessage.aiProcessingStatus ==
+                    AiProcessingStatus.processing);
       },
       orElse: () => false,
     );

@@ -19,17 +19,3 @@ class GetUserProfileUseCase {
     return repository.getProfileByUserId(params.userId);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

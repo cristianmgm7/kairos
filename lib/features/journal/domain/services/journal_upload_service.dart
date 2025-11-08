@@ -106,8 +106,9 @@ class JournalUploadService {
       );
 
       debugPrint('📦 Upload completed, processing result for: ${message.id}');
-      debugPrint('📦 Upload result type: ${uploadResult.isSuccess ? "SUCCESS" : "ERROR"}');
-      
+      debugPrint(
+          '📦 Upload result type: ${uploadResult.isSuccess ? "SUCCESS" : "ERROR"}');
+
       return uploadResult.when(
         success: (downloadUrl) async {
           // Update message with URLs and completed status
@@ -117,12 +118,15 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          debugPrint('Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
-          final updateResult = await messageRepository.updateMessage(updatedMessage);
-          
+          debugPrint(
+              'Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+          final updateResult =
+              await messageRepository.updateMessage(updatedMessage);
+
           return updateResult.when(
             success: (_) {
-              debugPrint('Successfully updated message in repository: ${updatedMessage.id}');
+              debugPrint(
+                  'Successfully updated message in repository: ${updatedMessage.id}');
               return const Success(null);
             },
             error: (failure) {
@@ -196,28 +200,34 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          debugPrint('Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
-          final updateResult = await messageRepository.updateMessage(updatedMessage);
-          
+          debugPrint(
+              'Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+          final updateResult =
+              await messageRepository.updateMessage(updatedMessage);
+
           return updateResult.when(
             success: (_) {
-              debugPrint('Successfully updated audio message in repository: ${updatedMessage.id}');
-              
+              debugPrint(
+                  'Successfully updated audio message in repository: ${updatedMessage.id}');
+
               // Trigger transcription in background (don't await)
               // The Cloud Function will handle this automatically via Firestore trigger
               // But we can also call it explicitly for faster processing
               unawaited(
-                transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
+                transcribeAudio(updatedMessage)
+                    .then<void>((transcriptionResult) {
                   if (transcriptionResult.isError) {
-                    debugPrint('Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
+                    debugPrint(
+                        'Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
                   }
                 }),
               );
-              
+
               return const Success(null);
             },
             error: (failure) {
-              debugPrint('Failed to update audio message in repository: $failure');
+              debugPrint(
+                  'Failed to update audio message in repository: $failure');
               return Error(failure);
             },
           );
@@ -237,15 +247,18 @@ class JournalUploadService {
   Future<Result<void>> transcribeAudio(JournalMessageEntity message) async {
     try {
       if (message.messageType != MessageType.audio) {
-        return const Error(ValidationFailure(message: 'Message is not audio type'));
+        return const Error(
+            ValidationFailure(message: 'Message is not audio type'));
       }
 
       if (message.storageUrl == null) {
-        return const Error(ValidationFailure(message: 'Audio not uploaded yet'));
+        return const Error(
+            ValidationFailure(message: 'Audio not uploaded yet'));
       }
 
       // Call Cloud Function to transcribe
-      final callable = functions.FirebaseFunctions.instance.httpsCallable('transcribeAudio');
+      final callable =
+          functions.FirebaseFunctions.instance.httpsCallable('transcribeAudio');
       final result = await callable.call<Map<String, dynamic>>({
         'audioUrl': message.storageUrl,
         'messageId': message.id,
@@ -255,8 +268,10 @@ class JournalUploadService {
       return const Success(null);
     } catch (e) {
       if (e is functions.FirebaseFunctionsException) {
-        debugPrint('Transcription error (${e.code}): ${e.message} ${e.details ?? ''}');
-        return Error(ServerFailure(message: 'Transcription failed: ${e.message}'));
+        debugPrint(
+            'Transcription error (${e.code}): ${e.message} ${e.details ?? ''}');
+        return Error(
+            ServerFailure(message: 'Transcription failed: ${e.message}'));
       }
       debugPrint('Transcription error: $e');
       return Error(ServerFailure(message: 'Transcription failed: $e'));
@@ -285,10 +300,10 @@ class JournalUploadService {
 
         // Exponential backoff: wait 2^retryCount seconds
         if (message.lastUploadAttemptAt != null) {
-          final timeSinceLastAttempt = DateTime.now()
-              .difference(message.lastUploadAttemptAt!)
-              .inSeconds;
-          final backoffSeconds = 2 << message.uploadRetryCount; // 2, 4, 8, 16, 32
+          final timeSinceLastAttempt =
+              DateTime.now().difference(message.lastUploadAttemptAt!).inSeconds;
+          final backoffSeconds =
+              2 << message.uploadRetryCount; // 2, 4, 8, 16, 32
 
           if (timeSinceLastAttempt < backoffSeconds) {
             debugPrint('Backoff period not elapsed for message ${message.id}');

@@ -6,6 +6,9 @@ abstract class JournalThreadRemoteDataSource {
   Future<JournalThreadModel?> getThreadById(String threadId);
   Future<List<JournalThreadModel>> getThreadsByUserId(String userId);
   Future<void> updateThread(JournalThreadModel thread);
+
+  /// Soft-deletes a thread in Firestore by setting isDeleted=true and deletedAtMillis.
+  Future<void> softDeleteThread(String threadId);
 }
 
 class JournalThreadRemoteDataSourceImpl
@@ -45,5 +48,15 @@ class JournalThreadRemoteDataSourceImpl
   @override
   Future<void> updateThread(JournalThreadModel thread) async {
     await _collection.doc(thread.id).update(thread.toFirestoreMap());
+  }
+
+  @override
+  Future<void> softDeleteThread(String threadId) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    await _collection.doc(threadId).update({
+      'isDeleted': true,
+      'deletedAtMillis': now,
+      'updatedAtMillis': now,
+    });
   }
 }

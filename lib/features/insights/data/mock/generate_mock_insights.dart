@@ -105,7 +105,11 @@ InsightModel _generateMockInsight({
   if (moodCategory < 0.4) {
     // Positive mood
     moodScore = 0.6 + random.nextDouble() * 0.3; // 0.6 to 0.9
-    final positiveEmotions = [EmotionType.joy, EmotionType.calm, EmotionType.excitement];
+    final positiveEmotions = [
+      EmotionType.joy,
+      EmotionType.calm,
+      EmotionType.excitement
+    ];
     dominantEmotion = positiveEmotions[random.nextInt(positiveEmotions.length)];
   } else if (moodCategory < 0.7) {
     // Neutral mood
@@ -115,8 +119,14 @@ InsightModel _generateMockInsight({
   } else {
     // Challenging mood
     moodScore = 0.15 + random.nextDouble() * 0.25; // 0.15 to 0.4
-    final challengingEmotions = [EmotionType.sadness, EmotionType.stress, EmotionType.fear, EmotionType.anger];
-    dominantEmotion = challengingEmotions[random.nextInt(challengingEmotions.length)];
+    final challengingEmotions = [
+      EmotionType.sadness,
+      EmotionType.stress,
+      EmotionType.fear,
+      EmotionType.anger
+    ];
+    dominantEmotion =
+        challengingEmotions[random.nextInt(challengingEmotions.length)];
   }
 
   // Generate keywords based on thread
@@ -278,8 +288,11 @@ String _generateSummary(
     'low': ['challenging', 'difficult', 'contemplative', 'processing'],
   };
 
-  final moodCategory =
-      moodScore > 0.6 ? 'high' : moodScore < 0.4 ? 'low' : 'medium';
+  final moodCategory = moodScore > 0.6
+      ? 'high'
+      : moodScore < 0.4
+          ? 'low'
+          : 'medium';
   final descriptor = (moodDescriptors[moodCategory]!..shuffle()).first;
 
   final emotionDescriptors = {

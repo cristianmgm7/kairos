@@ -49,10 +49,7 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
 
   @override
   Future<UserProfileModel?> getProfileById(String profileId) async {
-    return isar.userProfileModels
-        .where()
-        .idEqualTo(profileId)
-        .findFirst();
+    return isar.userProfileModels.where().idEqualTo(profileId).findFirst();
   }
 
   @override
@@ -94,9 +91,6 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
 
   @override
   Future<List<UserProfileModel>> getAllProfiles() async {
-    return isar.userProfileModels
-        .filter()
-        .isDeletedEqualTo(false)
-        .findAll();
+    return isar.userProfileModels.filter().isDeletedEqualTo(false).findAll();
   }
 }

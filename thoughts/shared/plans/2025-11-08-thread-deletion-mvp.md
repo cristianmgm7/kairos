@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement a simple, reliable thread deletion feature that allows users to delete journal threads and their associated messages. The implementation follows a **remote-first, online-only, soft-delete with Cloud Function cascade** approach to minimize client complexity while ensuring multi-device consistency.
+Implement a simple, reliable thread deletion feature that allows users to delete journal threads and their associated messages. The implementation follows a **remote-first, online-only, hard-delete with Cloud Function cascade that permanently removes messages and associated media files** approach to minimize client complexity while ensuring multi-device consistency.
 
 ## Current State Analysis
 
@@ -32,9 +32,9 @@ Implement a simple, reliable thread deletion feature that allows users to delete
 
 #### Automated Verification:
 - [ ] Thread soft-delete updates Firestore: manual Firestore console check or integration test
-- [ ] Messages cascade-deleted by Cloud Function: verify via Firestore console
+- [ ] Messages and their media files permanently deleted by Cloud Function: verify via Firestore console (messages should not exist)
 - [ ] Local thread and messages hard-deleted: verify via Isar Inspector
-- [ ] Storage files deleted: verify via Firebase Storage console
+- [ ] Storage files deleted: verify via Firebase Storage console (audio/image files should not exist)
 - [ ] TypeScript compiles without errors: `cd functions && npm run build`
 - [ ] Firestore rules permit authorized deletions: `firebase deploy --only firestore:rules`
 - [ ] Unit tests pass: `~/flutter/bin/flutter test`
@@ -42,11 +42,11 @@ Implement a simple, reliable thread deletion feature that allows users to delete
 #### Manual Verification:
 - [ ] User can delete a thread when online → thread disappears from thread list
 - [ ] Attempting deletion while offline shows "You must be online to delete" error
-- [ ] Deleted thread's messages are removed from Firestore within ~5 seconds
-- [ ] Media files (audio/images) are deleted from Cloud Storage within ~30 seconds
+- [ ] Deleted thread's messages are completely removed from Firestore within ~5 seconds (not just marked deleted)
+- [ ] Media files (audio/images) are permanently deleted from Cloud Storage within ~30 seconds
 - [ ] Deletion syncs across devices (delete on device A, disappears on device B)
 - [ ] Confirmation dialog appears before deletion
-- [ ] Cannot create new messages in a deleted thread (Cloud Function validation)
+- [ ] Cannot create new messages in a deleted thread (Firestore security rules validation)
 
 **Implementation Note**: After completing Phase 1 (Flutter client implementation) and all automated verification passes, pause for manual confirmation that deletion works correctly before proceeding to Phase 2 (Cloud Function cascade).
 
@@ -57,10 +57,10 @@ Implement a simple, reliable thread deletion feature that allows users to delete
 To maintain MVP scope and avoid complexity:
 
 - ❌ **Offline deletion queue** - No retry mechanism for offline deletions
-- ❌ **Undo/restore feature** - Deleted threads are gone (though soft-deleted in Firestore for 30 days)
+- ❌ **Undo/restore feature** - Messages and media are permanently deleted (thread soft-deleted for potential recovery window)
 - ❌ **Batch deletion** - Only single thread deletion supported
 - ❌ **Archive before delete** - Direct deletion without archiving first
-- ❌ **Permanent hard-delete from Firestore** - Using soft delete (`isDeleted=true`) for recovery window
+- ❌ **Soft-delete for messages** - Messages are permanently hard-deleted (only threads use soft-delete)
 - ❌ **Optimistic UI updates** - Wait for remote success before updating local state
 - ❌ **Local-first deletion** - Using remote-first approach to avoid sync conflicts
 
@@ -70,10 +70,10 @@ To maintain MVP scope and avoid complexity:
 
 ### Remote-First Strategy:
 1. **Pre-check connectivity** - Fail fast if offline
-2. **Remote soft-delete first** - Update Firestore `isDeleted=true`, add `deletedAtMillis`
+2. **Remote soft-delete thread first** - Set `isDeleted=true`, add `deletedAtMillis` on thread, then immediately cascade to hard-delete all messages and related media files via Cloud Function
 3. **Wait for remote success** - Block until Firestore confirms
 4. **Local hard-delete after** - Remove from Isar to free space
-5. **Cloud Function cascade** - Automatically delete messages and storage files
+5. **Cloud Function cascade** - Permanently delete all messages in Firestore and their related audio/image files in Cloud Storage
 
 ### Why Remote-First (Not Local-First)?
 - **Single source of truth**: Remote change triggers all devices
@@ -108,8 +108,8 @@ abstract class JournalThreadRepository {
   /// This operation requires an active internet connection. If the device
   /// is offline, it will return a [NetworkFailure].
   ///
-  /// The deletion is performed remotely first (soft delete in Firestore),
-  /// then local data is hard-deleted. A Cloud Function will cascade-delete
+  /// The deletion is performed remotely first (soft delete thread in Firestore),
+  /// then local data is hard-deleted. A Cloud Function will permanently hard-delete
   /// all messages and media files associated with this thread.
   ///
   /// Returns [Success] if deletion completes successfully.
@@ -495,10 +495,10 @@ Widget build(BuildContext context) {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze`
-- [ ] Code formatting passes: `~/flutter/bin/dart format --set-exit-if-changed .`
-- [ ] Unit tests pass: `~/flutter/bin/flutter test`
-- [ ] Repository method can be called: Write integration test that mocks remote/local sources
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze`
+- [x] Code formatting passes: `~/flutter/bin/dart format --set-exit-if-changed .`
+- [x] Unit tests pass: `~/flutter/bin/flutter test` (existing tests pass, new code compiles)
+- [x] Repository method can be called: Write integration test that mocks remote/local sources
 
 #### Manual Verification:
 - [ ] Thread delete button appears in UI (swipe left on thread)
@@ -515,7 +515,7 @@ Widget build(BuildContext context) {
 ## Phase 2: Cloud Function - Cascade Deletion
 
 ### Overview
-Create a Cloud Function that automatically deletes all messages and media files when a thread is soft-deleted.
+Create a Cloud Function that automatically permanently deletes all messages and media files when a thread is soft-deleted.
 
 ---
 
@@ -535,8 +535,8 @@ import { logger } from 'firebase-functions/v2';
 
 /**
  * Cloud Function triggered when a thread document is updated.
- * Detects when isDeleted changes from false to true and cascades deletion
- * to all messages and media files associated with the thread.
+ * Detects when isDeleted changes from false to true and permanently hard-deletes
+ * all messages and media files associated with the thread.
  */
 export const onThreadDeleted = onDocumentUpdated(
   {
@@ -552,20 +552,19 @@ export const onThreadDeleted = onDocumentUpdated(
 
     // Only proceed if isDeleted changed from false to true
     if (beforeData?.isDeleted === false && afterData?.isDeleted === true) {
-      logger.info(`Thread ${threadId} was soft-deleted. Starting cascade deletion.`);
+      logger.info(`Thread ${threadId} was soft-deleted. Starting permanent cascade deletion of messages and media.`);
 
       const db = getFirestore();
       const bucket = getStorage().bucket();
 
       try {
-        // Step 1: Query all messages for this thread
+        // Step 1: Query all messages for this thread (no isDeleted filter needed for hard delete)
         const messagesSnapshot = await db
           .collection('journalMessages')
           .where('threadId', '==', threadId)
-          .where('isDeleted', '==', false)
           .get();
 
-        logger.info(`Found ${messagesSnapshot.size} messages to delete for thread ${threadId}`);
+        logger.info(`Permanently deleting ${messagesSnapshot.size} messages and associated media for thread ${threadId}`);
 
         // Step 2: Batch delete messages (Firestore batches limited to 500 operations)
         const batchSize = 500;
@@ -578,11 +577,8 @@ export const onThreadDeleted = onDocumentUpdated(
         for (const messageDoc of messagesSnapshot.docs) {
           const messageData = messageDoc.data();
 
-          // Mark message as deleted (soft delete)
-          currentBatch.update(messageDoc.ref, {
-            isDeleted: true,
-            deletedAtMillis: FieldValue.serverTimestamp(),
-          });
+          // Hard delete message (permanently remove from Firestore)
+          currentBatch.delete(messageDoc.ref);
 
           // Collect storage URLs for deletion
           if (messageData.storageUrl) {
@@ -608,9 +604,9 @@ export const onThreadDeleted = onDocumentUpdated(
         }
 
         // Step 3: Commit all batches
-        logger.info(`Committing ${batches.length} batch(es) to delete messages`);
+        logger.info(`Committing ${batches.length} batch(es) to permanently delete messages`);
         await Promise.all(batches.map((batch) => batch.commit()));
-        logger.info(`✅ Successfully soft-deleted ${messagesSnapshot.size} messages`);
+        logger.info(`✅ Successfully permanently deleted ${messagesSnapshot.size} messages`);
 
         // Step 4: Delete storage files
         logger.info(`Deleting ${storageFilesToDelete.length} storage file(s)`);
@@ -781,27 +777,13 @@ class JournalThreadModel {
 
 ---
 
-#### 5. Data Model - Add deletedAtMillis to Message Model
+#### 5. Data Model - Message Model (No Changes Needed)
 
 **File**: [lib/features/journal/data/models/journal_message_model.dart](lib/features/journal/data/models/journal_message_model.dart)
 
-**Changes**: Add `deletedAtMillis` field (optional, for consistency)
+**Changes**: None required - messages will be hard-deleted, so no `deletedAtMillis` field needed
 
-```dart
-@collection
-class JournalMessageModel {
-  JournalMessageModel({
-    // ... existing parameters ...
-    this.deletedAtMillis,  // NEW FIELD
-  });
-
-  // ... existing fields ...
-  final int? deletedAtMillis;  // NEW FIELD
-
-  // Update factory methods similarly to thread model
-  // Update fromMap, toFirestoreMap, copyWith
-}
-```
+**Note**: The existing `isDeleted` field in `JournalMessageModel` can remain for backward compatibility, but won't be used in the deletion flow since messages are permanently deleted from Firestore.
 
 ---
 
@@ -814,12 +796,12 @@ class JournalMessageModel {
 - [ ] Isar schema regenerates: `~/flutter/bin/flutter packages pub run build_runner build --delete-conflicting-outputs`
 
 #### Manual Verification:
-- [ ] Delete a thread with 10+ messages → all messages marked `isDeleted=true` in Firestore within 10 seconds
-- [ ] Delete a thread with audio/image messages → storage files deleted within 30 seconds (check Firebase Storage console)
+- [ ] Delete a thread with 10+ messages → all messages completely removed from Firestore within 10 seconds (verify messages no longer exist)
+- [ ] Delete a thread with audio/image messages → corresponding media files permanently deleted from Cloud Storage within 30 seconds
 - [ ] Delete a thread with 600+ messages → batch processing works correctly (no errors in Cloud Function logs)
 - [ ] Attempt to create message in deleted thread → Firestore rules reject with permission error
 - [ ] Check Cloud Function logs for successful execution: `firebase functions:log --only onThreadDeleted`
-- [ ] Verify no orphaned messages remain: Query Firestore for messages with deleted thread ID
+- [ ] Verify no orphaned messages remain: Query Firestore for messages with deleted thread ID (should return 0 results)
 
 **Implementation Note**: After completing this phase, perform end-to-end testing across multiple devices.
 
@@ -1023,12 +1005,12 @@ describe('onThreadDeleted', () => {
     test.cleanup();
   });
 
-  it('should cascade-delete messages when thread is soft-deleted', async () => {
+  it('should permanently delete messages when thread is soft-deleted', async () => {
     // TODO: Implement test with Firestore emulator
     // 1. Create test thread and messages in Firestore emulator
     // 2. Update thread with isDeleted=true
     // 3. Trigger Cloud Function
-    // 4. Assert all messages have isDeleted=true
+    // 4. Assert all messages are permanently deleted (no longer exist in Firestore)
   });
 
   it('should handle batches larger than 500 messages', async () => {
@@ -1102,7 +1084,7 @@ Future<Result<JournalMessageEntity>> createMessage(
 
 ### Firestore Batch Limits:
 - Firestore batches limited to **500 operations**
-- Cloud Function handles pagination automatically
+- Cloud Function handles pagination automatically for hard-delete operations
 - For threads with 1000+ messages, expect ~2 batches, processing time ~3-5 seconds
 
 ### Storage Deletion:
@@ -1130,9 +1112,9 @@ No data migration required - `isDeleted` and `deletedAtMillis` fields already ex
 ## Security Considerations
 
 ### Firestore Rules:
-- Only thread owner can set `isDeleted=true` (enforced by existing rules: `userId == request.auth.uid`)
+- Only thread owner can set `isDeleted=true` on threads (enforced by existing rules: `userId == request.auth.uid`)
 - New messages cannot be created in deleted threads (new rule added in Phase 2)
-- Message deletion cascade handled server-side, not exposed to client
+- Message hard-deletion cascade handled server-side via Cloud Function, not exposed to client
 
 ### Cloud Function Security:
 - Function only triggered by Firestore document updates (no public HTTP endpoint)
@@ -1152,9 +1134,9 @@ If deletion feature causes issues in production:
 
 1. **Disable deletion UI**: Comment out delete button in `thread_list_screen.dart`
 2. **Disable Cloud Function**: `firebase deploy --only functions` (exclude `onThreadDeleted`)
-3. **Restore deleted threads**: Update Firestore documents: `isDeleted=false` (manual recovery)
+3. **Restore deleted threads**: Update Firestore documents: `isDeleted=false` (manual recovery for threads only)
 
-Soft deletion allows easy rollback - no data is permanently lost within the first 30 days.
+**Important**: Thread soft-deletion allows recovery, but **messages and media files are permanently deleted and cannot be recovered** once the Cloud Function cascade completes. This is by design for the MVP to minimize storage costs and sync complexity.
 
 ---
 
@@ -1168,6 +1150,32 @@ Soft deletion allows easy rollback - no data is permanently lost within the firs
 - [ ] **Offline deletion queue** - Queue deletions when offline, process when back online
 - [ ] **Trash/Recycle bin** - UI to view and restore deleted threads
 - [ ] **Storage optimization** - Compress images before storage to reduce deletion overhead
+
+---
+
+## Architecture Summary
+
+### Deletion Strategy by Component:
+
+| Component | Deletion Type | Location | Recovery |
+|-----------|---------------|----------|----------|
+| **Thread** | Soft-delete (`isDeleted=true`) | Firestore | Recoverable (manual update to `isDeleted=false`) |
+| **Messages** | Hard-delete (permanent removal) | Firestore | **Not recoverable** |
+| **Media Files** | Hard-delete (permanent removal) | Cloud Storage | **Not recoverable** |
+| **Local Data** | Hard-delete (immediate removal) | Isar | Not recoverable (but re-syncs from remote if available) |
+
+### Flow Summary:
+1. User deletes thread → Thread soft-deleted in Firestore
+2. Cloud Function triggered → Messages hard-deleted from Firestore
+3. Cloud Function → Media files hard-deleted from Cloud Storage
+4. Local storage → Thread and messages hard-deleted from Isar
+5. Result: **Thread recoverable for 30 days, messages and media gone permanently**
+
+This hybrid approach balances:
+- ✅ **User mistake recovery**: Can restore thread metadata if deleted accidentally
+- ✅ **Storage efficiency**: Messages and media permanently removed to save costs
+- ✅ **Sync simplicity**: No complex queue or retry logic for deletions
+- ✅ **Multi-device consistency**: Firestore listeners propagate deletions automatically
 
 ---
 

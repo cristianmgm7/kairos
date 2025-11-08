@@ -102,7 +102,8 @@ class MessageController extends StateNotifier<MessageState> {
         uploadService.uploadImageMessage(message).then((uploadResult) {
           uploadResult.when(
             success: (_) {
-              debugPrint('✅ Image upload completed successfully for: ${message.id}');
+              debugPrint(
+                  '✅ Image upload completed successfully for: ${message.id}');
             },
             error: (failure) {
               debugPrint('❌ Upload failed: ${failure.message}');

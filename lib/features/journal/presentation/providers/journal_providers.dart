@@ -15,7 +15,9 @@ import 'package:kairos/features/journal/domain/services/journal_upload_service.d
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
+import 'package:kairos/features/journal/domain/usecases/delete_thread_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
+import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
 // Data sources
 final threadLocalDataSourceProvider =
@@ -110,6 +112,11 @@ final createAudioMessageUseCaseProvider =
   );
 });
 
+final deleteThreadUseCaseProvider = Provider<DeleteThreadUseCase>((ref) {
+  final threadRepository = ref.watch(threadRepositoryProvider);
+  return DeleteThreadUseCase(threadRepository: threadRepository);
+});
+
 // Stream providers
 final threadsStreamProvider =
     StreamProvider.family<List<JournalThreadEntity>, String>((ref, userId) {
@@ -123,7 +130,7 @@ final messagesStreamProvider =
   return repository.watchMessagesByThreadId(threadId);
 });
 
-// Controller
+// Controllers
 final messageControllerProvider =
     StateNotifierProvider<MessageController, MessageState>((ref) {
   final createTextMessageUseCase = ref.watch(createTextMessageUseCaseProvider);
@@ -143,4 +150,10 @@ final messageControllerProvider =
     imagePickerService: imagePickerService,
     audioRecorderService: audioRecorderService,
   );
+});
+
+final threadControllerProvider =
+    StateNotifierProvider<ThreadController, ThreadState>((ref) {
+  final deleteThreadUseCase = ref.watch(deleteThreadUseCaseProvider);
+  return ThreadController(deleteThreadUseCase: deleteThreadUseCase);
 });

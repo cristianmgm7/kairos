@@ -7,7 +7,8 @@ abstract class InsightRemoteDataSource {
   Future<List<InsightModel>> getGlobalInsights(String userId);
   Future<List<InsightModel>> getThreadInsights(String userId, String threadId);
   Stream<List<InsightModel>> watchGlobalInsights(String userId);
-  Stream<List<InsightModel>> watchThreadInsights(String userId, String threadId);
+  Stream<List<InsightModel>> watchThreadInsights(
+      String userId, String threadId);
   Future<void> updateInsight(InsightModel insight);
   Future<void> deleteInsight(String insightId);
 }

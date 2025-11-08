@@ -100,7 +100,9 @@ class AudioRecorderService {
       final fileSize = await file.length();
       if (fileSize < 1000) {
         return Error(
-          UnknownFailure(message: 'Recording file is too small ($fileSize bytes). Please try recording again with a longer message.'),
+          UnknownFailure(
+              message:
+                  'Recording file is too small ($fileSize bytes). Please try recording again with a longer message.'),
         );
       }
 

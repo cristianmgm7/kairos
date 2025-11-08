@@ -75,9 +75,8 @@ class _AiTypingIndicatorState extends State<AiTypingIndicator>
                   mainAxisSize: MainAxisSize.min,
                   children: List.generate(3, (index) {
                     final delay = index * 0.2;
-                    final opacity = ((_controller.value + delay) % 1.0) < 0.5
-                        ? 1.0
-                        : 0.3;
+                    final opacity =
+                        ((_controller.value + delay) % 1.0) < 0.5 ? 1.0 : 0.3;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: Opacity(

@@ -26,8 +26,7 @@ class NotificationsScreen extends StatelessWidget {
                   Icon(
                     Icons.notifications,
                     size: 80,
-                    color:
-                        Theme.of(context).colorScheme.primary.withAlpha(128),
+                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
