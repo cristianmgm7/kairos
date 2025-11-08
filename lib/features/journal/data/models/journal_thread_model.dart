@@ -16,6 +16,7 @@ class JournalThreadModel {
     this.messageCount = 0,
     this.isArchived = false,
     this.isDeleted = false,
+    this.deletedAtMillis,
     this.version = 1,
   });
 
@@ -57,6 +58,7 @@ class JournalThreadModel {
       messageCount: map['messageCount'] as int? ?? 0,
       isArchived: map['isArchived'] as bool? ?? false,
       isDeleted: map['isDeleted'] as bool? ?? false,
+      deletedAtMillis: map['deletedAtMillis'] as int?,
       version: map['version'] as int? ?? 1,
     );
   }
@@ -74,6 +76,7 @@ class JournalThreadModel {
   final int messageCount;
   final bool isArchived;
   final bool isDeleted;
+  final int? deletedAtMillis;
   final int version;
 
   Id get isarId => fastHash(id);
@@ -89,6 +92,7 @@ class JournalThreadModel {
       'messageCount': messageCount,
       'isArchived': isArchived,
       'isDeleted': isDeleted,
+      'deletedAtMillis': deletedAtMillis,
       'version': version,
     };
   }
@@ -121,6 +125,7 @@ class JournalThreadModel {
     int? messageCount,
     bool? isArchived,
     bool? isDeleted,
+    int? deletedAtMillis,
     int? version,
   }) {
     return JournalThreadModel(
@@ -133,6 +138,7 @@ class JournalThreadModel {
       messageCount: messageCount ?? this.messageCount,
       isArchived: isArchived ?? this.isArchived,
       isDeleted: isDeleted ?? this.isDeleted,
+      deletedAtMillis: deletedAtMillis ?? this.deletedAtMillis,
       version: version ?? this.version,
     );
   }
