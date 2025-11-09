@@ -101,7 +101,6 @@ flutter_*.png
 flutter_*.jpeg
 flutter_*.webp
 
-
 # Generated
 lib/**/*.freezed.dart
 lib/**/*.g.dart

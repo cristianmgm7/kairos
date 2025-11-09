@@ -1,40 +1,40 @@
 {
   "project_info": {
-    "project_number": "854546904017",
-    "project_id": "kairos-develop",
-    "storage_bucket": "kairos-develop.firebasestorage.app"
+    "project_number": "1078196853321",
+    "project_id": "kairos-prod-19461",
+    "storage_bucket": "kairos-prod-19461.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:854546904017:android:7467172813414d1a5866f0",
+        "mobilesdk_app_id": "1:1078196853321:android:ac64ec4d1b673e45dc7d98",
         "android_client_info": {
-          "package_name": "com.kairos_app.dev"
+          "package_name": "com.kairos_app.prod"
         }
       },
       "oauth_client": [
         {
-          "client_id": "854546904017-gah13go36rh8815172jmcau821d3rd64.apps.googleusercontent.com",
+          "client_id": "1078196853321-0gpv62un0qhdnkv3afmpor6ogdm44hgu.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAvhbbV3SKeI5cWzrerKe7QRZ95QejIlGY"
+          "current_key": "AIzaSyDDWIbiRZO9VeX38HBeT4BWqKEgR5oLyfU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "854546904017-gah13go36rh8815172jmcau821d3rd64.apps.googleusercontent.com",
+              "client_id": "1078196853321-0gpv62un0qhdnkv3afmpor6ogdm44hgu.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "854546904017-fd2m67ls1li4l1dluska32bddkh74bd5.apps.googleusercontent.com",
+              "client_id": "1078196853321-be68nlie0m7e11thqlrfciscpr1jn59q.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.kairos-app.dev"
+                "bundle_id": "com.kairos-app.prod"
               }
             }
           ]

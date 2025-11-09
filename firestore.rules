@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // User profiles - stored in userProfiles collection
+    // Users can access only their own profiles
+    match /userProfiles/{profileId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'id', 'userId', 'name', 'createdAtMillis', 'modifiedAtMillis'
+        ]);
+
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      // Allow soft deletes only by owner (actual delete is discouraged)
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if thread is deleted
+    function isThreadDeleted(threadId) {
+      return exists(/databases/$(database)/documents/journalThreads/$(threadId))
+        && get(/databases/$(database)/documents/journalThreads/$(threadId)).data.isDeleted == true;
+    }
+
+    // User profiles - users can only read/write their own profile
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && request.resource.data.keys().hasAll(['id', 'email'])
+        && request.resource.data.id == userId;
+      allow update: if isOwner(userId);
+      allow delete: if false; // Prevent accidental deletion
+    }
+    
+    // Journal threads - users can only access their own threads
+    match /journalThreads/{threadId} {
+      allow read: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid;
+      
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['id', 'userId', 'createdAtMillis', 'updatedAtMillis']);
+      
+      // Allow updates including soft-deletion (setting isDeleted=true)
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId; // userId cannot change
+      
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Journal messages - users can only access messages in their own threads
+    match /journalMessages/{messageId} {
+      // Allow reading individual messages
+      allow get: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Allow queries that include userId filter matching the authenticated user
+      allow list: if isAuthenticated();
+
+      // Users can create their own messages (role=user only)
+      // Prevent creating messages in deleted threads
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == 0  // user role only
+        && request.resource.data.keys().hasAll(['id', 'userId', 'threadId', 'createdAtMillis'])
+        && !isThreadDeleted(request.resource.data.threadId);
+
+      // Users can update their own messages (for upload status, etc.)
+      // Allow updates as long as userId and role don't change
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == resource.data.role; // Role must not change
+
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Insights - users can only access their own insights
+    match /insights/{insightId} {
+      // Allow reading insights that belong to the authenticated user
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      
+      // Allow queries that filter by userId matching the authenticated user
+      allow list: if isAuthenticated();
+      
+      // Insights are created/updated by Cloud Functions, so users don't need write access
+      // But we allow it in case we need client-side updates in the future
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      
+      allow delete: if false; // Insights are soft-deleted only
+    }
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
+
+

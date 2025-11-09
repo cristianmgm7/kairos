@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kairos/core/errors/failures.dart';
-import 'package:kairos/core/services/firebase_image_storage_service.dart';
+import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/services/firebase_storage_service.dart';
 import 'package:kairos/core/services/image_picker_service.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
@@ -38,7 +39,7 @@ class ProfileController extends StateNotifier<ProfileState> {
   final CreateUserProfileUseCase createProfileUseCase;
   final GetUserProfileUseCase getProfileUseCase;
   final ImagePickerService imagePickerService;
-  final FirebaseImageStorageService storageService;
+  final FirebaseStorageService storageService;
   final Ref ref;
 
   File? _selectedAvatar;
@@ -101,9 +102,20 @@ class ProfileController extends StateNotifier<ProfileState> {
       // Upload avatar first if selected
       String? avatarUrl;
       if (_selectedAvatar != null) {
-        final uploadResult = await storageService.uploadProfileAvatar(
-          imageFile: _selectedAvatar!,
-          userId: userId,
+        // Build storage path
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final storagePath = 'profile_avatars/$userId/avatar_$timestamp.jpg';
+
+        final uploadResult = await storageService.uploadFile(
+          file: _selectedAvatar!,
+          storagePath: storagePath,
+          fileType: FileType.image,
+          imageMaxSize: 512,
+          imageQuality: 85,
+          metadata: {
+            'userId': userId,
+            'type': 'avatar',
+          },
         );
 
         uploadResult.when(
@@ -176,7 +188,7 @@ final profileControllerProvider =
   final createProfileUseCase = ref.watch(createUserProfileUseCaseProvider);
   final getProfileUseCase = ref.watch(getUserProfileUseCaseProvider);
   final imagePickerService = ref.watch(imagePickerServiceProvider);
-  final storageService = ref.watch(firebaseImageStorageServiceProvider);
+  final storageService = ref.watch(firebaseStorageServiceProvider);
 
   return ProfileController(
     createProfileUseCase: createProfileUseCase,

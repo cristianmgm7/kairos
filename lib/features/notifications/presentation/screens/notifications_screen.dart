@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:kairos/core/theme/app_spacing.dart';
+import 'package:kairos/l10n/app_localizations.dart';
 
 /// Notifications screen - placeholder for future notification functionality.
 /// NOTE: Does not wrap in Scaffold - MainScaffold provides that.
@@ -9,10 +10,11 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         AppBar(
-          title: const Text('Notifications'),
+          title: Text(l10n.notifications),
         ),
         Expanded(
           child: Center(
@@ -24,12 +26,11 @@ class NotificationsScreen extends StatelessWidget {
                   Icon(
                     Icons.notifications,
                     size: 80,
-                    color:
-                        Theme.of(context).colorScheme.primary.withAlpha(128),
+                    color: Theme.of(context).colorScheme.primary.withAlpha(128),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Notifications',
+                    l10n.notifications,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppSpacing.md),

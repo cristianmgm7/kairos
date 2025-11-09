@@ -74,4 +74,3 @@ class CreateUserProfileUseCase {
     return repository.createProfile(profile);
   }
 }
-

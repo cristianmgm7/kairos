@@ -1,4 +1,5 @@
 #!/bin/sh
+set -euo pipefail
 
 # Script to copy the correct GoogleService-Info.plist based on the build configuration
 
@@ -27,8 +28,10 @@ echo "Copying GoogleService-Info.plist from config/$CONFIG_FOLDER/"
 # Copy the appropriate GoogleService-Info.plist
 SOURCE_PATH="${SRCROOT}/config/${CONFIG_FOLDER}/GoogleService-Info.plist"
 DEST_PATH="${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist"
+DEST_DIR="$(dirname "${DEST_PATH}")"
 
 if [ -f "$SOURCE_PATH" ]; then
+  mkdir -p "$DEST_DIR"
   cp "$SOURCE_PATH" "$DEST_PATH"
   echo "Successfully copied GoogleService-Info.plist from $CONFIG_FOLDER"
 else
