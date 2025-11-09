@@ -10,6 +10,8 @@ abstract class JournalMessageRemoteDataSource {
   Future<void> updateMessage(JournalMessageModel message);
   Stream<List<JournalMessageModel>> watchMessagesByThreadId(
       String threadId, String userId);
+  Stream<List<JournalMessageModel>> watchUpdatedMessages(
+      String threadId, int sinceUpdatedAtMillis);
 }
 
 class JournalMessageRemoteDataSourceImpl
@@ -84,13 +86,32 @@ class JournalMessageRemoteDataSourceImpl
   ) {
     return _collection
         .where('threadId', isEqualTo: threadId)
-        .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
         .orderBy('createdAtMillis', descending: false)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs.map((doc) {
             // Include document ID in the data map
+            final data = doc.data();
+            data['id'] = doc.id;
+            return JournalMessageModel.fromMap(data);
+          }).toList(),
+        );
+  }
+
+  @override
+  Stream<List<JournalMessageModel>> watchUpdatedMessages(
+    String threadId,
+    int sinceUpdatedAtMillis,
+  ) {
+    return _collection
+        .where('threadId', isEqualTo: threadId)
+        .where('isDeleted', isEqualTo: false)
+        .where('updatedAtMillis', isGreaterThan: sinceUpdatedAtMillis)
+        .orderBy('updatedAtMillis', descending: false)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
             final data = doc.data();
             data['id'] = doc.id;
             return JournalMessageModel.fromMap(data);

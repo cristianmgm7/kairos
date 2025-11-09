@@ -29,7 +29,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Future<Result<JournalMessageEntity>> createMessage(
-      JournalMessageEntity message) async {
+      JournalMessageEntity message,) async {
     try {
       final model = JournalMessageModel.fromEntity(message);
       await localDataSource.saveMessage(model);
@@ -97,105 +97,34 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Stream<List<JournalMessageEntity>> watchMessagesByThreadId(
-      String threadId) async* {
+      String threadId,) async* {
     // Check if online
     final isOnline = await _isOnline;
 
-    if (!isOnline) {
-      // Offline: just watch local DB
-      yield* localDataSource
-          .watchMessagesByThreadId(threadId)
-          .map((models) => models.map((m) => m.toEntity()).toList());
-      return;
-    }
-
-    // Get userId from local messages (needed for Firestore query)
-    final localMessages = await localDataSource.getMessagesByThreadId(threadId);
-    if (localMessages.isEmpty) {
-      // No messages yet, just watch local
-      yield* localDataSource
-          .watchMessagesByThreadId(threadId)
-          .map((models) => models.map((m) => m.toEntity()).toList());
-      return;
-    }
-    final userId = localMessages.first.userId;
-
-    // Online: Set up bidirectional sync between Firestore and local DB
     StreamSubscription<List<JournalMessageModel>>? remoteSub;
-
     try {
-      // Listen to Firestore and sync to local DB in background
-      remoteSub =
-          remoteDataSource.watchMessagesByThreadId(threadId, userId).listen(
-        (remoteModels) async {
-          // Get current local messages to compare
-          final localMessages =
-              await localDataSource.getMessagesByThreadId(threadId);
-          final localIds = localMessages.map((m) => m.id).toSet();
+      if (isOnline) {
+        // Determine since timestamp based on local latest update
+        final since =
+            (await localDataSource.getLastUpdatedAtMillis(threadId)) ?? 0;
 
+        // Listen for remote updates since 'since' and upsert into local
+        remoteSub = remoteDataSource
+            .watchUpdatedMessages(threadId, since)
+            .listen((remoteModels) async {
           for (final remoteModel in remoteModels) {
-            if (!localIds.contains(remoteModel.id)) {
-              // New message from remote (e.g., AI response)
-              // Ensure remote-created messages are marked as completed locally to avoid "waiting to upload"
-              final normalized = remoteModel.copyWith(
-                uploadStatus: UploadStatus.completed.index,
-              );
-              await localDataSource.saveMessage(normalized);
-              debugPrint('Synced new AI message: ${remoteModel.id}');
-            } else {
-              // Check if we need to update (e.g., processing status, transcription, or storageUrl changed)
-              final localModel =
-                  await localDataSource.getMessageById(remoteModel.id);
-              if (localModel != null) {
-                final needsUpdate = localModel.aiProcessingStatus !=
-                        remoteModel.aiProcessingStatus ||
-                    localModel.transcription != remoteModel.transcription ||
-                    localModel.storageUrl != remoteModel.storageUrl;
-
-                if (needsUpdate) {
-                  // Merge: preserve local-only fields (uploadStatus, localFilePath, etc.)
-                  // For non-user or text messages, force uploadStatus to completed
-                  // For user messages with media, use remote uploadStatus if it's more advanced
-                  final isNonUser = remoteModel.role != MessageRole.user.index;
-                  final isText =
-                      remoteModel.messageType == MessageType.text.index;
-                  final int uploadStatusToUse;
-                  if (isNonUser || isText) {
-                    uploadStatusToUse = UploadStatus.completed.index;
-                  } else if (remoteModel.uploadStatus >
-                      localModel.uploadStatus) {
-                    // Use remote status if it's more advanced (e.g., remote is COMPLETED, local is UPLOADING)
-                    uploadStatusToUse = remoteModel.uploadStatus;
-                  } else {
-                    uploadStatusToUse = localModel.uploadStatus;
-                  }
-
-                  final mergedModel = remoteModel.copyWith(
-                    uploadStatus: uploadStatusToUse,
-                    uploadRetryCount: localModel.uploadRetryCount,
-                    localFilePath: localModel.localFilePath,
-                    localThumbnailPath: localModel.localThumbnailPath,
-                    audioDurationSeconds: localModel.audioDurationSeconds,
-                  );
-                  await localDataSource.updateMessage(mergedModel);
-                  debugPrint(
-                      'Updated message: ${remoteModel.id} (transcription: ${remoteModel.transcription != null}, storageUrl: ${remoteModel.storageUrl != null}, uploadStatus: $uploadStatusToUse)');
-                }
-              }
-            }
+            await localDataSource.upsertFromRemote(remoteModel);
           }
-        },
-        onError: (Object error) {
+        }, onError: (Object error) {
           debugPrint('Remote sync error: $error');
-        },
-      );
+        });
+      }
 
-      // Yield the local stream (which gets updated by the remote listener above)
+      // Always yield the local stream, which will be updated by remote listener (if online)
       yield* localDataSource
           .watchMessagesByThreadId(threadId)
           .map((models) => models.map((m) => m.toEntity()).toList());
     } finally {
-      // Clean up subscription when stream is cancelled
       await remoteSub?.cancel();
     }
   }
@@ -214,10 +143,10 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
         debugPrint('Attempting remote update for: ${message.id}');
         await remoteDataSource.updateMessage(model);
         debugPrint(
-            '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}');
+            '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}',);
       } catch (e) {
         debugPrint(
-            '⚠️ Failed to sync message update to remote (will retry later): $e');
+            '⚠️ Failed to sync message update to remote (will retry later): $e',);
         // Don't fail the whole operation - local update succeeded
         // The message will be synced later when connectivity is restored
       }
@@ -267,7 +196,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final sinceTimestamp = lastUpdatedAtMillis ?? 0;
 
       debugPrint(
-          '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp');
+          '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',);
 
       // Fetch only messages updated after the last local timestamp
       final updatedMessages = await remoteDataSource.getUpdatedMessages(
@@ -339,7 +268,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       return Success(messages.map((m) => m.toEntity()).toList());
     } catch (e) {
       return Error(
-          CacheFailure(message: 'Failed to query pending uploads: $e'));
+          CacheFailure(message: 'Failed to query pending uploads: $e'),);
     }
   }
 }
