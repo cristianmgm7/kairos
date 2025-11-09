@@ -13,6 +13,7 @@ class JournalMessageModel {
     required this.role,
     required this.messageType,
     required this.createdAtMillis,
+    required this.updatedAtMillis,
     this.content,
     this.storageUrl,
     this.thumbnailUrl,
@@ -38,6 +39,7 @@ class JournalMessageModel {
     int? audioDurationSeconds,
   }) {
     final now = DateTime.now().toUtc();
+    final nowMillis = now.millisecondsSinceEpoch;
     return JournalMessageModel(
       id: const Uuid().v4(),
       threadId: threadId,
@@ -48,7 +50,8 @@ class JournalMessageModel {
       localFilePath: localFilePath,
       localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
-      createdAtMillis: now.millisecondsSinceEpoch,
+      createdAtMillis: nowMillis,
+      updatedAtMillis: nowMillis, // same as created initially
       uploadStatus: messageType == MessageType.text
           ? 2
           : 0, // text=completed, media=notStarted
@@ -75,10 +78,12 @@ class JournalMessageModel {
       lastUploadAttemptMillis:
           entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
+      updatedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
   }
 
   factory JournalMessageModel.fromMap(Map<String, dynamic> map) {
+    final createdAt = map['createdAtMillis'] as int;
     return JournalMessageModel(
       id: map['id'] as String,
       threadId: map['threadId'] as String,
@@ -92,7 +97,8 @@ class JournalMessageModel {
       transcription: map['transcription'] as String?,
       aiProcessingStatus: map['aiProcessingStatus'] as int? ?? 0,
       uploadStatus: map['uploadStatus'] as int? ?? 0,
-      createdAtMillis: map['createdAtMillis'] as int,
+      createdAtMillis: createdAt,
+      updatedAtMillis: map['updatedAtMillis'] as int? ?? createdAt, // default to createdAt for backwards compatibility
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
     );
@@ -121,6 +127,8 @@ class JournalMessageModel {
   final int uploadRetryCount;
   final int? lastUploadAttemptMillis;
   final int createdAtMillis;
+  @Index()
+  final int updatedAtMillis;
   final bool isDeleted;
   final int version;
 
@@ -140,6 +148,7 @@ class JournalMessageModel {
       'transcription': transcription,
       'aiProcessingStatus': aiProcessingStatus,
       'createdAtMillis': createdAtMillis,
+      'updatedAtMillis': updatedAtMillis,
       'isDeleted': isDeleted,
       'version': version,
     };
@@ -168,6 +177,8 @@ class JournalMessageModel {
           : null,
       createdAt:
           DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
+      updatedAt:
+          DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
     );
   }
 
@@ -189,6 +200,7 @@ class JournalMessageModel {
     int? uploadRetryCount,
     int? lastUploadAttemptMillis,
     int? createdAtMillis,
+    int? updatedAtMillis,
     bool? isDeleted,
     int? version,
   }) {
@@ -211,6 +223,7 @@ class JournalMessageModel {
       lastUploadAttemptMillis:
           lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
+      updatedAtMillis: updatedAtMillis ?? this.updatedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,
       version: version ?? this.version,
     );

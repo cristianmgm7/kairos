@@ -69,6 +69,7 @@ class CreateTextMessageUseCase {
         messageType: MessageType.text,
         content: params.content.trim(),
         createdAt: now,
+        updatedAt: now,
         uploadStatus: UploadStatus.completed,
       );
 

@@ -72,6 +72,7 @@ class CreateAudioMessageUseCase {
         localFilePath: params.audioFile.path,
         audioDurationSeconds: params.durationSeconds,
         createdAt: now,
+        updatedAt: now,
       );
 
       final messageResult = await messageRepository.createMessage(message);

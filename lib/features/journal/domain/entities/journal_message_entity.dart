@@ -35,6 +35,7 @@ class JournalMessageEntity extends Equatable {
     required this.role,
     required this.messageType,
     required this.createdAt,
+    required this.updatedAt,
     this.content,
     this.storageUrl,
     this.thumbnailUrl,
@@ -56,6 +57,7 @@ class JournalMessageEntity extends Equatable {
   final MessageRole role;
   final MessageType messageType;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   // Content
   final String? content;
@@ -86,6 +88,7 @@ class JournalMessageEntity extends Equatable {
         role,
         messageType,
         createdAt,
+        updatedAt,
         content,
         storageUrl,
         thumbnailUrl,
@@ -108,6 +111,7 @@ class JournalMessageEntity extends Equatable {
     MessageRole? role,
     MessageType? messageType,
     DateTime? createdAt,
+    DateTime? updatedAt,
     String? content,
     String? storageUrl,
     String? thumbnailUrl,
@@ -129,6 +133,7 @@ class JournalMessageEntity extends Equatable {
       role: role ?? this.role,
       messageType: messageType ?? this.messageType,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       content: content ?? this.content,
       storageUrl: storageUrl ?? this.storageUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,

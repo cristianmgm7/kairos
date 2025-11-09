@@ -8,5 +8,6 @@ abstract class JournalMessageRepository {
   Stream<List<JournalMessageEntity>> watchMessagesByThreadId(String threadId);
   Future<Result<void>> updateMessage(JournalMessageEntity message);
   Future<Result<void>> syncMessages(String threadId);
+  Future<Result<void>> syncThreadIncremental(String threadId);
   Future<Result<List<JournalMessageEntity>>> getPendingUploads(String userId);
 }

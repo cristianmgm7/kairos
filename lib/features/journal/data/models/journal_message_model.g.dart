@@ -93,23 +93,28 @@ const JournalMessageModelSchema = CollectionSchema(
       name: r'transcription',
       type: IsarType.string,
     ),
-    r'uploadRetryCount': PropertySchema(
+    r'updatedAtMillis': PropertySchema(
       id: 15,
+      name: r'updatedAtMillis',
+      type: IsarType.long,
+    ),
+    r'uploadRetryCount': PropertySchema(
+      id: 16,
       name: r'uploadRetryCount',
       type: IsarType.long,
     ),
     r'uploadStatus': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'uploadStatus',
       type: IsarType.long,
     ),
     r'userId': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'userId',
       type: IsarType.string,
     ),
     r'version': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'version',
       type: IsarType.long,
     )
@@ -156,6 +161,19 @@ const JournalMessageModelSchema = CollectionSchema(
           name: r'userId',
           type: IndexType.hash,
           caseSensitive: true,
+        )
+      ],
+    ),
+    r'updatedAtMillis': IndexSchema(
+      id: -5245432295617068179,
+      name: r'updatedAtMillis',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'updatedAtMillis',
+          type: IndexType.value,
+          caseSensitive: false,
         )
       ],
     )
@@ -237,10 +255,11 @@ void _journalMessageModelSerialize(
   writer.writeString(offsets[12], object.threadId);
   writer.writeString(offsets[13], object.thumbnailUrl);
   writer.writeString(offsets[14], object.transcription);
-  writer.writeLong(offsets[15], object.uploadRetryCount);
-  writer.writeLong(offsets[16], object.uploadStatus);
-  writer.writeString(offsets[17], object.userId);
-  writer.writeLong(offsets[18], object.version);
+  writer.writeLong(offsets[15], object.updatedAtMillis);
+  writer.writeLong(offsets[16], object.uploadRetryCount);
+  writer.writeLong(offsets[17], object.uploadStatus);
+  writer.writeString(offsets[18], object.userId);
+  writer.writeLong(offsets[19], object.version);
 }
 
 JournalMessageModel _journalMessageModelDeserialize(
@@ -265,10 +284,11 @@ JournalMessageModel _journalMessageModelDeserialize(
     threadId: reader.readString(offsets[12]),
     thumbnailUrl: reader.readStringOrNull(offsets[13]),
     transcription: reader.readStringOrNull(offsets[14]),
-    uploadRetryCount: reader.readLongOrNull(offsets[15]) ?? 0,
-    uploadStatus: reader.readLongOrNull(offsets[16]) ?? 0,
-    userId: reader.readString(offsets[17]),
-    version: reader.readLongOrNull(offsets[18]) ?? 1,
+    updatedAtMillis: reader.readLong(offsets[15]),
+    uploadRetryCount: reader.readLongOrNull(offsets[16]) ?? 0,
+    uploadStatus: reader.readLongOrNull(offsets[17]) ?? 0,
+    userId: reader.readString(offsets[18]),
+    version: reader.readLongOrNull(offsets[19]) ?? 1,
   );
   return object;
 }
@@ -311,12 +331,14 @@ P _journalMessageModelDeserializeProp<P>(
     case 14:
       return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
+      return (reader.readLong(offset)) as P;
     case 16:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 17:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 18:
+      return (reader.readString(offset)) as P;
+    case 19:
       return (reader.readLongOrNull(offset) ?? 1) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -396,6 +418,15 @@ extension JournalMessageModelQueryWhereSort
       anyIsarId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhere>
+      anyUpdatedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'updatedAtMillis'),
+      );
     });
   }
 }
@@ -602,6 +633,99 @@ extension JournalMessageModelQueryWhere
               includeUpper: false,
             ));
       }
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhereClause>
+      updatedAtMillisEqualTo(int updatedAtMillis) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'updatedAtMillis',
+        value: [updatedAtMillis],
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhereClause>
+      updatedAtMillisNotEqualTo(int updatedAtMillis) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'updatedAtMillis',
+              lower: [],
+              upper: [updatedAtMillis],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'updatedAtMillis',
+              lower: [updatedAtMillis],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'updatedAtMillis',
+              lower: [updatedAtMillis],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'updatedAtMillis',
+              lower: [],
+              upper: [updatedAtMillis],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhereClause>
+      updatedAtMillisGreaterThan(
+    int updatedAtMillis, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'updatedAtMillis',
+        lower: [updatedAtMillis],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhereClause>
+      updatedAtMillisLessThan(
+    int updatedAtMillis, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'updatedAtMillis',
+        lower: [],
+        upper: [updatedAtMillis],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterWhereClause>
+      updatedAtMillisBetween(
+    int lowerUpdatedAtMillis,
+    int upperUpdatedAtMillis, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'updatedAtMillis',
+        lower: [lowerUpdatedAtMillis],
+        includeLower: includeLower,
+        upper: [upperUpdatedAtMillis],
+        includeUpper: includeUpper,
+      ));
     });
   }
 }
@@ -2243,6 +2367,62 @@ extension JournalMessageModelQueryFilter on QueryBuilder<JournalMessageModel,
   }
 
   QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterFilterCondition>
+      updatedAtMillisEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'updatedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterFilterCondition>
+      updatedAtMillisGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'updatedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterFilterCondition>
+      updatedAtMillisLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'updatedAtMillis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterFilterCondition>
+      updatedAtMillisBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'updatedAtMillis',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterFilterCondition>
       uploadRetryCountEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -2766,6 +2946,20 @@ extension JournalMessageModelQuerySortBy
   }
 
   QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
+      sortByUpdatedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAtMillis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
+      sortByUpdatedAtMillisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAtMillis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
       sortByUploadRetryCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uploadRetryCount', Sort.asc);
@@ -3049,6 +3243,20 @@ extension JournalMessageModelQuerySortThenBy
   }
 
   QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
+      thenByUpdatedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAtMillis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
+      thenByUpdatedAtMillisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'updatedAtMillis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QAfterSortBy>
       thenByUploadRetryCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'uploadRetryCount', Sort.asc);
@@ -3216,6 +3424,13 @@ extension JournalMessageModelQueryWhereDistinct
   }
 
   QueryBuilder<JournalMessageModel, JournalMessageModel, QDistinct>
+      distinctByUpdatedAtMillis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'updatedAtMillis');
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, JournalMessageModel, QDistinct>
       distinctByUploadRetryCount() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'uploadRetryCount');
@@ -3352,6 +3567,13 @@ extension JournalMessageModelQueryProperty
       transcriptionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'transcription');
+    });
+  }
+
+  QueryBuilder<JournalMessageModel, int, QQueryOperations>
+      updatedAtMillisProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'updatedAtMillis');
     });
   }
 
