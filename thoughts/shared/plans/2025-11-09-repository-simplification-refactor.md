@@ -538,14 +538,14 @@ class JournalThreadRemoteDataSourceImpl
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/datasources/journal_thread_remote_datasource.dart`
-- [ ] Import statement is correct: check for `firestore_exception_mapper.dart` import
-- [ ] All methods have try-catch blocks
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/datasources/journal_thread_remote_datasource.dart`
+- [x] Import statement is correct: check for `firestore_exception_mapper.dart` import
+- [x] All methods have try-catch blocks
 
 #### Manual Verification:
-- [ ] Each method has exactly one try-catch wrapping the Firestore call
-- [ ] Context messages are descriptive and unique per method
-- [ ] Pattern matches JournalMessageRemoteDataSource implementation
+- [x] Each method has exactly one try-catch wrapping the Firestore call
+- [x] Context messages are descriptive and unique per method
+- [x] Pattern matches JournalMessageRemoteDataSource implementation
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation before proceeding to Phase 4.
 
@@ -583,14 +583,14 @@ import 'package:kairos/core/errors/firestore_exception_mapper.dart'; // Add
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/insights/`
-- [ ] Import statement is correct
-- [ ] All Future methods have try-catch blocks
-- [ ] Stream methods remain unwrapped
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/insights/`
+- [x] Import statement is correct
+- [x] All Future methods have try-catch blocks
+- [x] Stream methods remain unwrapped
 
 #### Manual Verification:
-- [ ] Pattern consistent with JournalMessageRemoteDataSource and JournalThreadRemoteDataSource
-- [ ] Context messages are descriptive
+- [x] Pattern consistent with JournalMessageRemoteDataSource and JournalThreadRemoteDataSource
+- [x] Context messages are descriptive
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation before proceeding to Phase 5.
 
