@@ -1,5 +1,5 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/data/datasources/journal_thread_local_datasource.dart';
@@ -11,7 +11,6 @@ import 'package:mockito/mockito.dart';
 @GenerateMocks([
   JournalThreadLocalDataSource,
   JournalThreadRemoteDataSource,
-  Connectivity,
 ])
 import 'journal_thread_repository_impl_test.mocks.dart';
 
@@ -19,7 +18,6 @@ void main() {
   late JournalThreadRepositoryImpl repository;
   late MockJournalThreadLocalDataSource mockLocalDataSource;
   late MockJournalThreadRemoteDataSource mockRemoteDataSource;
-  late MockConnectivity mockConnectivity;
 
   setUpAll(() {
     // Provide dummy value for Result<void>
@@ -29,21 +27,20 @@ void main() {
   setUp(() {
     mockLocalDataSource = MockJournalThreadLocalDataSource();
     mockRemoteDataSource = MockJournalThreadRemoteDataSource();
-    mockConnectivity = MockConnectivity();
     repository = JournalThreadRepositoryImpl(
       localDataSource: mockLocalDataSource,
       remoteDataSource: mockRemoteDataSource,
-      connectivity: mockConnectivity,
     );
   });
 
   group('deleteThread', () {
     const testThreadId = 'test-thread-123';
 
-    test('should return NetworkFailure when offline', () async {
+    test('should return NetworkFailure when remote throws NetworkException',
+        () async {
       // Arrange
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.none]);
+      when(mockRemoteDataSource.softDeleteThread(testThreadId))
+          .thenThrow(NetworkException(message: 'Network error'));
 
       // Act
       final result = await repository.deleteThread(testThreadId);
@@ -51,17 +48,14 @@ void main() {
       // Assert
       expect(result.isError, true);
       expect(result.failureOrNull, isA<NetworkFailure>());
-      final failure = result.failureOrNull as NetworkFailure;
+      final failure = result.failureOrNull!;
       expect(failure.message, 'You must be online to delete this thread');
-      verifyNever(mockRemoteDataSource.softDeleteThread(any));
       verifyNever(mockLocalDataSource.hardDeleteThreadAndMessages(any));
     });
 
-    test('should soft-delete remotely then hard-delete locally when online',
+    test('should soft-delete remotely then hard-delete locally on success',
         () async {
       // Arrange
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenAnswer((_) async => Future.value());
       when(mockLocalDataSource.hardDeleteThreadAndMessages(testThreadId))
@@ -76,12 +70,11 @@ void main() {
       verify(mockLocalDataSource.hardDeleteThreadAndMessages(testThreadId));
     });
 
-    test('should return ServerFailure when remote deletion fails', () async {
+    test('should return ServerFailure when remote throws ServerException',
+        () async {
       // Arrange
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
-          .thenThrow(Exception('Network error'));
+          .thenThrow(ServerException(message: 'Server error'));
 
       // Act
       final result = await repository.deleteThread(testThreadId);
@@ -95,8 +88,6 @@ void main() {
     test('should succeed even if local deletion fails after remote success',
         () async {
       // Arrange
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenAnswer((_) async => Future.value());
       when(mockLocalDataSource.hardDeleteThreadAndMessages(testThreadId))
@@ -112,4 +103,5 @@ void main() {
     });
   });
 }
+
 

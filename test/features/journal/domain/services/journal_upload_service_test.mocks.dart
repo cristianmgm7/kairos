@@ -243,6 +243,23 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<void>>);
 
   @override
+  _i4.Future<_i5.Result<void>> syncThreadIncremental(String? threadId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #syncThreadIncremental,
+          [threadId],
+        ),
+        returnValue:
+            _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
+          this,
+          Invocation.method(
+            #syncThreadIncremental,
+            [threadId],
+          ),
+        )),
+      ) as _i4.Future<_i5.Result<void>>);
+
+  @override
   _i4.Future<_i5.Result<List<_i9.JournalMessageEntity>>> getPendingUploads(
           String? userId) =>
       (super.noSuchMethod(

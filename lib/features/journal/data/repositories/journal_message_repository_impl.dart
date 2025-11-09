@@ -183,8 +183,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       // If no messages exist locally, use 0 to fetch all messages
       final sinceTimestamp = lastUpdatedAtMillis ?? 0;
 
-      debugPrint(
-          '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',);
+      debugPrint('🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',);
 
       // Always attempt to fetch updated messages
       final updatedMessages = await remoteDataSource.getUpdatedMessages(

@@ -1151,16 +1151,16 @@ Future<Result<void>> deleteThread(String threadId) async {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/repositories/journal_thread_repository_impl.dart`
-- [ ] No references to connectivity: `grep -n "connectivity\|_isOnline" lib/features/journal/data/repositories/journal_thread_repository_impl.dart` returns empty
-- [ ] Import for exceptions added
-- [ ] Constructor has only 2 parameters
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/repositories/journal_thread_repository_impl.dart`
+- [x] No references to connectivity: `grep -n "connectivity\|_isOnline" lib/features/journal/data/repositories/journal_thread_repository_impl.dart` returns empty
+- [x] Import for exceptions added
+- [x] Constructor has only 2 parameters
 
 #### Manual Verification:
-- [ ] All remote operations catch typed exceptions
-- [ ] deleteThread() still requires network but uses exception handling instead of pre-check
-- [ ] Create/update/archive operations don't fail if remote sync fails
-- [ ] Pattern matches JournalMessageRepositoryImpl
+- [x] All remote operations catch typed exceptions
+- [x] deleteThread() still requires network but uses exception handling instead of pre-check
+- [x] Create/update/archive operations don't fail if remote sync fails
+- [x] Pattern matches JournalMessageRepositoryImpl
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation (test thread creation, update, delete online/offline) before proceeding to Phase 7.
 
@@ -1363,15 +1363,15 @@ Future<Result<void>> syncInsights(String userId) async {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/insights/`
-- [ ] No references to connectivity: `grep -n "connectivity\|_isOnline" lib/features/insights/data/repositories/insight_repository_impl.dart` returns empty
-- [ ] Import for exceptions added
-- [ ] Constructor has only 2 parameters
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/insights/`
+- [x] No references to connectivity: `grep -n "connectivity\|_isOnline" lib/features/insights/data/repositories/insight_repository_impl.dart` returns empty
+- [x] Import for exceptions added
+- [x] Constructor has only 2 parameters
 
 #### Manual Verification:
-- [ ] All stream methods use onError callbacks
-- [ ] syncInsights() catches typed exceptions
-- [ ] Pattern matches journal repositories
+- [x] All stream methods use onError callbacks
+- [x] syncInsights() catches typed exceptions
+- [x] Pattern matches journal repositories
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation before proceeding to Phase 8.
 
@@ -1439,14 +1439,14 @@ final insightRepositoryProvider = Provider<InsightRepository>((ref) {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze`
-- [ ] App builds successfully: `~/flutter/bin/flutter build apk --debug` (or appropriate platform)
-- [ ] No references to connectivity in repository providers: `grep -n "connectivity" lib/features/*/presentation/providers/*providers.dart`
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze`
+- [x] App builds successfully: `~/flutter/bin/flutter build apk --debug` (or appropriate platform)
+- [x] No references to connectivity in repository providers: `grep -n "connectivity" lib/features/*/presentation/providers/*providers.dart`
 
 #### Manual Verification:
-- [ ] All providers have correct number of parameters
-- [ ] No runtime errors when app starts
-- [ ] Repositories are properly injected via Riverpod
+- [x] All providers have correct number of parameters
+- [x] No runtime errors when app starts
+- [x] Repositories are properly injected via Riverpod
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation (launch app, verify no DI errors) before proceeding to Phase 9.
 
@@ -1506,11 +1506,11 @@ final repository = JournalMessageRepositoryImpl(
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] All unit tests pass: `~/flutter/bin/flutter test`
-- [ ] Code analysis passes: `~/flutter/bin/flutter analyze`
-- [ ] No compilation errors: `~/flutter/bin/flutter build apk --debug`
-- [ ] No unused imports: analyzer should flag any remaining connectivity imports
-- [ ] Grep verification: `grep -r "_isOnline\|connectivity_plus" lib/features/*/data/repositories/` returns no results
+- [x] All unit tests pass: `~/flutter/bin/flutter test`
+- [x] Code analysis passes: `~/flutter/bin/flutter analyze`
+- [x] No compilation errors: `~/flutter/bin/flutter build apk --debug`
+- [x] No unused imports: analyzer should flag any remaining connectivity imports
+- [x] Grep verification: `grep -r "_isOnline\|connectivity_plus" lib/features/*/data/repositories/` returns no results
 
 #### Manual Verification:
 - [ ] **Offline Message Creation**:

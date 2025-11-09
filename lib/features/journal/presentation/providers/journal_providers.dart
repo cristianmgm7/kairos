@@ -49,24 +49,20 @@ final messageRemoteDataSourceProvider =
 final threadRepositoryProvider = Provider<JournalThreadRepository>((ref) {
   final localDataSource = ref.watch(threadLocalDataSourceProvider);
   final remoteDataSource = ref.watch(threadRemoteDataSourceProvider);
-  final connectivity = ref.watch(connectivityProvider);
 
   return JournalThreadRepositoryImpl(
     localDataSource: localDataSource,
     remoteDataSource: remoteDataSource,
-    connectivity: connectivity,
   );
 });
 
 final messageRepositoryProvider = Provider<JournalMessageRepository>((ref) {
   final localDataSource = ref.watch(messageLocalDataSourceProvider);
   final remoteDataSource = ref.watch(messageRemoteDataSourceProvider);
-  final connectivity = ref.watch(connectivityProvider);
 
   return JournalMessageRepositoryImpl(
     localDataSource: localDataSource,
     remoteDataSource: remoteDataSource,
-    connectivity: connectivity,
   );
 });
 

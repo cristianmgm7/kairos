@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/insights/data/datasources/insight_local_datasource.dart';
@@ -14,17 +14,10 @@ class InsightRepositoryImpl implements InsightRepository {
   InsightRepositoryImpl({
     required this.localDataSource,
     required this.remoteDataSource,
-    required this.connectivity,
   });
 
   final InsightLocalDataSource localDataSource;
   final InsightRemoteDataSource remoteDataSource;
-  final Connectivity connectivity;
-
-  Future<bool> get _isOnline async {
-    final results = await connectivity.checkConnectivity();
-    return !results.contains(ConnectivityResult.none);
-  }
 
   @override
   Future<Result<InsightEntity?>> getInsightById(String insightId) async {
@@ -58,22 +51,10 @@ class InsightRepositoryImpl implements InsightRepository {
 
   @override
   Stream<List<InsightEntity>> watchGlobalInsights(String userId) async* {
-    // Check if online
-    final isOnline = await _isOnline;
-
-    if (!isOnline) {
-      // Offline: just watch local DB
-      yield* localDataSource
-          .watchGlobalInsights(userId)
-          .map((models) => models.map((m) => m.toEntity()).toList());
-      return;
-    }
-
-    // Online: Set up bidirectional sync between Firestore and local DB
     StreamSubscription<List<InsightModel>>? remoteSub;
 
     try {
-      // Listen to Firestore and sync to local DB in background
+      // Always attempt remote sync - listen to Firestore and sync to local DB
       remoteSub = remoteDataSource.watchGlobalInsights(userId).listen(
         (remoteModels) async {
           // Get current local insights to compare
@@ -98,11 +79,13 @@ class InsightRepositoryImpl implements InsightRepository {
           }
         },
         onError: (Object error) {
-          debugPrint('Remote sync error: $error');
+          // Network errors are transient - just log and continue
+          // The local stream continues to work offline
+          debugPrint('Remote sync error (will retry when online): $error');
         },
       );
 
-      // Yield the local stream (which gets updated by the remote listener above)
+      // Always yield the local stream (updated by remote listener when online)
       yield* localDataSource
           .watchGlobalInsights(userId)
           .map((models) => models.map((m) => m.toEntity()).toList());
@@ -114,58 +97,45 @@ class InsightRepositoryImpl implements InsightRepository {
 
   @override
   Stream<List<InsightEntity>> watchThreadInsights(String threadId) async* {
-    // Check if online
-    final isOnline = await _isOnline;
-
-    if (!isOnline) {
-      // Offline: just watch local DB
-      yield* localDataSource
-          .watchThreadInsights(threadId)
-          .map((models) => models.map((m) => m.toEntity()).toList());
-      return;
-    }
-
-    // Get userId from local insights (needed for Firestore query)
-    final localInsights = await localDataSource.getThreadInsights(threadId);
-    if (localInsights.isEmpty) {
-      // No insights yet, just watch local
-      yield* localDataSource
-          .watchThreadInsights(threadId)
-          .map((models) => models.map((m) => m.toEntity()).toList());
-      return;
-    }
-    final userId = localInsights.first.userId;
-
-    // Online: Set up bidirectional sync
     StreamSubscription<List<InsightModel>>? remoteSub;
 
     try {
-      remoteSub = remoteDataSource.watchThreadInsights(userId, threadId).listen(
-        (remoteModels) async {
-          final localInsights =
-              await localDataSource.getThreadInsights(threadId);
-          final localIds = localInsights.map((m) => m.id).toSet();
+      // Get userId from local insights (needed for Firestore query)
+      final localInsights = await localDataSource.getThreadInsights(threadId);
 
-          for (final remoteModel in remoteModels) {
-            if (!localIds.contains(remoteModel.id)) {
-              await localDataSource.saveInsight(remoteModel);
-              debugPrint('Synced new thread insight: ${remoteModel.id}');
-            } else {
-              final localModel =
-                  await localDataSource.getInsightById(remoteModel.id);
-              if (localModel != null &&
-                  localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
-                await localDataSource.updateInsight(remoteModel);
-                debugPrint('Updated thread insight: ${remoteModel.id}');
+      if (localInsights.isNotEmpty) {
+        final userId = localInsights.first.userId;
+
+        // Always attempt remote sync when we have userId
+        remoteSub = remoteDataSource.watchThreadInsights(userId, threadId).listen(
+          (remoteModels) async {
+            final localInsights =
+                await localDataSource.getThreadInsights(threadId);
+            final localIds = localInsights.map((m) => m.id).toSet();
+
+            for (final remoteModel in remoteModels) {
+              if (!localIds.contains(remoteModel.id)) {
+                await localDataSource.saveInsight(remoteModel);
+                debugPrint('Synced new thread insight: ${remoteModel.id}');
+              } else {
+                final localModel =
+                    await localDataSource.getInsightById(remoteModel.id);
+                if (localModel != null &&
+                    localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
+                  await localDataSource.updateInsight(remoteModel);
+                  debugPrint('Updated thread insight: ${remoteModel.id}');
+                }
               }
             }
-          }
-        },
-        onError: (Object error) {
-          debugPrint('Remote sync error: $error');
-        },
-      );
+          },
+          onError: (Object error) {
+            // Network errors are transient - just log and continue
+            debugPrint('Remote sync error (will retry when online): $error');
+          },
+        );
+      }
 
+      // Always yield the local stream (updated by remote listener when online)
       yield* localDataSource
           .watchThreadInsights(threadId)
           .map((models) => models.map((m) => m.toEntity()).toList());
@@ -177,10 +147,6 @@ class InsightRepositoryImpl implements InsightRepository {
   @override
   Future<Result<void>> syncInsights(String userId) async {
     try {
-      if (!await _isOnline) {
-        return const Error(NetworkFailure(message: 'Device is offline'));
-      }
-
       // Sync global insights
       final remoteGlobalInsights =
           await remoteDataSource.getGlobalInsights(userId);
@@ -192,12 +158,11 @@ class InsightRepositoryImpl implements InsightRepository {
       // This is an optimization to avoid loading all thread insights at once
 
       return const Success(null);
+    } on NetworkException catch (e) {
+      return Error(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Error(ServerFailure(message: e.message));
     } catch (e) {
-      if (e.toString().contains('network')) {
-        return Error(
-          NetworkFailure(message: 'Network error syncing insights: $e'),
-        );
-      }
       return Error(ServerFailure(message: 'Failed to sync insights: $e'));
     }
   }
