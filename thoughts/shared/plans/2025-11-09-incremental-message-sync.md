@@ -351,9 +351,9 @@ async function migrateMessages() {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `flutter analyze`
-- [ ] Build runner succeeds: `flutter pub run build_runner build --delete-conflicting-outputs`
-- [ ] No type errors: `flutter analyze`
+- [x] Code compiles without errors: `flutter analyze`
+- [x] Build runner succeeds: `flutter pub run build_runner build --delete-conflicting-outputs`
+- [x] No type errors: `flutter analyze`
 - [ ] Unit tests pass (if any exist for models): `flutter test`
 
 #### Manual Verification:

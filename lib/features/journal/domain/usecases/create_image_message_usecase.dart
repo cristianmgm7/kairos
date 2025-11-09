@@ -101,6 +101,7 @@ class CreateImageMessageUseCase {
         localFilePath: params.imageFile.path,
         localThumbnailPath: localThumbnailPath,
         createdAt: now,
+        updatedAt: now,
       );
 
       final messageResult = await messageRepository.createMessage(message);
