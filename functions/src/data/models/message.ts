@@ -8,7 +8,7 @@ export interface Message {
   transcription?: string;
   storageUrl?: string;
   createdAtMillis: number;
-  updatedAtMillis?: number;
+  updatedAtMillis: number;
   aiProcessingStatus: number; // AiProcessingStatus enum
   uploadStatus?: number; // UploadStatus enum
   isDeleted: boolean;
