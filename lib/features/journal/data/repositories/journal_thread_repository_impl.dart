@@ -1,6 +1,6 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/data/datasources/journal_thread_local_datasource.dart';
@@ -13,31 +13,27 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
   JournalThreadRepositoryImpl({
     required this.localDataSource,
     required this.remoteDataSource,
-    required this.connectivity,
   });
 
   final JournalThreadLocalDataSource localDataSource;
   final JournalThreadRemoteDataSource remoteDataSource;
-  final Connectivity connectivity;
-
-  Future<bool> get _isOnline async {
-    final results = await connectivity.checkConnectivity();
-    return !results.contains(ConnectivityResult.none);
-  }
 
   @override
   Future<Result<JournalThreadEntity>> createThread(
-      JournalThreadEntity thread) async {
+      JournalThreadEntity thread,) async {
     try {
       final model = JournalThreadModel.fromEntity(thread);
       await localDataSource.saveThread(model);
 
-      if (await _isOnline) {
-        try {
-          await remoteDataSource.saveThread(model);
-        } catch (e) {
-          debugPrint('Failed to sync thread to remote: $e');
-        }
+      // Always attempt remote save
+      try {
+        await remoteDataSource.saveThread(model);
+      } on NetworkException catch (e) {
+        debugPrint('Network error saving thread (will sync later): ${e.message}');
+        // Don't fail - local save succeeded
+      } on ServerException catch (e) {
+        debugPrint('Server error saving thread (will sync later): ${e.message}');
+        // Don't fail - local save succeeded
       }
 
       return Success(model.toEntity());
@@ -69,12 +65,15 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
       final model = JournalThreadModel.fromEntity(thread);
       await localDataSource.updateThread(model);
 
-      if (await _isOnline) {
-        try {
-          await remoteDataSource.updateThread(model);
-        } catch (e) {
-          debugPrint('Failed to sync thread update to remote: $e');
-        }
+      // Always attempt remote update
+      try {
+        await remoteDataSource.updateThread(model);
+      } on NetworkException catch (e) {
+        debugPrint('Network error updating thread (will sync later): ${e.message}');
+        // Don't fail - local update succeeded
+      } on ServerException catch (e) {
+        debugPrint('Server error updating thread (will sync later): ${e.message}');
+        // Don't fail - local update succeeded
       }
 
       return const Success(null);
@@ -88,15 +87,18 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
     try {
       await localDataSource.archiveThread(threadId);
 
-      if (await _isOnline) {
-        try {
-          final thread = await localDataSource.getThreadById(threadId);
-          if (thread != null) {
-            await remoteDataSource.updateThread(thread);
-          }
-        } catch (e) {
-          debugPrint('Failed to sync thread archive to remote: $e');
+      // Always attempt remote update
+      try {
+        final thread = await localDataSource.getThreadById(threadId);
+        if (thread != null) {
+          await remoteDataSource.updateThread(thread);
         }
+      } on NetworkException catch (e) {
+        debugPrint('Network error syncing thread archive (will sync later): ${e.message}');
+        // Don't fail - local archive succeeded
+      } on ServerException catch (e) {
+        debugPrint('Server error syncing thread archive (will sync later): ${e.message}');
+        // Don't fail - local archive succeeded
       }
 
       return const Success(null);
@@ -108,22 +110,17 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
   @override
   Future<Result<void>> syncThreads(String userId) async {
     try {
-      if (!await _isOnline) {
-        return const Error(NetworkFailure(message: 'Device is offline'));
-      }
-
       final remoteThreads = await remoteDataSource.getThreadsByUserId(userId);
       for (final thread in remoteThreads) {
         await localDataSource.saveThread(thread);
       }
 
       return const Success(null);
+    } on NetworkException catch (e) {
+      return Error(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Error(ServerFailure(message: e.message));
     } catch (e) {
-      if (e.toString().contains('network')) {
-        return Error(
-          NetworkFailure(message: 'Network error syncing threads: $e'),
-        );
-      }
       return Error(ServerFailure(message: 'Failed to sync threads: $e'));
     }
   }
@@ -131,23 +128,10 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
   @override
   Future<Result<void>> deleteThread(String threadId) async {
     try {
-      // Pre-check: Must be online for deletion
-      if (!await _isOnline) {
-        return const Error(
-          NetworkFailure(message: 'You must be online to delete this thread'),
-        );
-      }
-
       // Step 1: Remote soft-delete first (sets isDeleted=true in Firestore)
-      try {
-        await remoteDataSource.softDeleteThread(threadId);
-        debugPrint('✅ Remote soft-delete successful for thread: $threadId');
-      } catch (e) {
-        debugPrint('❌ Remote deletion failed for thread $threadId: $e');
-        return Error(
-          ServerFailure(message: 'Failed to delete thread $threadId: $e'),
-        );
-      }
+      // This is a destructive operation that requires network connectivity
+      await remoteDataSource.softDeleteThread(threadId);
+      debugPrint('✅ Remote soft-delete successful for thread: $threadId');
 
       // Step 2: Local hard-delete after remote success
       try {
@@ -160,6 +144,14 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
       }
 
       return const Success(null);
+    } on NetworkException catch (e) {
+      debugPrint('❌ Network error deleting thread $threadId: ${e.message}');
+      return const Error(
+        NetworkFailure(message: 'You must be online to delete this thread'),
+      );
+    } on ServerException catch (e) {
+      debugPrint('❌ Server error deleting thread $threadId: ${e.message}');
+      return Error(ServerFailure(message: 'Failed to delete thread: ${e.message}'));
     } catch (e) {
       return Error(
         ServerFailure(message: 'Unexpected error deleting thread: $e'),

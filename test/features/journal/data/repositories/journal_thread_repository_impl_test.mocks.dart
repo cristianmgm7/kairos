@@ -5,9 +5,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i3;
 
-import 'package:connectivity_plus/connectivity_plus.dart' as _i6;
-import 'package:connectivity_plus_platform_interface/connectivity_plus_platform_interface.dart'
-    as _i7;
 import 'package:kairos/features/journal/data/datasources/journal_thread_local_datasource.dart'
     as _i2;
 import 'package:kairos/features/journal/data/datasources/journal_thread_remote_datasource.dart'
@@ -175,31 +172,4 @@ class MockJournalThreadRemoteDataSource extends _i1.Mock
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),
       ) as _i3.Future<void>);
-}
-
-/// A class which mocks [Connectivity].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockConnectivity extends _i1.Mock implements _i6.Connectivity {
-  MockConnectivity() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i3.Stream<List<_i7.ConnectivityResult>> get onConnectivityChanged =>
-      (super.noSuchMethod(
-        Invocation.getter(#onConnectivityChanged),
-        returnValue: _i3.Stream<List<_i7.ConnectivityResult>>.empty(),
-      ) as _i3.Stream<List<_i7.ConnectivityResult>>);
-
-  @override
-  _i3.Future<List<_i7.ConnectivityResult>> checkConnectivity() =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #checkConnectivity,
-          [],
-        ),
-        returnValue: _i3.Future<List<_i7.ConnectivityResult>>.value(
-            <_i7.ConnectivityResult>[]),
-      ) as _i3.Future<List<_i7.ConnectivityResult>>);
 }

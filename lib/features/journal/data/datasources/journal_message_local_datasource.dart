@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
+import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 
 abstract class JournalMessageLocalDataSource {
   Future<void> saveMessage(JournalMessageModel message);
@@ -9,6 +10,7 @@ abstract class JournalMessageLocalDataSource {
   Future<void> updateMessage(JournalMessageModel message);
   Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId);
   Future<List<JournalMessageModel>> getPendingUploads(String userId);
+  Future<void> upsertFromRemote(JournalMessageModel remote);
 }
 
 class JournalMessageLocalDataSourceImpl
@@ -101,5 +103,41 @@ class JournalMessageLocalDataSourceImpl
               .uploadStatusEqualTo(3),
         ) // failed
         .findAll();
+  }
+
+  @override
+  Future<void> upsertFromRemote(JournalMessageModel remote) async {
+    final existing = await getMessageById(remote.id);
+    if (existing == null) {
+      final isNonUser = remote.role != MessageRole.user.index;
+      final isText = remote.messageType == MessageType.text.index;
+      final normalized = remote.copyWith(
+        uploadStatus: (isNonUser || isText)
+            ? UploadStatus.completed.index
+            : (remote.uploadStatus),
+      );
+      await saveMessage(normalized);
+      return;
+    }
+
+    final isNonUser = remote.role != MessageRole.user.index;
+    final isText = remote.messageType == MessageType.text.index;
+    final int uploadStatusToUse;
+    if (isNonUser || isText) {
+      uploadStatusToUse = UploadStatus.completed.index;
+    } else if (remote.uploadStatus > existing.uploadStatus) {
+      uploadStatusToUse = remote.uploadStatus;
+    } else {
+      uploadStatusToUse = existing.uploadStatus;
+    }
+
+    final merged = remote.copyWith(
+      uploadStatus: uploadStatusToUse,
+      uploadRetryCount: existing.uploadRetryCount,
+      localFilePath: existing.localFilePath,
+      localThumbnailPath: existing.localThumbnailPath,
+      audioDurationSeconds: existing.audioDurationSeconds,
+    );
+    await updateMessage(merged);
   }
 }

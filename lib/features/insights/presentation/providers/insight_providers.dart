@@ -24,12 +24,10 @@ final insightRemoteDataSourceProvider =
 final insightRepositoryProvider = Provider<InsightRepository>((ref) {
   final localDataSource = ref.watch(insightLocalDataSourceProvider);
   final remoteDataSource = ref.watch(insightRemoteDataSourceProvider);
-  final connectivity = ref.watch(connectivityProvider);
 
   return InsightRepositoryImpl(
     localDataSource: localDataSource,
     remoteDataSource: remoteDataSource,
-    connectivity: connectivity,
   );
 });
 
