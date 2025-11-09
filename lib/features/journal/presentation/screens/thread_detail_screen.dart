@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kairos/core/network/network_info.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
@@ -30,10 +33,41 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _currentThreadId;
 
+  // For debounced auto-sync
+  Timer? _syncDebounceTimer;
+  bool _wasOffline = false;
+
   @override
   void initState() {
     super.initState();
     _currentThreadId = widget.threadId;
+
+    // Listen for connectivity changes (auto-sync on reconnect)
+    Future.microtask(() {
+      ref.listen<AsyncValue<bool>>(
+        connectivityStreamProvider,
+        (previous, next) {
+          next.whenData((isOnline) {
+            // Detect transition from offline to online
+            if (_wasOffline && isOnline && _currentThreadId != null) {
+              debugPrint('🌐 Device reconnected - scheduling incremental sync');
+
+              // Cancel any pending sync timer
+              _syncDebounceTimer?.cancel();
+
+              // Debounce sync by 2 seconds after reconnection
+              _syncDebounceTimer = Timer(const Duration(seconds: 2), () {
+                debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
+                _performIncrementalSync();
+              });
+            }
+
+            // Update offline tracking state
+            _wasOffline = !isOnline;
+          });
+        },
+      );
+    });
   }
 
   bool get hasAiPending {
@@ -55,10 +89,53 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
     );
   }
 
+  void _performIncrementalSync() {
+    if (_currentThreadId == null) return;
+
+    final syncUseCase = ref.read(syncThreadMessagesUseCaseProvider);
+    syncUseCase.execute(_currentThreadId!).then((result) {
+      result.when(
+        success: (_) {
+          debugPrint('✅ Auto-sync completed successfully');
+        },
+        error: (failure) {
+          debugPrint('❌ Auto-sync failed: ${failure.message}');
+        },
+      );
+    });
+  }
+
+  Future<void> _handleRefresh() async {
+    if (_currentThreadId == null) return;
+
+    debugPrint('🔄 Manual refresh triggered for thread: $_currentThreadId');
+
+    final syncUseCase = ref.read(syncThreadMessagesUseCaseProvider);
+    final result = await syncUseCase.execute(_currentThreadId!);
+
+    result.when(
+      success: (_) {
+        debugPrint('✅ Manual sync completed successfully');
+      },
+      error: (failure) {
+        debugPrint('❌ Manual sync failed: ${failure.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sync failed: ${failure.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _syncDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -250,27 +327,30 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                   _scrollToBottom();
                 });
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.pagePadding,
-                    vertical: AppSpacing.md,
+                return RefreshIndicator(
+                  onRefresh: _handleRefresh,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.pagePadding,
+                      vertical: AppSpacing.md,
+                    ),
+                    itemCount: messages.length + (hasAiPending ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      // Show typing indicator at the end if AI is processing
+                      if (index == messages.length) {
+                        return const AiTypingIndicator();
+                      }
+
+                      final message = messages[index];
+                      final isUserMessage = message.role == MessageRole.user;
+
+                      return MessageBubble(
+                        message: message,
+                        isUserMessage: isUserMessage,
+                      );
+                    },
                   ),
-                  itemCount: messages.length + (hasAiPending ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    // Show typing indicator at the end if AI is processing
-                    if (index == messages.length) {
-                      return const AiTypingIndicator();
-                    }
-
-                    final message = messages[index];
-                    final isUserMessage = message.role == MessageRole.user;
-
-                    return MessageBubble(
-                      message: message,
-                      isUserMessage: isUserMessage,
-                    );
-                  },
                 );
               },
               loading: () => const Center(

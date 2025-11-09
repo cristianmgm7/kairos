@@ -5,6 +5,7 @@ abstract class JournalMessageLocalDataSource {
   Future<void> saveMessage(JournalMessageModel message);
   Future<JournalMessageModel?> getMessageById(String messageId);
   Future<List<JournalMessageModel>> getMessagesByThreadId(String threadId);
+  Future<int?> getLastUpdatedAtMillis(String threadId);
   Future<void> updateMessage(JournalMessageModel message);
   Stream<List<JournalMessageModel>> watchMessagesByThreadId(String threadId);
   Future<List<JournalMessageModel>> getPendingUploads(String userId);
@@ -43,6 +44,20 @@ class JournalMessageLocalDataSourceImpl
         .isDeletedEqualTo(false)
         .sortByCreatedAtMillis()
         .findAll();
+  }
+
+  @override
+  Future<int?> getLastUpdatedAtMillis(String threadId) async {
+    final messages = await isar.journalMessageModels
+        .filter()
+        .threadIdEqualTo(threadId)
+        .and()
+        .isDeletedEqualTo(false)
+        .sortByUpdatedAtMillisDesc()
+        .findAll();
+
+    if (messages.isEmpty) return null;
+    return messages.first.updatedAtMillis;
   }
 
   @override

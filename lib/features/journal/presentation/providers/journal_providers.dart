@@ -16,6 +16,7 @@ import 'package:kairos/features/journal/domain/usecases/create_audio_message_use
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/delete_thread_usecase.dart';
+import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
@@ -115,6 +116,12 @@ final createAudioMessageUseCaseProvider =
 final deleteThreadUseCaseProvider = Provider<DeleteThreadUseCase>((ref) {
   final threadRepository = ref.watch(threadRepositoryProvider);
   return DeleteThreadUseCase(threadRepository: threadRepository);
+});
+
+final syncThreadMessagesUseCaseProvider =
+    Provider<SyncThreadMessagesUseCase>((ref) {
+  final messageRepository = ref.watch(messageRepositoryProvider);
+  return SyncThreadMessagesUseCase(messageRepository: messageRepository);
 });
 
 // Stream providers

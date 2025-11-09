@@ -5,6 +5,8 @@ abstract class JournalMessageRemoteDataSource {
   Future<void> saveMessage(JournalMessageModel message);
   Future<JournalMessageModel?> getMessageById(String messageId);
   Future<List<JournalMessageModel>> getMessagesByThreadId(String threadId);
+  Future<List<JournalMessageModel>> getUpdatedMessages(
+      String threadId, int lastUpdatedAtMillis);
   Future<void> updateMessage(JournalMessageModel message);
   Stream<List<JournalMessageModel>> watchMessagesByThreadId(
       String threadId, String userId);
@@ -45,6 +47,25 @@ class JournalMessageRemoteDataSourceImpl
 
     return querySnapshot.docs.map((doc) {
       // Include document ID in the data map
+      final data = doc.data();
+      data['id'] = doc.id;
+      return JournalMessageModel.fromMap(data);
+    }).toList();
+  }
+
+  @override
+  Future<List<JournalMessageModel>> getUpdatedMessages(
+    String threadId,
+    int lastUpdatedAtMillis,
+  ) async {
+    final querySnapshot = await _collection
+        .where('threadId', isEqualTo: threadId)
+        .where('isDeleted', isEqualTo: false)
+        .where('updatedAtMillis', isGreaterThan: lastUpdatedAtMillis)
+        .orderBy('updatedAtMillis', descending: false)
+        .get();
+
+    return querySnapshot.docs.map((doc) {
       final data = doc.data();
       data['id'] = doc.id;
       return JournalMessageModel.fromMap(data);

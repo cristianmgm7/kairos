@@ -5,6 +5,7 @@ import 'package:kairos/core/providers/core_providers.dart';
 
 abstract class NetworkInfo {
   Future<bool> get isConnected;
+  Stream<bool> get connectivityStream;
 }
 
 class NetworkInfoImpl implements NetworkInfo {
@@ -19,10 +20,25 @@ class NetworkInfoImpl implements NetworkInfo {
         result.contains(ConnectivityResult.wifi) ||
         result.contains(ConnectivityResult.ethernet);
   }
+
+  @override
+  Stream<bool> get connectivityStream {
+    return _connectivity.onConnectivityChanged.map((results) {
+      return results.contains(ConnectivityResult.mobile) ||
+          results.contains(ConnectivityResult.wifi) ||
+          results.contains(ConnectivityResult.ethernet);
+    });
+  }
 }
 
 /// NetworkInfo provider
 final networkInfoProvider = Provider<NetworkInfo>((ref) {
   final connectivity = ref.watch(connectivityProvider);
   return NetworkInfoImpl(connectivity);
+});
+
+/// Connectivity stream provider - emits true when connected, false when offline
+final connectivityStreamProvider = StreamProvider<bool>((ref) {
+  final networkInfo = ref.watch(networkInfoProvider);
+  return networkInfo.connectivityStream;
 });

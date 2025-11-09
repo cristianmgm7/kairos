@@ -253,6 +253,85 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   }
 
   @override
+  Future<Result<void>> syncThreadIncremental(String threadId) async {
+    try {
+      if (!await _isOnline) {
+        return const Error(NetworkFailure(message: 'Device is offline'));
+      }
+
+      // Get the latest updatedAtMillis from local DB
+      final lastUpdatedAtMillis =
+          await localDataSource.getLastUpdatedAtMillis(threadId);
+
+      // If no messages exist locally, use 0 to fetch all messages
+      final sinceTimestamp = lastUpdatedAtMillis ?? 0;
+
+      debugPrint(
+          '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp');
+
+      // Fetch only messages updated after the last local timestamp
+      final updatedMessages = await remoteDataSource.getUpdatedMessages(
+        threadId,
+        sinceTimestamp,
+      );
+
+      debugPrint('📥 Fetched ${updatedMessages.length} updated messages');
+
+      if (updatedMessages.isEmpty) {
+        debugPrint('✅ No new messages to sync');
+        return const Success(null);
+      }
+
+      // Merge updated messages into local DB
+      for (final message in updatedMessages) {
+        final existingMessage = await localDataSource.getMessageById(message.id);
+
+        if (existingMessage != null) {
+          // Message exists locally - merge remote updates with local-only fields
+          final isNonUser = message.role != MessageRole.user.index;
+          final isText = message.messageType == MessageType.text.index;
+
+          final int uploadStatusToUse;
+          if (isNonUser || isText) {
+            uploadStatusToUse = UploadStatus.completed.index;
+          } else if (message.uploadStatus > existingMessage.uploadStatus) {
+            uploadStatusToUse = message.uploadStatus;
+          } else {
+            uploadStatusToUse = existingMessage.uploadStatus;
+          }
+
+          final mergedModel = message.copyWith(
+            uploadStatus: uploadStatusToUse,
+            uploadRetryCount: existingMessage.uploadRetryCount,
+            localFilePath: existingMessage.localFilePath,
+            localThumbnailPath: existingMessage.localThumbnailPath,
+            audioDurationSeconds: existingMessage.audioDurationSeconds,
+          );
+
+          await localDataSource.updateMessage(mergedModel);
+          debugPrint('📝 Updated message: ${message.id}');
+        } else {
+          // New message from remote (e.g., AI response)
+          final normalized = message.copyWith(
+            uploadStatus: UploadStatus.completed.index,
+          );
+          await localDataSource.saveMessage(normalized);
+          debugPrint('✨ Added new message: ${message.id}');
+        }
+      }
+
+      debugPrint('✅ Incremental sync completed successfully');
+      return const Success(null);
+    } catch (e) {
+      debugPrint('❌ Incremental sync failed: $e');
+      if (e.toString().contains('network')) {
+        return Error(NetworkFailure(message: 'Network error during sync: $e'));
+      }
+      return Error(ServerFailure(message: 'Failed to sync messages: $e'));
+    }
+  }
+
+  @override
   Future<Result<List<JournalMessageEntity>>> getPendingUploads(
       String userId) async {
     try {
