@@ -931,18 +931,18 @@ Future<Result<void>> syncThreadIncremental(String threadId) async {
 ### Success Criteria:
 
 #### Automated Verification:
-- [ ] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/repositories/journal_message_repository_impl.dart`
-- [ ] No references to `connectivity`: `grep -n "connectivity\|_isOnline" lib/features/journal/data/repositories/journal_message_repository_impl.dart` returns empty
-- [ ] Import for exceptions added: check for `import 'package:kairos/core/errors/exceptions.dart';`
-- [ ] Constructor has only 2 parameters: `localDataSource`, `remoteDataSource`
+- [x] Code compiles without errors: `~/flutter/bin/flutter analyze lib/features/journal/data/repositories/journal_message_repository_impl.dart`
+- [x] No references to `connectivity`: `grep -n "connectivity\|_isOnline" lib/features/journal/data/repositories/journal_message_repository_impl.dart` returns empty
+- [x] Import for exceptions added: check for `import 'package:kairos/core/errors/exceptions.dart';`
+- [x] Constructor has only 2 parameters: `localDataSource`, `remoteDataSource`
 
 #### Manual Verification:
-- [ ] All remote operations now catch `NetworkException` and `ServerException`
-- [ ] Upload status logic preserved (text vs media, user vs non-user)
-- [ ] Stream error handling uses `onError` callback
-- [ ] Debug prints are descriptive and helpful
-- [ ] No pre-checks for connectivity before remote calls
-- [ ] Local operations always succeed even if remote fails
+- [x] All remote operations now catch `NetworkException` and `ServerException`
+- [x] Upload status logic preserved (text vs media, user vs non-user)
+- [x] Stream error handling uses `onError` callback
+- [x] Debug prints are descriptive and helpful
+- [x] No pre-checks for connectivity before remote calls
+- [x] Local operations always succeed even if remote fails
 
 **Implementation Note**: This is a critical phase. After completing all changes and automated verification passes, pause here for thorough manual testing (create messages online/offline, test sync, verify upload status) before proceeding to Phase 6.
 
