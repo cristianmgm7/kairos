@@ -262,7 +262,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Future<Result<List<JournalMessageEntity>>> getPendingUploads(
-      String userId) async {
+      String userId,) async {
     try {
       final messages = await localDataSource.getPendingUploads(userId);
       return Success(messages.map((m) => m.toEntity()).toList());
