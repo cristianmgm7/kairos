@@ -2010,7 +2010,7 @@ yield Success(message);
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code compiles: `flutter analyze`
+- [x] Code compiles: `flutter analyze`
 - [ ] Use case tests pass: `flutter test test/features/journal/domain/usecases/`
 
 #### Manual Verification:
@@ -2445,7 +2445,7 @@ final retryMessagePipelineUseCaseProvider = Provider<RetryMessagePipelineUseCase
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code compiles: `flutter analyze`
+- [x] Code compiles: `flutter analyze`
 - [ ] Use case tests pass: `flutter test test/features/journal/domain/usecases/retry_message_pipeline_usecase_test.dart`
 
 #### Manual Verification:

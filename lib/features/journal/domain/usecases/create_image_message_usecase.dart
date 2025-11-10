@@ -2,128 +2,245 @@ import 'dart:io';
 
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/providers/core_providers.dart';
-import 'package:kairos/core/services/firebase_storage_service.dart';
+import 'package:kairos/core/services/media_uploader.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateImageMessageParams {
   const CreateImageMessageParams({
     required this.userId,
     required this.imageFile,
-    required this.thumbnailPath,
     this.threadId,
   });
 
   final String userId;
   final File imageFile;
-  final String thumbnailPath;
   final String? threadId;
 }
 
+/// Use case for creating image messages with full pipeline orchestration
+///
+/// Pipeline steps:
+/// 1. Create message locally (status: localCreated)
+/// 2. Upload image file (status: uploadingMedia → mediaUploaded)
+/// 3. Analyze image (status: processingAi)
+/// 4. Update with description (status: processed)
+/// 5. Create remote message (status: remoteCreated)
+/// 6. Request AI response (status: processingAi)
 class CreateImageMessageUseCase {
   CreateImageMessageUseCase({
     required this.messageRepository,
     required this.threadRepository,
-    required this.storageService,
+    required this.mediaUploader,
+    required this.aiServiceClient,
   });
 
   final JournalMessageRepository messageRepository;
   final JournalThreadRepository threadRepository;
-  final FirebaseStorageService storageService;
+  final MediaUploader mediaUploader;
+  final AiServiceClient aiServiceClient;
 
-  Future<Result<JournalMessageEntity>> call(
-    CreateImageMessageParams params,
-  ) async {
-    if (!params.imageFile.existsSync()) {
-      return const Error(
-        ValidationFailure(message: 'Image file does not exist'),
-      );
-    }
+  final _uuid = const Uuid();
 
+  Stream<Result<JournalMessageEntity>> call(CreateImageMessageParams params) async* {
     try {
-      // Generate thumbnail for instant preview
-      String? localThumbnailPath;
-      final thumbnailResult = await storageService.generateThumbnail(params.imageFile);
-
-      if (thumbnailResult.isSuccess) {
-        try {
-          // Save thumbnail to temp file
-          final tempDir = await getTemporaryDirectory();
-          final thumbnailFile = File(
-            '${tempDir.path}/${const Uuid().v4()}_thumb.jpg',
-          );
-          await thumbnailFile.writeAsBytes(thumbnailResult.dataOrNull!);
-          localThumbnailPath = thumbnailFile.path;
-        } catch (e) {
-          logger.i('Failed to save thumbnail: $e');
-          // Continue without thumbnail
-        }
-      } else {
-        logger.i(
-          'Thumbnail generation failed: ${thumbnailResult.failureOrNull?.message}',
-        );
+      // Validate image file
+      if (!params.imageFile.existsSync()) {
+        yield const Error(ValidationFailure(message: 'Image file does not exist'));
+        return;
       }
 
-      String threadId;
-      if (params.threadId != null) {
-        threadId = params.threadId!;
-      } else {
-        final now = DateTime.now().toUtc();
-        final newThread = JournalThreadEntity(
-          id: const Uuid().v4(),
+      // Determine thread ID
+      String threadId = params.threadId ?? _uuid.v4();
+
+      if (params.threadId == null) {
+        final thread = JournalThreadEntity(
+          id: threadId,
           userId: params.userId,
           title: 'Image Journal',
-          createdAt: now,
-          updatedAt: now,
+          createdAt: DateTime.now().toUtc(),
+          updatedAt: DateTime.now().toUtc(),
+          lastMessageAt: DateTime.now().toUtc(),
+          messageCount: 0,
         );
 
-        final threadResult = await threadRepository.createThread(newThread);
+        final threadResult = await threadRepository.createThread(thread);
         if (threadResult.isError) {
-          return Error(threadResult.failureOrNull!);
+          yield Error(threadResult.failureOrNull!);
+          return;
         }
-
-        threadId = threadResult.dataOrNull!.id;
       }
 
-      final now = DateTime.now().toUtc();
-      final message = JournalMessageEntity(
-        id: const Uuid().v4(),
+      // STEP 1: Create message locally
+      final messageId = _uuid.v4();
+      final clientLocalId = _uuid.v4();
+
+      var message = JournalMessageEntity(
+        id: messageId,
         threadId: threadId,
         userId: params.userId,
         role: MessageRole.user,
         messageType: MessageType.image,
         localFilePath: params.imageFile.path,
-        localThumbnailPath: localThumbnailPath,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+        status: MessageStatus.localCreated,
+        clientLocalId: clientLocalId,
+        attemptCount: 0,
       );
 
-      final messageResult = await messageRepository.createMessage(message);
-      if (messageResult.isError) {
-        return Error(messageResult.failureOrNull!);
+      logger.i('Creating image message locally: $messageId');
+
+      final createResult = await messageRepository.createMessage(message);
+      if (createResult.isError) {
+        yield Error(createResult.failureOrNull!);
+        return;
       }
 
-      final threadResult = await threadRepository.getThreadById(threadId);
-      if (threadResult.dataOrNull != null) {
-        final thread = threadResult.dataOrNull!;
-        final updatedThread = thread.copyWith(
-          lastMessageAt: now,
-          messageCount: thread.messageCount + 1,
-          updatedAt: now,
+      yield Success(message);
+
+      // STEP 2: Upload image file
+      message = message.copyWith(
+        status: MessageStatus.uploadingMedia,
+        uploadProgress: 0.0,
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      final storagePath = 'users/${params.userId}/journals/$threadId/$messageId.jpg';
+
+      logger.i('Uploading image file: $messageId');
+
+      final uploadResult = await mediaUploader.uploadFile(
+        file: params.imageFile,
+        storagePath: storagePath,
+        contentType: 'image/jpeg',
+        metadata: {
+          'messageId': messageId,
+          'threadId': threadId,
+          'type': 'image',
+        },
+        onProgress: (progress) async {
+          // Update progress in entity
+          message = message.copyWith(uploadProgress: progress);
+          await messageRepository.updateMessage(message);
+          // Note: Not yielding here to avoid too many emissions
+        },
+      );
+
+      if (uploadResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.uploadFailed,
+          uploadError: uploadResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
         );
-        await threadRepository.updateThread(updatedThread);
+        await messageRepository.updateMessage(message);
+
+        yield Error(uploadResult.failureOrNull!);
+        return;
       }
 
-      return messageResult;
-    } catch (e) {
-      return Error(
-        UnknownFailure(message: 'Failed to create image message: $e'),
+      final imageUrl = uploadResult.dataOrNull!.remoteUrl;
+
+      message = message.copyWith(
+        status: MessageStatus.mediaUploaded,
+        storageUrl: imageUrl,
+        uploadProgress: 1.0,
       );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 3: Analyze image
+      message = message.copyWith(status: MessageStatus.processingAi);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      logger.i('Analyzing image: $messageId');
+
+      final analysisResult = await aiServiceClient.analyzeImage(
+        messageId: messageId,
+        imageUrl: imageUrl,
+      );
+
+      if (analysisResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.aiResponseFailed,
+          aiError: analysisResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+
+        yield Error(analysisResult.failureOrNull!);
+        return;
+      }
+
+      // STEP 4: Update with description
+      final description = analysisResult.dataOrNull!.description;
+
+      message = message.copyWith(
+        status: MessageStatus.processed,
+        content: description, // Use image description as content
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 5: Create remote message
+      message = message.copyWith(status: MessageStatus.remoteCreated);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 6: Request AI response
+      message = message.copyWith(status: MessageStatus.processingAi);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      logger.i('Requesting AI response for image message: $messageId');
+
+      final aiResult = await aiServiceClient.generateAiResponse(messageId: messageId);
+
+      if (aiResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.aiResponseFailed,
+          aiError: aiResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+
+        yield Error(aiResult.failureOrNull!);
+        return;
+      }
+
+      logger.i('Image message pipeline complete: $messageId');
+      yield Success(message);
+
+      await _updateThreadMetadata(threadId);
+    } catch (e) {
+      logger.i('Unexpected error in CreateImageMessageUseCase: $e');
+      yield Error(UnknownFailure(message: 'Failed to create image message: $e'));
+    }
+  }
+
+  Future<void> _updateThreadMetadata(String threadId) async {
+    final threadResult = await threadRepository.getThreadById(threadId);
+    if (threadResult.isSuccess) {
+      final thread = threadResult.dataOrNull!;
+      final updatedThread = thread.copyWith(
+        lastMessageAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+        messageCount: thread.messageCount + 1,
+      );
+      await threadRepository.updateThread(updatedThread);
     }
   }
 }

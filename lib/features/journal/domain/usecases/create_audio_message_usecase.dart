@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/services/media_uploader.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateAudioMessageParams {
@@ -22,80 +25,227 @@ class CreateAudioMessageParams {
   final String? threadId;
 }
 
+/// Use case for creating audio messages with full pipeline orchestration
+///
+/// Pipeline steps:
+/// 1. Create message locally (status: localCreated)
+/// 2. Upload audio file (status: uploadingMedia → mediaUploaded)
+/// 3. Transcribe audio (status: processingAi)
+/// 4. Update with transcription (status: processed)
+/// 5. Create remote message (status: remoteCreated)
+/// 6. Request AI response (status: processingAi)
 class CreateAudioMessageUseCase {
   CreateAudioMessageUseCase({
     required this.messageRepository,
     required this.threadRepository,
+    required this.mediaUploader,
+    required this.aiServiceClient,
   });
 
   final JournalMessageRepository messageRepository;
   final JournalThreadRepository threadRepository;
+  final MediaUploader mediaUploader;
+  final AiServiceClient aiServiceClient;
 
-  Future<Result<JournalMessageEntity>> call(
-    CreateAudioMessageParams params,
-  ) async {
-    if (!params.audioFile.existsSync()) {
-      return const Error(
-        ValidationFailure(message: 'Audio file does not exist'),
-      );
-    }
+  final _uuid = const Uuid();
 
+  Stream<Result<JournalMessageEntity>> call(CreateAudioMessageParams params) async* {
     try {
-      String threadId;
-      if (params.threadId != null) {
-        threadId = params.threadId!;
-      } else {
-        final now = DateTime.now().toUtc();
-        final newThread = JournalThreadEntity(
-          id: const Uuid().v4(),
-          userId: params.userId,
-          title: 'Audio Recording (${params.durationSeconds}s)',
-          createdAt: now,
-          updatedAt: now,
-        );
-
-        final threadResult = await threadRepository.createThread(newThread);
-        if (threadResult.isError) {
-          return Error(threadResult.failureOrNull!);
-        }
-
-        threadId = threadResult.dataOrNull!.id;
+      // Validate audio file
+      if (!params.audioFile.existsSync()) {
+        yield const Error(ValidationFailure(message: 'Audio file does not exist'));
+        return;
       }
 
-      final now = DateTime.now().toUtc();
-      final message = JournalMessageEntity(
-        id: const Uuid().v4(),
+      // Determine thread ID
+      String threadId = params.threadId ?? _uuid.v4();
+
+      if (params.threadId == null) {
+        final thread = JournalThreadEntity(
+          id: threadId,
+          userId: params.userId,
+          title: 'Audio Journal',
+          createdAt: DateTime.now().toUtc(),
+          updatedAt: DateTime.now().toUtc(),
+          lastMessageAt: DateTime.now().toUtc(),
+          messageCount: 0,
+        );
+
+        final threadResult = await threadRepository.createThread(thread);
+        if (threadResult.isError) {
+          yield Error(threadResult.failureOrNull!);
+          return;
+        }
+      }
+
+      // STEP 1: Create message locally
+      final messageId = _uuid.v4();
+      final clientLocalId = _uuid.v4();
+
+      var message = JournalMessageEntity(
+        id: messageId,
         threadId: threadId,
         userId: params.userId,
         role: MessageRole.user,
         messageType: MessageType.audio,
         localFilePath: params.audioFile.path,
         audioDurationSeconds: params.durationSeconds,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+        status: MessageStatus.localCreated,
+        clientLocalId: clientLocalId,
+        attemptCount: 0,
       );
 
-      final messageResult = await messageRepository.createMessage(message);
-      if (messageResult.isError) {
-        return Error(messageResult.failureOrNull!);
+      logger.i('Creating audio message locally: $messageId');
+
+      final createResult = await messageRepository.createMessage(message);
+      if (createResult.isError) {
+        yield Error(createResult.failureOrNull!);
+        return;
       }
 
-      final threadResult = await threadRepository.getThreadById(threadId);
-      if (threadResult.dataOrNull != null) {
-        final thread = threadResult.dataOrNull!;
-        final updatedThread = thread.copyWith(
-          lastMessageAt: now,
-          messageCount: thread.messageCount + 1,
-          updatedAt: now,
+      yield Success(message);
+
+      // STEP 2: Upload audio file
+      message = message.copyWith(
+        status: MessageStatus.uploadingMedia,
+        uploadProgress: 0.0,
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      final storagePath = 'users/${params.userId}/journals/$threadId/$messageId.m4a';
+
+      logger.i('Uploading audio file: $messageId');
+
+      final uploadResult = await mediaUploader.uploadFile(
+        file: params.audioFile,
+        storagePath: storagePath,
+        contentType: 'audio/mp4',
+        metadata: {
+          'messageId': messageId,
+          'threadId': threadId,
+          'type': 'audio',
+          'durationSeconds': params.durationSeconds.toString(),
+        },
+        onProgress: (progress) async {
+          // Update progress in entity
+          message = message.copyWith(uploadProgress: progress);
+          await messageRepository.updateMessage(message);
+          // Note: Not yielding here to avoid too many emissions
+        },
+      );
+
+      if (uploadResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.uploadFailed,
+          uploadError: uploadResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
         );
-        await threadRepository.updateThread(updatedThread);
+        await messageRepository.updateMessage(message);
+
+        yield Error(uploadResult.failureOrNull!);
+        return;
       }
 
-      return messageResult;
-    } catch (e) {
-      return Error(
-        UnknownFailure(message: 'Failed to create audio message: $e'),
+      final audioUrl = uploadResult.dataOrNull!.remoteUrl;
+
+      message = message.copyWith(
+        status: MessageStatus.mediaUploaded,
+        storageUrl: audioUrl,
+        uploadProgress: 1.0,
       );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 3: Transcribe audio
+      message = message.copyWith(status: MessageStatus.processingAi);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      logger.i('Transcribing audio: $messageId');
+
+      final transcriptionResult = await aiServiceClient.transcribeAudio(
+        messageId: messageId,
+        audioUrl: audioUrl,
+      );
+
+      if (transcriptionResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.transcriptionFailed,
+          aiError: transcriptionResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+
+        yield Error(transcriptionResult.failureOrNull!);
+        return;
+      }
+
+      // STEP 4: Update with transcription
+      final transcription = transcriptionResult.dataOrNull!.transcription;
+
+      message = message.copyWith(
+        status: MessageStatus.processed,
+        transcription: transcription,
+        content: transcription, // Use transcription as content
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 5: Create remote message
+      message = message.copyWith(status: MessageStatus.remoteCreated);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      // STEP 6: Request AI response
+      message = message.copyWith(status: MessageStatus.processingAi);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+
+      logger.i('Requesting AI response for audio message: $messageId');
+
+      final aiResult = await aiServiceClient.generateAiResponse(messageId: messageId);
+
+      if (aiResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.aiResponseFailed,
+          aiError: aiResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+
+        yield Error(aiResult.failureOrNull!);
+        return;
+      }
+
+      logger.i('Audio message pipeline complete: $messageId');
+      yield Success(message);
+
+      await _updateThreadMetadata(threadId);
+    } catch (e) {
+      logger.i('Unexpected error in CreateAudioMessageUseCase: $e');
+      yield Error(UnknownFailure(message: 'Failed to create audio message: $e'));
+    }
+  }
+
+  Future<void> _updateThreadMetadata(String threadId) async {
+    final threadResult = await threadRepository.getThreadById(threadId);
+    if (threadResult.isSuccess) {
+      final thread = threadResult.dataOrNull!;
+      final updatedThread = thread.copyWith(
+        lastMessageAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+        messageCount: thread.messageCount + 1,
+      );
+      await threadRepository.updateThread(updatedThread);
     }
   }
 }

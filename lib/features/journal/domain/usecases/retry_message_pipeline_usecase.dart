@@ -1,0 +1,397 @@
+import 'dart:io';
+
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/services/media_uploader.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
+import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
+
+/// Use case for retrying/resuming failed or interrupted message pipelines
+///
+/// Stateless retry logic:
+/// 1. Read current message status from repository
+/// 2. Determine next step based on status and failureReason
+/// 3. Execute that step
+/// 4. Update status and continue or stop
+///
+/// Idempotent: safe to call multiple times on same message
+class RetryMessagePipelineUseCase {
+  RetryMessagePipelineUseCase({
+    required this.messageRepository,
+    required this.mediaUploader,
+    required this.aiServiceClient,
+  });
+
+  final JournalMessageRepository messageRepository;
+  final MediaUploader mediaUploader;
+  final AiServiceClient aiServiceClient;
+
+  // Retry policy constants
+  static const int _maxAttempts = 5;
+  static const List<int> _backoffSeconds = [2, 4, 8, 16, 32];
+
+  /// Resume message pipeline from current state
+  ///
+  /// Returns stream of status updates as pipeline progresses
+  Stream<Result<JournalMessageEntity>> call(String messageId) async* {
+    try {
+      // Step 1: Get current message state
+      final messageResult = await messageRepository.getMessageById(messageId);
+
+      if (messageResult.isError) {
+        yield Error(messageResult.failureOrNull!);
+        return;
+      }
+
+      final messageData = messageResult.dataOrNull;
+      if (messageData == null) {
+        yield const Error(ValidationFailure(message: 'Message not found'));
+        return;
+      }
+
+      var message = messageData;
+
+      // Step 2: Check if max attempts reached
+      if (message.attemptCount >= _maxAttempts) {
+        logger.i('Max retry attempts reached for message $messageId');
+        yield const Error(ValidationFailure(
+          message: 'Maximum retry attempts reached (5). Please contact support.',
+        ));
+        return;
+      }
+
+      // Step 3: Check backoff period
+      if (message.lastAttemptAt != null) {
+        final backoffIndex = message.attemptCount.clamp(0, _backoffSeconds.length - 1);
+        final requiredBackoffSeconds = _backoffSeconds[backoffIndex];
+        final timeSinceLastAttempt = DateTime.now().difference(message.lastAttemptAt!).inSeconds;
+
+        if (timeSinceLastAttempt < requiredBackoffSeconds) {
+          final remainingSeconds = requiredBackoffSeconds - timeSinceLastAttempt;
+          yield Error(ValidationFailure(
+            message: 'Please wait $remainingSeconds seconds before retrying',
+          ));
+          return;
+        }
+      }
+
+      logger.i('Retrying message pipeline: $messageId (status: ${message.status}, attempt: ${message.attemptCount})');
+
+      // Step 4: Resume based on current status
+      yield* _resumeFromStatus(message);
+    } catch (e) {
+      logger.i('Unexpected error in RetryMessagePipelineUseCase: $e');
+      yield Error(UnknownFailure(message: 'Retry failed: $e'));
+    }
+  }
+
+  /// Resume pipeline based on message status
+  Stream<Result<JournalMessageEntity>> _resumeFromStatus(
+    JournalMessageEntity message,
+  ) async* {
+    switch (message.status) {
+      case MessageStatus.localCreated:
+      case MessageStatus.failed when message.failureReason == FailureReason.uploadFailed:
+        // Need to upload media
+        yield* _uploadMediaStep(message);
+        break;
+
+      case MessageStatus.uploadingMedia:
+        // Was interrupted during upload - restart upload
+        yield* _uploadMediaStep(message);
+        break;
+
+      case MessageStatus.mediaUploaded:
+      case MessageStatus.failed when message.failureReason == FailureReason.transcriptionFailed:
+        // Need to transcribe/analyze
+        yield* _processAiStep(message);
+        break;
+
+      case MessageStatus.processed:
+      case MessageStatus.failed when message.failureReason == FailureReason.remoteCreationFailed:
+        // Need to create remote
+        yield* _createRemoteStep(message);
+        break;
+
+      case MessageStatus.remoteCreated:
+      case MessageStatus.failed when message.failureReason == FailureReason.aiResponseFailed:
+        // Need to request AI response
+        yield* _requestAiResponseStep(message);
+        break;
+
+      case MessageStatus.processingAi:
+        // Already processing - just re-request
+        yield* _requestAiResponseStep(message);
+        break;
+
+      default:
+        yield const Error(ValidationFailure(
+          message: 'Message is not in a retryable state',
+        ));
+    }
+  }
+
+  /// Upload media files (audio/image)
+  Stream<Result<JournalMessageEntity>> _uploadMediaStep(
+    JournalMessageEntity message,
+  ) async* {
+    if (message.messageType == MessageType.text) {
+      // Text messages don't need upload - skip to remote creation
+      yield* _createRemoteStep(message);
+      return;
+    }
+
+    if (message.localFilePath == null) {
+      message = message.copyWith(
+        status: MessageStatus.failed,
+        failureReason: FailureReason.uploadFailed,
+        uploadError: 'No local file path',
+        attemptCount: message.attemptCount + 1,
+        lastAttemptAt: DateTime.now().toUtc(),
+      );
+      await messageRepository.updateMessage(message);
+      yield const Error(ValidationFailure(message: 'No local file path for upload'));
+      return;
+    }
+
+    final file = File(message.localFilePath!);
+    if (!file.existsSync()) {
+      message = message.copyWith(
+        status: MessageStatus.failed,
+        failureReason: FailureReason.uploadFailed,
+        uploadError: 'Local file no longer exists',
+        attemptCount: message.attemptCount + 1,
+        lastAttemptAt: DateTime.now().toUtc(),
+      );
+      await messageRepository.updateMessage(message);
+      yield const Error(ValidationFailure(message: 'Local file no longer exists'));
+      return;
+    }
+
+    // Update status to uploading
+    message = message.copyWith(
+      status: MessageStatus.uploadingMedia,
+      uploadProgress: 0.0,
+      uploadError: null, // Clear previous error
+    );
+    await messageRepository.updateMessage(message);
+    yield Success(message);
+
+    // Determine content type and storage path
+    final contentType = message.messageType == MessageType.audio ? 'audio/mp4' : 'image/jpeg';
+    final extension = message.messageType == MessageType.audio ? 'm4a' : 'jpg';
+    final storagePath = 'users/${message.userId}/journals/${message.threadId}/${message.id}.$extension';
+
+    logger.i('Uploading ${message.messageType.name} for message ${message.id}');
+
+    final uploadResult = await mediaUploader.uploadFile(
+      file: file,
+      storagePath: storagePath,
+      contentType: contentType,
+      metadata: {
+        'messageId': message.id,
+        'threadId': message.threadId,
+        'type': message.messageType.name,
+      },
+      onProgress: (progress) async {
+        message = message.copyWith(uploadProgress: progress);
+        await messageRepository.updateMessage(message);
+      },
+    );
+
+    if (uploadResult.isError) {
+      message = message.copyWith(
+        status: MessageStatus.failed,
+        failureReason: FailureReason.uploadFailed,
+        uploadError: uploadResult.failureOrNull?.message,
+        attemptCount: message.attemptCount + 1,
+        lastAttemptAt: DateTime.now().toUtc(),
+      );
+      await messageRepository.updateMessage(message);
+      yield Error(uploadResult.failureOrNull!);
+      return;
+    }
+
+    // Upload succeeded
+    message = message.copyWith(
+      status: MessageStatus.mediaUploaded,
+      storageUrl: uploadResult.dataOrNull!.remoteUrl,
+      uploadProgress: 1.0,
+    );
+    await messageRepository.updateMessage(message);
+    yield Success(message);
+
+    // Continue to next step
+    yield* _processAiStep(message);
+  }
+
+  /// Process AI (transcription or image analysis)
+  Stream<Result<JournalMessageEntity>> _processAiStep(
+    JournalMessageEntity message,
+  ) async* {
+    message = message.copyWith(
+      status: MessageStatus.processingAi,
+      aiError: null, // Clear previous error
+    );
+    await messageRepository.updateMessage(message);
+    yield Success(message);
+
+    if (message.messageType == MessageType.audio) {
+      // Transcribe audio
+      if (message.storageUrl == null) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.transcriptionFailed,
+          aiError: 'No audio URL for transcription',
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+        yield const Error(ValidationFailure(message: 'No audio URL'));
+        return;
+      }
+
+      logger.i('Transcribing audio for message ${message.id}');
+
+      final transcriptionResult = await aiServiceClient.transcribeAudio(
+        messageId: message.id,
+        audioUrl: message.storageUrl!,
+      );
+
+      if (transcriptionResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.transcriptionFailed,
+          aiError: transcriptionResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+        yield Error(transcriptionResult.failureOrNull!);
+        return;
+      }
+
+      message = message.copyWith(
+        status: MessageStatus.processed,
+        transcription: transcriptionResult.dataOrNull!.transcription,
+        content: transcriptionResult.dataOrNull!.transcription,
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+    } else if (message.messageType == MessageType.image) {
+      // Analyze image
+      if (message.storageUrl == null) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.aiResponseFailed,
+          aiError: 'No image URL for analysis',
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+        yield const Error(ValidationFailure(message: 'No image URL'));
+        return;
+      }
+
+      logger.i('Analyzing image for message ${message.id}');
+
+      final analysisResult = await aiServiceClient.analyzeImage(
+        messageId: message.id,
+        imageUrl: message.storageUrl!,
+      );
+
+      if (analysisResult.isError) {
+        message = message.copyWith(
+          status: MessageStatus.failed,
+          failureReason: FailureReason.aiResponseFailed,
+          aiError: analysisResult.failureOrNull?.message,
+          attemptCount: message.attemptCount + 1,
+          lastAttemptAt: DateTime.now().toUtc(),
+        );
+        await messageRepository.updateMessage(message);
+        yield Error(analysisResult.failureOrNull!);
+        return;
+      }
+
+      message = message.copyWith(
+        status: MessageStatus.processed,
+        content: analysisResult.dataOrNull!.description,
+      );
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+    } else {
+      // Text message - skip this step
+      message = message.copyWith(status: MessageStatus.processed);
+      await messageRepository.updateMessage(message);
+      yield Success(message);
+    }
+
+    // Continue to next step
+    yield* _createRemoteStep(message);
+  }
+
+  /// Create remote message (sync to Firestore)
+  Stream<Result<JournalMessageEntity>> _createRemoteStep(
+    JournalMessageEntity message,
+  ) async* {
+    logger.i('Creating remote message ${message.id}');
+
+    message = message.copyWith(status: MessageStatus.remoteCreated);
+
+    final updateResult = await messageRepository.updateMessage(message);
+
+    if (updateResult.isError) {
+      message = message.copyWith(
+        status: MessageStatus.failed,
+        failureReason: FailureReason.remoteCreationFailed,
+        aiError: 'Failed to sync to server',
+        attemptCount: message.attemptCount + 1,
+        lastAttemptAt: DateTime.now().toUtc(),
+      );
+      await messageRepository.updateMessage(message);
+      yield Error(updateResult.failureOrNull!);
+      return;
+    }
+
+    yield Success(message);
+
+    // Continue to next step
+    yield* _requestAiResponseStep(message);
+  }
+
+  /// Request AI response generation
+  Stream<Result<JournalMessageEntity>> _requestAiResponseStep(
+    JournalMessageEntity message,
+  ) async* {
+    logger.i('Requesting AI response for message ${message.id}');
+
+    message = message.copyWith(
+      status: MessageStatus.processingAi,
+      aiError: null,
+    );
+    await messageRepository.updateMessage(message);
+    yield Success(message);
+
+    final aiResult = await aiServiceClient.generateAiResponse(messageId: message.id);
+
+    if (aiResult.isError) {
+      message = message.copyWith(
+        status: MessageStatus.failed,
+        failureReason: FailureReason.aiResponseFailed,
+        aiError: aiResult.failureOrNull?.message,
+        attemptCount: message.attemptCount + 1,
+        lastAttemptAt: DateTime.now().toUtc(),
+      );
+      await messageRepository.updateMessage(message);
+      yield Error(aiResult.failureOrNull!);
+      return;
+    }
+
+    // Success - pipeline complete
+    logger.i('Message pipeline complete (retry): ${message.id}');
+    yield Success(message);
+  }
+}
+

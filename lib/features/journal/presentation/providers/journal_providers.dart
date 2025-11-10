@@ -18,6 +18,7 @@ import 'package:kairos/features/journal/domain/usecases/create_audio_message_use
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/delete_thread_usecase.dart';
+import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
@@ -83,29 +84,37 @@ final journalUploadServiceProvider = Provider<JournalUploadService>((ref) {
 final createTextMessageUseCaseProvider = Provider<CreateTextMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
+  final aiServiceClient = ref.watch(aiServiceClientProvider);
   return CreateTextMessageUseCase(
     messageRepository: messageRepository,
     threadRepository: threadRepository,
+    aiServiceClient: aiServiceClient,
   );
 });
 
 final createImageMessageUseCaseProvider = Provider<CreateImageMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
-  final storageService = ref.watch(firebaseStorageServiceProvider);
+  final mediaUploader = ref.watch(mediaUploaderProvider);
+  final aiServiceClient = ref.watch(aiServiceClientProvider);
   return CreateImageMessageUseCase(
     messageRepository: messageRepository,
     threadRepository: threadRepository,
-    storageService: storageService,
+    mediaUploader: mediaUploader,
+    aiServiceClient: aiServiceClient,
   );
 });
 
 final createAudioMessageUseCaseProvider = Provider<CreateAudioMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
+  final mediaUploader = ref.watch(mediaUploaderProvider);
+  final aiServiceClient = ref.watch(aiServiceClientProvider);
   return CreateAudioMessageUseCase(
     messageRepository: messageRepository,
     threadRepository: threadRepository,
+    mediaUploader: mediaUploader,
+    aiServiceClient: aiServiceClient,
   );
 });
 
@@ -117,6 +126,17 @@ final deleteThreadUseCaseProvider = Provider<DeleteThreadUseCase>((ref) {
 final syncThreadMessagesUseCaseProvider = Provider<SyncThreadMessagesUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   return SyncThreadMessagesUseCase(messageRepository: messageRepository);
+});
+
+final retryMessagePipelineUseCaseProvider = Provider<RetryMessagePipelineUseCase>((ref) {
+  final messageRepository = ref.watch(messageRepositoryProvider);
+  final mediaUploader = ref.watch(mediaUploaderProvider);
+  final aiServiceClient = ref.watch(aiServiceClientProvider);
+  return RetryMessagePipelineUseCase(
+    messageRepository: messageRepository,
+    mediaUploader: mediaUploader,
+    aiServiceClient: aiServiceClient,
+  );
 });
 
 // Stream providers
