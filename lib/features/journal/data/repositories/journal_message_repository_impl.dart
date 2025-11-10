@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
 import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/data/datasources/journal_message_local_datasource.dart';
 import 'package:kairos/features/journal/data/datasources/journal_message_remote_datasource.dart';
@@ -112,7 +112,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
         onError: (Object error) {
           // Network errors are transient - just log and continue
           // The local stream continues to work offline
-          debugPrint('Remote sync error (will retry when online): $error');
+          logger.i('Remote sync error (will retry when online): $error');
         },
       );
 
@@ -128,23 +128,23 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   @override
   Future<Result<void>> updateMessage(JournalMessageEntity message) async {
     try {
-      debugPrint('updateMessage called for: ${message.id}');
+      logger.i('updateMessage called for: ${message.id}');
       final model = JournalMessageModel.fromEntity(message);
       await localDataSource.updateMessage(model);
-      debugPrint('Local update completed for: ${message.id}');
+      logger.i('Local update completed for: ${message.id}');
 
       // Always attempt remote update
       try {
-        debugPrint('Attempting remote update for: ${message.id}');
+        logger.i('Attempting remote update for: ${message.id}');
         await remoteDataSource.updateMessage(model);
-        debugPrint(
+        logger.i(
           '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}',
         );
       } on NetworkException catch (e) {
-        debugPrint('⚠️ Network error updating message (will retry later): ${e.message}');
+        logger.i('⚠️ Network error updating message (will retry later): ${e.message}');
         // Don't fail the whole operation - local update succeeded
       } on ServerException catch (e) {
-        debugPrint('⚠️ Server error updating message (will retry later): ${e.message}');
+        logger.i('⚠️ Server error updating message (will retry later): ${e.message}');
         // Don't fail the whole operation - local update succeeded
       }
 
@@ -182,7 +182,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       // If no messages exist locally, use 0 to fetch all messages
       final sinceTimestamp = lastUpdatedAtMillis ?? 0;
 
-      debugPrint(
+      logger.i(
         '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',
       );
 
@@ -192,10 +192,10 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
         sinceTimestamp,
       );
 
-      debugPrint('📥 Fetched ${updatedMessages.length} updated messages');
+      logger.i('📥 Fetched ${updatedMessages.length} updated messages');
 
       if (updatedMessages.isEmpty) {
-        debugPrint('✅ No new messages to sync');
+        logger.i('✅ No new messages to sync');
         return const Success(null);
       }
 
@@ -226,27 +226,27 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
           );
 
           await localDataSource.updateMessage(mergedModel);
-          debugPrint('📝 Updated message: ${message.id}');
+          logger.i('📝 Updated message: ${message.id}');
         } else {
           // New message from remote (e.g., AI response)
           final normalized = message.copyWith(
             uploadStatus: UploadStatus.completed.index,
           );
           await localDataSource.saveMessage(normalized);
-          debugPrint('✨ Added new message: ${message.id}');
+          logger.i('✨ Added new message: ${message.id}');
         }
       }
 
-      debugPrint('✅ Incremental sync completed successfully');
+      logger.i('✅ Incremental sync completed successfully');
       return const Success(null);
     } on NetworkException catch (e) {
-      debugPrint('❌ Network error during incremental sync: ${e.message}');
+      logger.i('❌ Network error during incremental sync: ${e.message}');
       return Error(NetworkFailure(message: e.message));
     } on ServerException catch (e) {
-      debugPrint('❌ Server error during incremental sync: ${e.message}');
+      logger.i('❌ Server error during incremental sync: ${e.message}');
       return Error(ServerFailure(message: e.message));
     } catch (e) {
-      debugPrint('❌ Incremental sync failed: $e');
+      logger.i('❌ Incremental sync failed: $e');
       return Error(ServerFailure(message: 'Failed to sync messages: $e'));
     }
   }

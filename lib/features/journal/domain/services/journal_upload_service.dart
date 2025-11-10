@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart' as functions;
-import 'package:flutter/foundation.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/services/firebase_storage_service.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
@@ -21,7 +21,7 @@ class JournalUploadService {
 
   /// Upload image message with thumbnail
   Future<Result<void>> uploadImageMessage(JournalMessageEntity message) async {
-    debugPrint('🚀 uploadImageMessage called for: ${message.id}');
+    logger.i('🚀 uploadImageMessage called for: ${message.id}');
     try {
       // Validate local file exists
       if (message.localFilePath == null) {
@@ -64,10 +64,10 @@ class JournalUploadService {
               'type': 'thumbnail',
             },
           );
-          debugPrint('Thumbnail upload result: ${thumbResult.dataOrNull}');
+          logger.i('Thumbnail upload result: ${thumbResult.dataOrNull}');
 
           if (thumbResult.isError) {
-            debugPrint(
+            logger.i(
               'Failed to upload thumbnail: ${thumbResult.failureOrNull?.message}',
             );
             // Continue with full image upload even if thumbnail fails
@@ -84,7 +84,7 @@ class JournalUploadService {
         filename: '${message.id}.jpg',
       );
 
-      debugPrint('📤 Starting image upload for: ${message.id}');
+      logger.i('📤 Starting image upload for: ${message.id}');
       final uploadResult = await storageService.uploadFile(
         file: file,
         storagePath: imagePath,
@@ -99,14 +99,14 @@ class JournalUploadService {
         onProgress: (progress) {
           // Validate progress before converting to int
           if (progress.isFinite && progress >= 0 && progress <= 1) {
-            debugPrint('Image upload progress: ${(progress * 100).toInt()}%');
+            logger.i('Image upload progress: ${(progress * 100).toInt()}%');
           }
           // Could emit to stream for UI updates
         },
       );
 
-      debugPrint('📦 Upload completed, processing result for: ${message.id}');
-      debugPrint('📦 Upload result type: ${uploadResult.isSuccess ? "SUCCESS" : "ERROR"}');
+      logger.i('📦 Upload completed, processing result for: ${message.id}');
+      logger.i('📦 Upload result type: ${uploadResult.isSuccess ? "SUCCESS" : "ERROR"}');
 
       return uploadResult.when(
         success: (downloadUrl) async {
@@ -117,17 +117,17 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          debugPrint(
+          logger.i(
               'Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}',);
           final updateResult = await messageRepository.updateMessage(updatedMessage);
 
           return updateResult.when(
             success: (_) {
-              debugPrint('Successfully updated message in repository: ${updatedMessage.id}');
+              logger.i('Successfully updated message in repository: ${updatedMessage.id}');
               return const Success(null);
             },
             error: (failure) {
-              debugPrint('Failed to update message in repository: $failure');
+              logger.i('Failed to update message in repository: $failure');
               return Error(failure);
             },
           );
@@ -184,7 +184,7 @@ class JournalUploadService {
         onProgress: (progress) {
           // Validate progress before converting to int
           if (progress.isFinite && progress >= 0 && progress <= 1) {
-            debugPrint('Audio upload progress: ${(progress * 100).toInt()}%');
+            logger.i('Audio upload progress: ${(progress * 100).toInt()}%');
           }
         },
       );
@@ -197,13 +197,13 @@ class JournalUploadService {
             uploadStatus: UploadStatus.completed,
           );
 
-          debugPrint(
+          logger.i(
               'Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}',);
           final updateResult = await messageRepository.updateMessage(updatedMessage);
 
           return updateResult.when(
             success: (_) {
-              debugPrint('Successfully updated audio message in repository: ${updatedMessage.id}');
+              logger.i('Successfully updated audio message in repository: ${updatedMessage.id}');
 
               // Trigger transcription in background (don't await)
               // The Cloud Function will handle this automatically via Firestore trigger
@@ -211,7 +211,7 @@ class JournalUploadService {
               unawaited(
                 transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
                   if (transcriptionResult.isError) {
-                    debugPrint(
+                    logger.i(
                         'Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}',);
                   }
                 }),
@@ -220,7 +220,7 @@ class JournalUploadService {
               return const Success(null);
             },
             error: (failure) {
-              debugPrint('Failed to update audio message in repository: $failure');
+              logger.i('Failed to update audio message in repository: $failure');
               return Error(failure);
             },
           );
@@ -254,14 +254,14 @@ class JournalUploadService {
         'messageId': message.id,
       });
 
-      debugPrint('Transcription result: ${result.data}');
+      logger.i('Transcription result: ${result.data}');
       return const Success(null);
     } catch (e) {
       if (e is functions.FirebaseFunctionsException) {
-        debugPrint('Transcription error (${e.code}): ${e.message} ${e.details ?? ''}');
+        logger.i('Transcription error (${e.code}): ${e.message} ${e.details ?? ''}');
         return Error(ServerFailure(message: 'Transcription failed: ${e.message}'));
       }
-      debugPrint('Transcription error: $e');
+      logger.i('Transcription error: $e');
       return Error(ServerFailure(message: 'Transcription failed: $e'));
     }
   }
@@ -282,7 +282,7 @@ class JournalUploadService {
       for (final message in pendingMessages) {
         // Skip if retry count too high (max 5 attempts)
         if (message.uploadRetryCount >= 5) {
-          debugPrint('Max retry count reached for message ${message.id}');
+          logger.i('Max retry count reached for message ${message.id}');
           continue;
         }
 
@@ -293,7 +293,7 @@ class JournalUploadService {
           final backoffSeconds = 2 << message.uploadRetryCount; // 2, 4, 8, 16, 32
 
           if (timeSinceLastAttempt < backoffSeconds) {
-            debugPrint('Backoff period not elapsed for message ${message.id}');
+            logger.i('Backoff period not elapsed for message ${message.id}');
             continue;
           }
         }

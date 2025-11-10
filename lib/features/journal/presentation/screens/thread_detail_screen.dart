@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kairos/core/network/network_info.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
@@ -72,7 +72,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   Future<void> _handleRefresh() async {
     if (_currentThreadId == null) return;
 
-    debugPrint('🔄 Manual refresh triggered for thread: $_currentThreadId');
+    logger.i('🔄 Manual refresh triggered for thread: $_currentThreadId');
 
     await ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
 
@@ -129,14 +129,14 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
           next.whenData((isOnline) {
             // Detect transition from offline to online
             if (_wasOffline && isOnline && _currentThreadId != null) {
-              debugPrint('🌐 Device reconnected - scheduling incremental sync');
+              logger.i('🌐 Device reconnected - scheduling incremental sync');
 
               // Cancel any pending sync timer
               _connectivitySyncTimer?.cancel();
 
               // Debounce sync by 2 seconds after reconnection
               _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
-                debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
+                logger.i('🔄 Triggering auto-sync for thread: $_currentThreadId');
                 ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
               });
             }
@@ -150,10 +150,10 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
       // Listen to sync controller state (optional - for UI feedback)
       ..listen<SyncState>(syncControllerProvider, (previous, next) {
         if (next is SyncError && mounted) {
-          debugPrint('❌ Background sync failed: ${next.message}');
+          logger.i('❌ Background sync failed: ${next.message}');
           // Optionally show a subtle notification
         } else if (next is SyncSuccess) {
-          debugPrint('✅ Background sync completed successfully');
+          logger.i('✅ Background sync completed successfully');
         }
       });
 

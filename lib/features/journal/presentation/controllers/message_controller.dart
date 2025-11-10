@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/services/audio_recorder_service.dart';
 import 'package:kairos/core/services/image_picker_service.dart';
 import 'package:kairos/core/utils/result.dart';
@@ -98,19 +98,19 @@ class MessageController extends StateNotifier<MessageState> {
         state = MessageSuccess(message);
 
         // Trigger background upload
-        debugPrint('🎬 Triggering background upload for: ${message.id}');
+        logger.i('🎬 Triggering background upload for: ${message.id}');
         uploadService.uploadImageMessage(message).then((uploadResult) {
           uploadResult.when(
             success: (_) {
-              debugPrint('✅ Image upload completed successfully for: ${message.id}');
+              logger.i('✅ Image upload completed successfully for: ${message.id}');
             },
             error: (failure) {
-              debugPrint('❌ Upload failed: ${failure.message}');
+              logger.i('❌ Upload failed: ${failure.message}');
               // Message saved locally, will retry later
             },
           );
         }).catchError((Object error) {
-          debugPrint('❌ Unexpected error in upload: $error');
+          logger.i('❌ Unexpected error in upload: $error');
         });
       },
       error: (Failure failure) {
@@ -143,7 +143,7 @@ class MessageController extends StateNotifier<MessageState> {
         // Trigger background upload
         uploadService.uploadAudioMessage(message).then((uploadResult) {
           if (uploadResult.isError) {
-            debugPrint(
+            logger.i(
               'Upload failed: ${uploadResult.failureOrNull?.message}',
             );
           }

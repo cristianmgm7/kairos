@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/services/firebase_storage_service.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
@@ -60,11 +60,11 @@ class CreateImageMessageUseCase {
           await thumbnailFile.writeAsBytes(thumbnailResult.dataOrNull!);
           localThumbnailPath = thumbnailFile.path;
         } catch (e) {
-          debugPrint('Failed to save thumbnail: $e');
+          logger.i('Failed to save thumbnail: $e');
           // Continue without thumbnail
         }
       } else {
-        debugPrint(
+        logger.i(
           'Thumbnail generation failed: ${thumbnailResult.failureOrNull?.message}',
         );
       }

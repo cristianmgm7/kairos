@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kairos/core/config/firebase_config.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/providers/database_provider.dart';
 import 'package:kairos/core/routing/router_provider.dart';
 import 'package:kairos/core/theme/app_theme.dart';
@@ -16,11 +17,11 @@ Future<void> main() async {
     // Initialize Firebase
     final firebaseConfig = FirebaseConfig();
     await firebaseConfig.initialize();
-    debugPrint('✅ Firebase initialized');
+    logger.i('✅ Firebase initialized');
 
     // Initialize Isar
     final isar = await initializeIsar();
-    debugPrint('✅ Isar initialized');
+    logger.i('✅ Isar initialized');
 
     runApp(
       ProviderScope(
@@ -31,8 +32,8 @@ Future<void> main() async {
       ),
     );
   } catch (e, stackTrace) {
-    debugPrint('❌ Error during initialization: $e');
-    debugPrint('Stack trace: $stackTrace');
+    logger.i('❌ Error during initialization: $e');
+    logger.i('Stack trace: $stackTrace');
     // Still run the app but with an error screen
     runApp(
       MaterialApp(

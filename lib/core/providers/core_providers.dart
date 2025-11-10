@@ -31,6 +31,7 @@ final loggerProvider = Provider<Logger>((ref) {
   );
 });
 
+final logger = ProviderContainer().read(loggerProvider);
 /// Connectivity provider - network connectivity monitoring
 final connectivityProvider = Provider<Connectivity>((ref) {
   return Connectivity();

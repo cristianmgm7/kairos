@@ -1,7 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_local_datasource.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_remote_datasource.dart';
@@ -42,7 +42,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
           await remoteDataSource.saveProfile(model);
         } catch (remoteError) {
           // Log error but don't fail - profile is saved locally
-          debugPrint('Failed to sync profile to remote: $remoteError');
+          logger.i('Failed to sync profile to remote: $remoteError');
           // Could add to sync queue here for retry later
         }
       }
@@ -66,7 +66,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
             return Success(remoteProfile.toEntity());
           }
         } catch (remoteError) {
-          debugPrint(
+          logger.i(
             'Failed to fetch from remote, falling back to local: $remoteError',
           );
         }
@@ -93,7 +93,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
             return Success(remoteProfile.toEntity());
           }
         } catch (remoteError) {
-          debugPrint(
+          logger.i(
             'Failed to fetch from remote, falling back to local: $remoteError',
           );
         }
@@ -122,7 +122,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         try {
           await remoteDataSource.updateProfile(model);
         } catch (remoteError) {
-          debugPrint('Failed to sync update to remote: $remoteError');
+          logger.i('Failed to sync update to remote: $remoteError');
         }
       }
 
@@ -143,7 +143,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         try {
           await remoteDataSource.deleteProfile(profileId);
         } catch (remoteError) {
-          debugPrint('Failed to sync delete to remote: $remoteError');
+          logger.i('Failed to sync delete to remote: $remoteError');
         }
       }
 
@@ -190,7 +190,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
             // If equal, they're in sync - do nothing
           }
         } catch (profileSyncError) {
-          debugPrint(
+          logger.i(
             'Failed to sync profile ${localProfile.id}: $profileSyncError',
           );
           // Continue with other profiles
