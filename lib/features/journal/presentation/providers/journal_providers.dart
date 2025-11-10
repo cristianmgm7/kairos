@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/providers/database_provider.dart';
@@ -11,6 +12,7 @@ import 'package:kairos/features/journal/domain/entities/journal_message_entity.d
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
 import 'package:kairos/features/journal/domain/services/journal_upload_service.dart';
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
@@ -64,6 +66,10 @@ final messageRepositoryProvider = Provider<JournalMessageRepository>((ref) {
 });
 
 // Services
+final aiServiceClientProvider = Provider<AiServiceClient>((ref) {
+  return AiServiceClient(FirebaseFunctions.instance);
+});
+
 final journalUploadServiceProvider = Provider<JournalUploadService>((ref) {
   final storageService = ref.watch(firebaseStorageServiceProvider);
   final messageRepository = ref.watch(messageRepositoryProvider);

@@ -441,8 +441,8 @@ No changes needed - Firestore automatically handles new fields. Ensure `toFirest
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code compiles with new fields: `flutter analyze`
-- [ ] Schema generation succeeds: `flutter pub run build_runner build --delete-conflicting-outputs`
+- [x] Code compiles with new fields: `flutter analyze`
+- [x] Schema generation succeeds: `flutter pub run build_runner build --delete-conflicting-outputs`
 - [ ] Existing tests pass: `flutter test test/features/journal/`
 - [ ] No breaking changes to existing message creation flows
 
@@ -819,7 +819,7 @@ final aiServiceClientProvider = Provider<AiServiceClient>((ref) {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code compiles: `flutter analyze`
+- [x] Code compiles: `flutter analyze`
 - [ ] Unit tests pass for MediaUploader: `flutter test test/core/services/media_uploader_test.dart`
 - [ ] Unit tests pass for AiServiceClient: `flutter test test/features/journal/domain/services/ai_service_client_test.dart`
 
@@ -1219,7 +1219,7 @@ firebase deploy --only functions:transcribeAudioMessage,functions:analyzeImageMe
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compiles: `cd functions && npm run build`
+- [x] TypeScript compiles: `cd functions && npm run build`
 - [ ] Linting passes: `cd functions && npm run lint`
 - [ ] Functions deploy successfully: `firebase deploy --only functions:transcribeAudioMessage,functions:analyzeImageMessage,functions:generateMessageResponse`
 - [ ] Functions appear in Firebase Console
@@ -1480,9 +1480,9 @@ abstract class JournalMessageRepository {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Code compiles: `flutter analyze`
+- [x] Code compiles: `flutter analyze`
 - [ ] Repository tests pass (update tests to remove business logic expectations): `flutter test test/features/journal/data/repositories/`
-- [ ] No if/else logic based on `messageType` or `role` remains in repository
+- [x] No if/else logic based on `messageType` or `role` remains in repository
 
 #### Manual Verification:
 - [ ] Repository creates message with status as-is (doesn't modify it)

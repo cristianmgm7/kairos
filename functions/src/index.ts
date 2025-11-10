@@ -4,6 +4,13 @@ import * as admin from 'firebase-admin';
 admin.initializeApp();
 
 // Export all Cloud Functions
+
+// NEW: Callable functions for explicit client-side orchestration
+export { transcribeAudioMessage } from './functions/transcription-callable';
+export { analyzeImageMessage } from './functions/image-analysis-callable';
+export { generateMessageResponse } from './functions/ai-response-callable';
+
+// EXISTING: Firestore triggers (will be deprecated after migration)
 export {
   processUserMessage,
   processImageUpload,
