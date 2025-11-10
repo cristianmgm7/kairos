@@ -1,5 +1,19 @@
 # Journal Message Pipeline Refactoring Implementation Plan
 
+## ✅ Implementation Status: COMPLETED
+
+All 8 phases have been successfully implemented:
+- ✅ **Phase 1**: Domain Model Refactoring (MessageStatus enum, new fields)
+- ✅ **Phase 2**: Infrastructure Layer (MediaUploader, AiServiceClient)
+- ✅ **Phase 3**: Cloud Functions (Callable functions for transcription, image analysis, AI response)
+- ✅ **Phase 4**: Repository Simplification (Pure CRUD, no business logic)
+- ✅ **Phase 5**: Use Cases (Pipeline orchestration with Future-based architecture)
+- ✅ **Phase 6**: Retry Logic (RetryMessagePipelineUseCase with exponential backoff)
+- ✅ **Phase 7**: UI Integration (Status indicators, retry buttons, MessageStatusDisplay helper)
+- ✅ **Phase 8**: Migration and Cleanup (Removed deprecated code, commented out old triggers)
+
+**Key Architectural Decision**: Use cases return `Future<Result<void>>` instead of `Stream`, leveraging the existing reactive architecture where the repository stream (`watchMessagesByThreadId`) automatically reflects status changes from the local database.
+
 ## Overview
 
 Refactor the journal message creation and processing pipeline to follow clean architecture principles by moving business logic out of repositories, eliminating the upload service orchestration layer, and implementing explicit client-side AI service calls with proper state management and resumability.

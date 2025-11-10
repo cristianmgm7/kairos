@@ -47,23 +47,6 @@ enum FailureReason {
 }
 
 // DEPRECATED: Legacy enums kept for backward compatibility during migration
-@Deprecated('Use MessageStatus instead')
-enum UploadStatus {
-  notStarted,
-  uploading,
-  completed,
-  failed,
-  retrying,
-}
-
-@Deprecated('Use MessageStatus instead')
-enum AiProcessingStatus {
-  pending,
-  processing,
-  completed,
-  failed,
-}
-
 class JournalMessageEntity extends Equatable {
   const JournalMessageEntity({
     required this.id,
@@ -92,11 +75,6 @@ class JournalMessageEntity extends Equatable {
     this.lastAttemptAt,
     // NEW: Idempotency
     this.clientLocalId,
-    // DEPRECATED: Legacy fields kept for backward compatibility
-    @Deprecated('Use status instead') this.aiProcessingStatus = AiProcessingStatus.pending,
-    @Deprecated('Use status instead') this.uploadStatus = UploadStatus.notStarted,
-    @Deprecated('Use attemptCount instead') this.uploadRetryCount = 0,
-    @Deprecated('Use lastAttemptAt instead') this.lastUploadAttemptAt,
     this.metadata,
     this.isTemporary = false,
   });
@@ -133,16 +111,6 @@ class JournalMessageEntity extends Equatable {
 
   // Idempotency key for remote writes
   final String? clientLocalId;
-
-  // DEPRECATED: Legacy fields
-  @Deprecated('Use status instead')
-  final AiProcessingStatus aiProcessingStatus;
-  @Deprecated('Use status instead')
-  final UploadStatus uploadStatus;
-  @Deprecated('Use attemptCount instead')
-  final int uploadRetryCount;
-  @Deprecated('Use lastAttemptAt instead')
-  final DateTime? lastUploadAttemptAt;
 
   // Extensibility
   final Map<String, dynamic>? metadata;
@@ -201,11 +169,6 @@ class JournalMessageEntity extends Equatable {
     int? attemptCount,
     DateTime? lastAttemptAt,
     String? clientLocalId,
-    // DEPRECATED: Keep for backward compatibility during migration
-    @Deprecated('Use status instead') AiProcessingStatus? aiProcessingStatus,
-    @Deprecated('Use status instead') UploadStatus? uploadStatus,
-    @Deprecated('Use attemptCount instead') int? uploadRetryCount,
-    @Deprecated('Use lastAttemptAt instead') DateTime? lastUploadAttemptAt,
     Map<String, dynamic>? metadata,
     bool? isTemporary,
   }) {

@@ -13,7 +13,6 @@ import 'package:kairos/features/journal/domain/entities/journal_thread_entity.da
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
 import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
-import 'package:kairos/features/journal/domain/services/journal_upload_service.dart';
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
@@ -69,15 +68,6 @@ final messageRepositoryProvider = Provider<JournalMessageRepository>((ref) {
 // Services
 final aiServiceClientProvider = Provider<AiServiceClient>((ref) {
   return AiServiceClient(FirebaseFunctions.instance);
-});
-
-final journalUploadServiceProvider = Provider<JournalUploadService>((ref) {
-  final storageService = ref.watch(firebaseStorageServiceProvider);
-  final messageRepository = ref.watch(messageRepositoryProvider);
-  return JournalUploadService(
-    storageService: storageService,
-    messageRepository: messageRepository,
-  );
 });
 
 // Use cases
@@ -157,7 +147,7 @@ final messageControllerProvider = StateNotifierProvider<MessageController, Messa
   final createTextMessageUseCase = ref.watch(createTextMessageUseCaseProvider);
   final createImageMessageUseCase = ref.watch(createImageMessageUseCaseProvider);
   final createAudioMessageUseCase = ref.watch(createAudioMessageUseCaseProvider);
-  final uploadService = ref.watch(journalUploadServiceProvider);
+  final retryMessagePipelineUseCase = ref.watch(retryMessagePipelineUseCaseProvider);
   final imagePickerService = ref.watch(imagePickerServiceProvider);
   final audioRecorderService = ref.watch(audioRecorderServiceProvider);
 
@@ -165,7 +155,7 @@ final messageControllerProvider = StateNotifierProvider<MessageController, Messa
     createTextMessageUseCase: createTextMessageUseCase,
     createImageMessageUseCase: createImageMessageUseCase,
     createAudioMessageUseCase: createAudioMessageUseCase,
-    uploadService: uploadService,
+    retryMessagePipelineUseCase: retryMessagePipelineUseCase,
     imagePickerService: imagePickerService,
     audioRecorderService: audioRecorderService,
   );

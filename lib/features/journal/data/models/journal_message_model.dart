@@ -30,11 +30,6 @@ class JournalMessageModel {
     this.attemptCount = 0,
     this.lastAttemptMillis,
     this.clientLocalId,
-    // DEPRECATED: Legacy fields for backward compatibility
-    @Deprecated('Use status instead') this.aiProcessingStatus = 0,
-    @Deprecated('Use status instead') this.uploadStatus = 0,
-    @Deprecated('Use attemptCount instead') this.uploadRetryCount = 0,
-    @Deprecated('Use lastAttemptMillis instead') this.lastUploadAttemptMillis,
     this.isDeleted = false,
     this.version = 1,
   });
@@ -155,16 +150,6 @@ class JournalMessageModel {
   final int? lastAttemptMillis;
   final String? clientLocalId;
 
-  // DEPRECATED: Legacy fields
-  @Deprecated('Use status instead')
-  final int aiProcessingStatus;
-  @Deprecated('Use status instead')
-  final int uploadStatus;
-  @Deprecated('Use attemptCount instead')
-  final int uploadRetryCount;
-  @Deprecated('Use lastAttemptMillis instead')
-  final int? lastUploadAttemptMillis;
-
   final int createdAtMillis;
   @Index()
   final int updatedAtMillis;
@@ -270,11 +255,6 @@ class JournalMessageModel {
     int? attemptCount,
     int? lastAttemptMillis,
     String? clientLocalId,
-    // DEPRECATED: Keep for backward compatibility during migration
-    @Deprecated('Use status instead') int? aiProcessingStatus,
-    @Deprecated('Use status instead') int? uploadStatus,
-    @Deprecated('Use attemptCount instead') int? uploadRetryCount,
-    @Deprecated('Use lastAttemptMillis instead') int? lastUploadAttemptMillis,
     int? createdAtMillis,
     int? updatedAtMillis,
     bool? isDeleted,

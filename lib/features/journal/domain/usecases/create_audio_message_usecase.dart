@@ -107,7 +107,7 @@ class CreateAudioMessageUseCase {
       // STEP 2: Upload audio file
       message = message.copyWith(
         status: MessageStatus.uploadingMedia,
-        uploadProgress: 0.0,
+        uploadProgress: 0,
       );
       await messageRepository.updateMessage(message);
 
