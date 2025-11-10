@@ -233,7 +233,7 @@ class MessageController extends StateNotifier<MessageState> {
   }) async {
     final result = await audioRecorderService.stopRecording();
 
-    result.when(
+    await result.when(
       success: (recordingResult) async {
         _isRecording = false;
 

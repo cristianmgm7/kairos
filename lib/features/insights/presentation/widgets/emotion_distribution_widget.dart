@@ -48,7 +48,7 @@ class EmotionDistributionWidget extends StatelessWidget {
                 child: PieChart(
                   PieChartData(
                     sections: emotionCounts.entries.map((entry) {
-                      final percentage = (entry.value / total * 100);
+                      final percentage = entry.value / total * 100;
                       return PieChartSectionData(
                         value: entry.value.toDouble(),
                         title: '${percentage.toStringAsFixed(0)}%',

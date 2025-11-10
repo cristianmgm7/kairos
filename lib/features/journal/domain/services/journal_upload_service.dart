@@ -118,7 +118,7 @@ class JournalUploadService {
           );
 
           debugPrint(
-              'Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+              'Calling updateMessage for: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}',);
           final updateResult = await messageRepository.updateMessage(updatedMessage);
 
           return updateResult.when(
@@ -198,7 +198,7 @@ class JournalUploadService {
           );
 
           debugPrint(
-              'Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}');
+              'Calling updateMessage for audio: ${updatedMessage.id} with storageUrl: ${updatedMessage.storageUrl}',);
           final updateResult = await messageRepository.updateMessage(updatedMessage);
 
           return updateResult.when(
@@ -212,7 +212,7 @@ class JournalUploadService {
                 transcribeAudio(updatedMessage).then<void>((transcriptionResult) {
                   if (transcriptionResult.isError) {
                     debugPrint(
-                        'Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}');
+                        'Manual transcription failed, will be handled by trigger: ${transcriptionResult.failureOrNull?.message}',);
                   }
                 }),
               );

@@ -46,7 +46,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
     // Trigger initial sync on screen entry if we have a threadId
     if (_currentThreadId != null) {
       Future.microtask(
-          () => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!));
+        () => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!),
+      );
     }
   }
 
@@ -121,39 +122,40 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   @override
   Widget build(BuildContext context) {
     // Listen for connectivity changes (auto-sync on reconnect)
-    ref.listen<AsyncValue<bool>>(
-      connectivityStreamProvider,
-      (previous, next) {
-        next.whenData((isOnline) {
-          // Detect transition from offline to online
-          if (_wasOffline && isOnline && _currentThreadId != null) {
-            debugPrint('🌐 Device reconnected - scheduling incremental sync');
+    ref
+      ..listen<AsyncValue<bool>>(
+        connectivityStreamProvider,
+        (previous, next) {
+          next.whenData((isOnline) {
+            // Detect transition from offline to online
+            if (_wasOffline && isOnline && _currentThreadId != null) {
+              debugPrint('🌐 Device reconnected - scheduling incremental sync');
 
-            // Cancel any pending sync timer
-            _connectivitySyncTimer?.cancel();
+              // Cancel any pending sync timer
+              _connectivitySyncTimer?.cancel();
 
-            // Debounce sync by 2 seconds after reconnection
-            _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
-              debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
-              ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
-            });
-          }
+              // Debounce sync by 2 seconds after reconnection
+              _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
+                debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
+                ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
+              });
+            }
 
-          // Update offline tracking state
-          _wasOffline = !isOnline;
-        });
-      },
-    );
+            // Update offline tracking state
+            _wasOffline = !isOnline;
+          });
+        },
+      )
 
-    // Listen to sync controller state (optional - for UI feedback)
-    ref.listen<SyncState>(syncControllerProvider, (previous, next) {
-      if (next is SyncError && mounted) {
-        debugPrint('❌ Background sync failed: ${next.message}');
-        // Optionally show a subtle notification
-      } else if (next is SyncSuccess) {
-        debugPrint('✅ Background sync completed successfully');
-      }
-    });
+      // Listen to sync controller state (optional - for UI feedback)
+      ..listen<SyncState>(syncControllerProvider, (previous, next) {
+        if (next is SyncError && mounted) {
+          debugPrint('❌ Background sync failed: ${next.message}');
+          // Optionally show a subtle notification
+        } else if (next is SyncSuccess) {
+          debugPrint('✅ Background sync completed successfully');
+        }
+      });
 
     final messagesAsync = _currentThreadId != null
         ? ref.watch(messagesStreamProvider(_currentThreadId!))

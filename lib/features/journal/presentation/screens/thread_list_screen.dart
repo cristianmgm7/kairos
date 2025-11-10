@@ -145,7 +145,7 @@ class ThreadListScreen extends ConsumerWidget {
       key: Key(thread.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        return await _showDeleteConfirmationDialog(context);
+        return _showDeleteConfirmationDialog(context);
       },
       onDismissed: (direction) {
         ref.read(threadControllerProvider.notifier).deleteThread(thread.id);

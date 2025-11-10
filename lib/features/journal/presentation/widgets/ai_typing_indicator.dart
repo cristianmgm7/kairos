@@ -34,7 +34,6 @@ class _AiTypingIndicatorState extends State<AiTypingIndicator> with SingleTicker
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // AI Avatar

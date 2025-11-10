@@ -1,3 +1,4 @@
+import 'package:kairos/core/errors/failures.dart' show NetworkFailure, ServerFailure;
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 

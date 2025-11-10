@@ -253,7 +253,7 @@ class MessageBubble extends ConsumerWidget {
     IconData icon;
     Color color;
     String tooltip;
-    bool showRetry = false;
+    var showRetry = false;
 
     switch (message.uploadStatus) {
       case UploadStatus.notStarted:
@@ -303,8 +303,7 @@ class MessageBubble extends ConsumerWidget {
           const SizedBox(width: 8),
           InkWell(
             onTap: () {
-              final controller = ref.read(messageControllerProvider.notifier);
-              controller.retryUpload(message);
+              ref.read(messageControllerProvider.notifier).retryUpload(message);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(

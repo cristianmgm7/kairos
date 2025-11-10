@@ -9,9 +9,7 @@ import 'package:kairos/features/journal/presentation/providers/journal_providers
 /// Input widget for composing and sending messages
 class MessageInput extends ConsumerStatefulWidget {
   const MessageInput({
-    super.key,
-    required this.controller,
-    required this.onSendMessage,
+    required this.controller, required this.onSendMessage, super.key,
     this.threadId,
   });
 
@@ -63,7 +61,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         border: Border(
           top: BorderSide(
             color: theme.colorScheme.outlineVariant,
-            width: 1,
           ),
         ),
       ),
@@ -264,8 +261,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
 class _RecordingDialog extends ConsumerStatefulWidget {
   const _RecordingDialog({
-    this.threadId,
-    required this.onSend,
+    required this.onSend, this.threadId,
   });
 
   final String? threadId;
