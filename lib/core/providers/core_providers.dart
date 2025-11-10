@@ -26,6 +26,8 @@ final loggerProvider = Provider<Logger>((ref) {
       methodCount: 0,
       errorMethodCount: 5,
       lineLength: 50,
+      colors: false,
+
     ),
     level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
   );
