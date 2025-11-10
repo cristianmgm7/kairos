@@ -21,10 +21,20 @@ class JournalMessageModel {
     this.localThumbnailPath,
     this.audioDurationSeconds,
     this.transcription,
-    this.aiProcessingStatus = 0,
-    this.uploadStatus = 0,
-    this.uploadRetryCount = 0,
-    this.lastUploadAttemptMillis,
+    // NEW: Single pipeline status
+    this.status = 0, // MessageStatus.localCreated
+    this.failureReason,
+    this.uploadProgress,
+    this.uploadError,
+    this.aiError,
+    this.attemptCount = 0,
+    this.lastAttemptMillis,
+    this.clientLocalId,
+    // DEPRECATED: Legacy fields for backward compatibility
+    @Deprecated('Use status instead') this.aiProcessingStatus = 0,
+    @Deprecated('Use status instead') this.uploadStatus = 0,
+    @Deprecated('Use attemptCount instead') this.uploadRetryCount = 0,
+    @Deprecated('Use lastAttemptMillis instead') this.lastUploadAttemptMillis,
     this.isDeleted = false,
     this.version = 1,
   });
@@ -52,7 +62,8 @@ class JournalMessageModel {
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: nowMillis,
       updatedAtMillis: nowMillis, // same as created initially
-      uploadStatus: messageType == MessageType.text ? 2 : 0, // text=completed, media=notStarted
+      status: 0, // MessageStatus.localCreated
+      clientLocalId: const Uuid().v4(), // Generate unique ID for idempotency
     );
   }
 
@@ -70,10 +81,15 @@ class JournalMessageModel {
       localThumbnailPath: entity.localThumbnailPath,
       audioDurationSeconds: entity.audioDurationSeconds,
       transcription: entity.transcription,
-      aiProcessingStatus: entity.aiProcessingStatus.index,
-      uploadStatus: entity.uploadStatus.index,
-      uploadRetryCount: entity.uploadRetryCount,
-      lastUploadAttemptMillis: entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
+      // NEW fields
+      status: entity.status.index,
+      failureReason: entity.failureReason?.index,
+      uploadProgress: entity.uploadProgress,
+      uploadError: entity.uploadError,
+      aiError: entity.aiError,
+      attemptCount: entity.attemptCount,
+      lastAttemptMillis: entity.lastAttemptAt?.millisecondsSinceEpoch,
+      clientLocalId: entity.clientLocalId,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
       updatedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
@@ -92,8 +108,15 @@ class JournalMessageModel {
       thumbnailUrl: map['thumbnailUrl'] as String?,
       audioDurationSeconds: map['audioDurationSeconds'] as int?,
       transcription: map['transcription'] as String?,
-      aiProcessingStatus: map['aiProcessingStatus'] as int? ?? 0,
-      uploadStatus: map['uploadStatus'] as int? ?? 0,
+      // NEW fields
+      status: map['status'] as int? ?? 0, // default to localCreated
+      failureReason: map['failureReason'] as int?,
+      uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
+      uploadError: map['uploadError'] as String?,
+      aiError: map['aiError'] as String?,
+      attemptCount: map['attemptCount'] as int? ?? 0,
+      lastAttemptMillis: map['lastAttemptMillis'] as int?,
+      clientLocalId: map['clientLocalId'] as String?,
       createdAtMillis: createdAt,
       updatedAtMillis: map['updatedAtMillis'] as int? ??
           createdAt, // default to createdAt for backwards compatibility
@@ -120,10 +143,28 @@ class JournalMessageModel {
   final String? localThumbnailPath;
   final int? audioDurationSeconds;
   final String? transcription;
+
+  // NEW: Single pipeline status fields
+  @enumerated
+  final int status; // MessageStatus enum index
+  final int? failureReason; // FailureReason enum index
+  final double? uploadProgress;
+  final String? uploadError;
+  final String? aiError;
+  final int attemptCount;
+  final int? lastAttemptMillis;
+  final String? clientLocalId;
+
+  // DEPRECATED: Legacy fields
+  @Deprecated('Use status instead')
   final int aiProcessingStatus;
+  @Deprecated('Use status instead')
   final int uploadStatus;
+  @Deprecated('Use attemptCount instead')
   final int uploadRetryCount;
+  @Deprecated('Use lastAttemptMillis instead')
   final int? lastUploadAttemptMillis;
+
   final int createdAtMillis;
   @Index()
   final int updatedAtMillis;
@@ -144,7 +185,15 @@ class JournalMessageModel {
       'thumbnailUrl': thumbnailUrl,
       'audioDurationSeconds': audioDurationSeconds,
       'transcription': transcription,
-      'aiProcessingStatus': aiProcessingStatus,
+      // NEW fields
+      'status': status,
+      'failureReason': failureReason,
+      'uploadProgress': uploadProgress,
+      'uploadError': uploadError,
+      'aiError': aiError,
+      'attemptCount': attemptCount,
+      'lastAttemptMillis': lastAttemptMillis,
+      'clientLocalId': clientLocalId,
       'createdAtMillis': createdAtMillis,
       'updatedAtMillis': updatedAtMillis,
       'isDeleted': isDeleted,
@@ -175,13 +224,18 @@ class JournalMessageModel {
       localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
       transcription: transcription,
-      aiProcessingStatus: AiProcessingStatus.values[aiProcessingStatus],
-      uploadStatus: UploadStatus.values[uploadStatus],
-      uploadRetryCount: uploadRetryCount,
-      lastUploadAttemptAt:
-          lastUploadAttemptMillis != null && _isValidTimestamp(lastUploadAttemptMillis!)
-              ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!, isUtc: true)
+      // NEW fields
+      status: MessageStatus.values[status],
+      failureReason: failureReason != null ? FailureReason.values[failureReason!] : null,
+      uploadProgress: uploadProgress,
+      uploadError: uploadError,
+      aiError: aiError,
+      attemptCount: attemptCount,
+      lastAttemptAt:
+          lastAttemptMillis != null && _isValidTimestamp(lastAttemptMillis!)
+              ? DateTime.fromMillisecondsSinceEpoch(lastAttemptMillis!, isUtc: true)
               : null,
+      clientLocalId: clientLocalId,
       createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
     );
@@ -208,10 +262,19 @@ class JournalMessageModel {
     String? localThumbnailPath,
     int? audioDurationSeconds,
     String? transcription,
-    int? aiProcessingStatus,
-    int? uploadStatus,
-    int? uploadRetryCount,
-    int? lastUploadAttemptMillis,
+    int? status,
+    int? failureReason,
+    double? uploadProgress,
+    String? uploadError,
+    String? aiError,
+    int? attemptCount,
+    int? lastAttemptMillis,
+    String? clientLocalId,
+    // DEPRECATED: Keep for backward compatibility during migration
+    @Deprecated('Use status instead') int? aiProcessingStatus,
+    @Deprecated('Use status instead') int? uploadStatus,
+    @Deprecated('Use attemptCount instead') int? uploadRetryCount,
+    @Deprecated('Use lastAttemptMillis instead') int? lastUploadAttemptMillis,
     int? createdAtMillis,
     int? updatedAtMillis,
     bool? isDeleted,
@@ -230,10 +293,14 @@ class JournalMessageModel {
       localThumbnailPath: localThumbnailPath ?? this.localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
-      aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
-      uploadStatus: uploadStatus ?? this.uploadStatus,
-      uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
-      lastUploadAttemptMillis: lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
+      status: status ?? this.status,
+      failureReason: failureReason ?? this.failureReason,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      uploadError: uploadError ?? this.uploadError,
+      aiError: aiError ?? this.aiError,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastAttemptMillis: lastAttemptMillis ?? this.lastAttemptMillis,
+      clientLocalId: clientLocalId ?? this.clientLocalId,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
       updatedAtMillis: updatedAtMillis ?? this.updatedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,

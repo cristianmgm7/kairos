@@ -12,6 +12,42 @@ enum MessageType {
   audio,
 }
 
+/// Single authoritative status modeling the entire message pipeline
+enum MessageStatus {
+  /// Message created locally but not yet processed
+  localCreated,
+
+  /// Media file is being uploaded (audio/image only)
+  uploadingMedia,
+
+  /// Media file uploaded successfully
+  mediaUploaded,
+
+  /// AI processing in progress (transcription or response generation)
+  processingAi,
+
+  /// AI processing completed (transcription/analysis done)
+  processed,
+
+  /// Message synced to remote Firestore
+  remoteCreated,
+
+  /// Terminal failure state
+  failed,
+}
+
+/// Detailed substatus for failed state to enable targeted retry
+enum FailureReason {
+  uploadFailed,
+  transcriptionFailed,
+  aiResponseFailed,
+  remoteCreationFailed,
+  networkError,
+  unknown,
+}
+
+// DEPRECATED: Legacy enums kept for backward compatibility during migration
+@Deprecated('Use MessageStatus instead')
 enum UploadStatus {
   notStarted,
   uploading,
@@ -20,6 +56,7 @@ enum UploadStatus {
   retrying,
 }
 
+@Deprecated('Use MessageStatus instead')
 enum AiProcessingStatus {
   pending,
   processing,
@@ -43,10 +80,23 @@ class JournalMessageEntity extends Equatable {
     this.localThumbnailPath,
     this.audioDurationSeconds,
     this.transcription,
-    this.aiProcessingStatus = AiProcessingStatus.pending,
-    this.uploadStatus = UploadStatus.notStarted,
-    this.uploadRetryCount = 0,
-    this.lastUploadAttemptAt,
+    // NEW: Single pipeline status (replaces uploadStatus and aiProcessingStatus)
+    this.status = MessageStatus.localCreated,
+    this.failureReason,
+    // NEW: Progress and error tracking
+    this.uploadProgress,
+    this.uploadError,
+    this.aiError,
+    // NEW: Retry tracking (replaces uploadRetryCount and lastUploadAttemptAt)
+    this.attemptCount = 0,
+    this.lastAttemptAt,
+    // NEW: Idempotency
+    this.clientLocalId,
+    // DEPRECATED: Legacy fields kept for backward compatibility
+    @Deprecated('Use status instead') this.aiProcessingStatus = AiProcessingStatus.pending,
+    @Deprecated('Use status instead') this.uploadStatus = UploadStatus.notStarted,
+    @Deprecated('Use attemptCount instead') this.uploadRetryCount = 0,
+    @Deprecated('Use lastAttemptAt instead') this.lastUploadAttemptAt,
     this.metadata,
     this.isTemporary = false,
   });
@@ -68,10 +118,30 @@ class JournalMessageEntity extends Equatable {
   final int? audioDurationSeconds;
   final String? transcription;
 
-  // Processing
+  // Pipeline status (REPLACES: uploadStatus, aiProcessingStatus)
+  final MessageStatus status;
+  final FailureReason? failureReason;
+
+  // Progress tracking
+  final double? uploadProgress; // 0.0 to 1.0
+  final String? uploadError;
+  final String? aiError;
+
+  // Retry tracking (REPLACES: uploadRetryCount, lastUploadAttemptAt)
+  final int attemptCount;
+  final DateTime? lastAttemptAt;
+
+  // Idempotency key for remote writes
+  final String? clientLocalId;
+
+  // DEPRECATED: Legacy fields
+  @Deprecated('Use status instead')
   final AiProcessingStatus aiProcessingStatus;
+  @Deprecated('Use status instead')
   final UploadStatus uploadStatus;
+  @Deprecated('Use attemptCount instead')
   final int uploadRetryCount;
+  @Deprecated('Use lastAttemptAt instead')
   final DateTime? lastUploadAttemptAt;
 
   // Extensibility
@@ -96,10 +166,14 @@ class JournalMessageEntity extends Equatable {
         localThumbnailPath,
         audioDurationSeconds,
         transcription,
-        aiProcessingStatus,
-        uploadStatus,
-        uploadRetryCount,
-        lastUploadAttemptAt,
+        status,
+        failureReason,
+        uploadProgress,
+        uploadError,
+        aiError,
+        attemptCount,
+        lastAttemptAt,
+        clientLocalId,
         metadata,
         isTemporary,
       ];
@@ -119,10 +193,19 @@ class JournalMessageEntity extends Equatable {
     String? localThumbnailPath,
     int? audioDurationSeconds,
     String? transcription,
-    AiProcessingStatus? aiProcessingStatus,
-    UploadStatus? uploadStatus,
-    int? uploadRetryCount,
-    DateTime? lastUploadAttemptAt,
+    MessageStatus? status,
+    FailureReason? failureReason,
+    double? uploadProgress,
+    String? uploadError,
+    String? aiError,
+    int? attemptCount,
+    DateTime? lastAttemptAt,
+    String? clientLocalId,
+    // DEPRECATED: Keep for backward compatibility during migration
+    @Deprecated('Use status instead') AiProcessingStatus? aiProcessingStatus,
+    @Deprecated('Use status instead') UploadStatus? uploadStatus,
+    @Deprecated('Use attemptCount instead') int? uploadRetryCount,
+    @Deprecated('Use lastAttemptAt instead') DateTime? lastUploadAttemptAt,
     Map<String, dynamic>? metadata,
     bool? isTemporary,
   }) {
@@ -141,10 +224,14 @@ class JournalMessageEntity extends Equatable {
       localThumbnailPath: localThumbnailPath ?? this.localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
-      aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
-      uploadStatus: uploadStatus ?? this.uploadStatus,
-      uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
-      lastUploadAttemptAt: lastUploadAttemptAt ?? this.lastUploadAttemptAt,
+      status: status ?? this.status,
+      failureReason: failureReason ?? this.failureReason,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      uploadError: uploadError ?? this.uploadError,
+      aiError: aiError ?? this.aiError,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      clientLocalId: clientLocalId ?? this.clientLocalId,
       metadata: metadata ?? this.metadata,
       isTemporary: isTemporary ?? this.isTemporary,
     );
