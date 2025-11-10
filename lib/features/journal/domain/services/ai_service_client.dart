@@ -46,6 +46,7 @@ class AiServiceClient {
       parser: (data) {
         final transcription = data['transcription'] as String?;
         if (transcription == null) {
+          // ignore: only_throw_errors
           throw const ServerFailure(message: 'No transcription in response');
         }
         return TranscriptionResult(transcription: transcription);
@@ -73,6 +74,7 @@ class AiServiceClient {
       parser: (data) {
         final description = data['description'] as String?;
         if (description == null) {
+          // ignore: only_throw_errors
           throw const ServerFailure(message: 'No description in response');
         }
         return ImageAnalysisResult(description: description);
