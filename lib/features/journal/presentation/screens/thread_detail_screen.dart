@@ -58,12 +58,13 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     return messagesAsync.maybeWhen(
       data: (messages) {
-        // Check if last message is from user and has pending/processing AI status
+        // Check if last message is from user and AI response is pending
         if (messages.isEmpty) return false;
         final lastMessage = messages.last;
+        // Show "AI thinking" if last message is from user and not failed
+        // (AI response will arrive as a separate message)
         return lastMessage.role == MessageRole.user &&
-            (lastMessage.aiProcessingStatus == AiProcessingStatus.pending ||
-                lastMessage.aiProcessingStatus == AiProcessingStatus.processing);
+            lastMessage.status != MessageStatus.failed;
       },
       orElse: () => false,
     );
@@ -172,15 +173,25 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         _messageController.clear();
         _scrollToBottom();
 
-        // If this was a new thread, update the thread ID
-        if (_currentThreadId == null) {
-          setState(() {
-            _currentThreadId = next.message.threadId;
-          });
-        }
-
         // Reset controller state
         ref.read(messageControllerProvider.notifier).reset();
+        
+        // If this was a new thread, get thread ID from the messages stream
+        if (_currentThreadId == null) {
+          // Wait a frame for the stream to update, then grab the thread ID
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final userId = ref.read(currentUserProvider)?.id;
+            if (userId != null) {
+              ref.read(threadsStreamProvider(userId)).whenData((threads) {
+                if (threads.isNotEmpty && _currentThreadId == null) {
+                  setState(() {
+                    _currentThreadId = threads.first.id;
+                  });
+                }
+              });
+            }
+          });
+        }
       } else if (next is MessageError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -192,34 +203,38 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
       }
     });
 
-    // Listen for AI processing failures
+    // Listen for message processing failures
     if (_currentThreadId != null) {
       ref.listen<AsyncValue<List<JournalMessageEntity>>>(
         messagesStreamProvider(_currentThreadId!),
         (previous, next) {
           next.whenData((messages) {
-            // Check if any message just failed AI processing
+            // Check if any message just failed
             final previousMessages = previous?.valueOrNull ?? [];
             for (final message in messages) {
               if (message.role == MessageRole.user &&
-                  message.aiProcessingStatus == AiProcessingStatus.failed) {
+                  message.status == MessageStatus.failed) {
                 // Check if this is a new failure
                 final previousMessage = previousMessages.firstWhere(
                   (m) => m.id == message.id,
                   orElse: () => message,
                 );
 
-                if (previousMessage.aiProcessingStatus != AiProcessingStatus.failed) {
-                  // Show error snackbar
+                if (previousMessage.status != MessageStatus.failed) {
+                  // Show error snackbar with specific error message
+                  final errorMessage = message.uploadError ?? 
+                                       message.aiError ?? 
+                                       'Message processing failed. Please try again.';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('AI response failed. Please try again.'),
+                      content: Text(errorMessage),
                       backgroundColor: Colors.red,
                       action: SnackBarAction(
                         label: 'Retry',
                         textColor: Colors.white,
                         onPressed: () {
-                          // TODO(Phase 3): Implement retry logic
+                          ref.read(messageControllerProvider.notifier)
+                              .retryMessage(message.id);
                         },
                       ),
                     ),

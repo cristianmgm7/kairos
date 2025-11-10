@@ -1,6 +1,5 @@
 import 'package:isar/isar.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
-import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 
 abstract class JournalMessageLocalDataSource {
   Future<void> saveMessage(JournalMessageModel message);
@@ -98,6 +97,8 @@ class JournalMessageLocalDataSourceImpl implements JournalMessageLocalDataSource
 
   @override
   Future<List<JournalMessageModel>> getPendingUploads(String userId) async {
+    // Find messages that need media upload or retry
+    // Status: localCreated, uploadingMedia, or failed
     return isar.journalMessageModels
         .filter()
         .userIdEqualTo(userId)
@@ -108,10 +109,12 @@ class JournalMessageLocalDataSourceImpl implements JournalMessageLocalDataSource
         .and()
         .group(
           (q) => q
-              .uploadStatusEqualTo(0) // notStarted
+              .statusEqualTo(0) // localCreated
               .or()
-              .uploadStatusEqualTo(3),
-        ) // failed
+              .statusEqualTo(1) // uploadingMedia
+              .or()
+              .statusEqualTo(6), // failed
+        )
         .findAll();
   }
 
@@ -119,29 +122,14 @@ class JournalMessageLocalDataSourceImpl implements JournalMessageLocalDataSource
   Future<void> upsertFromRemote(JournalMessageModel remote) async {
     final existing = await getMessageById(remote.id);
     if (existing == null) {
-      final isNonUser = remote.role != MessageRole.user.index;
-      final isText = remote.messageType == MessageType.text.index;
-      final normalized = remote.copyWith(
-        uploadStatus: (isNonUser || isText) ? UploadStatus.completed.index : (remote.uploadStatus),
-      );
-      await saveMessage(normalized);
+      // New message from remote - save as is
+      await saveMessage(remote);
       return;
     }
 
-    final isNonUser = remote.role != MessageRole.user.index;
-    final isText = remote.messageType == MessageType.text.index;
-    final int uploadStatusToUse;
-    if (isNonUser || isText) {
-      uploadStatusToUse = UploadStatus.completed.index;
-    } else if (remote.uploadStatus > existing.uploadStatus) {
-      uploadStatusToUse = remote.uploadStatus;
-    } else {
-      uploadStatusToUse = existing.uploadStatus;
-    }
-
+    // Merge remote with local, preserving local file paths and attempt tracking
     final merged = remote.copyWith(
-      uploadStatus: uploadStatusToUse,
-      uploadRetryCount: existing.uploadRetryCount,
+      attemptCount: existing.attemptCount,
       localFilePath: existing.localFilePath,
       localThumbnailPath: existing.localThumbnailPath,
       audioDurationSeconds: existing.audioDurationSeconds,
