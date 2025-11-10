@@ -4,7 +4,7 @@ import { geminiApiKey } from '../config/genkit';
 import { createAiService } from '../services/ai-service';
 import { getMessageRepository } from '../data/repositories';
 import { createConversationBuilder } from '../domain/conversation/conversation-builder';
-import { MessageRole, MessageType, AiProcessingStatus } from '../config/constants';
+import { MessageRole, MessageType, MessageStatus } from '../config/constants';
 
 const db = admin.firestore();
 
@@ -111,21 +111,26 @@ export const generateMessageResponse = onCall(
         throw new HttpsError('invalid-argument', 'Unknown message type');
       }
 
-      // 8. Save AI response as new message
+      // 8. Update original user message to processed status
+      await messageRepo.update(messageId, {
+        status: MessageStatus.PROCESSED,
+      });
+
+      // 9. Save AI response as new message (created directly in Firestore)
       const responseMessage = {
         threadId,
         userId,
         role: MessageRole.AI,
         messageType: MessageType.TEXT,
         content: aiResponse.text,
-        aiProcessingStatus: AiProcessingStatus.COMPLETED,
+        status: MessageStatus.REMOTE_CREATED, // Backend-created messages are remoteCreated
       };
 
       await messageRepo.create(responseMessage);
 
       console.log(`AI response created for message ${messageId}`);
 
-      // 9. Return success
+      // 10. Return success
       return {
         success: true,
         message: 'AI response generated successfully',

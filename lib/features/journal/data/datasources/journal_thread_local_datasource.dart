@@ -83,12 +83,14 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
         .and()
         .isArchivedEqualTo(false)
         .watch(fireImmediately: true)
-        .map((threads) => threads
-          ..sort((a, b) {
-            final aTime = a.lastMessageAtMillis ?? a.createdAtMillis;
-            final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
-            return bTime.compareTo(aTime);
-          }),);
+        .map(
+          (threads) => threads
+            ..sort((a, b) {
+              final aTime = a.lastMessageAtMillis ?? a.createdAtMillis;
+              final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
+              return bTime.compareTo(aTime);
+            }),
+        );
   }
 
   @override

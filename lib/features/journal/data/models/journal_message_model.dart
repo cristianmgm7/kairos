@@ -57,7 +57,6 @@ class JournalMessageModel {
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: nowMillis,
       updatedAtMillis: nowMillis, // same as created initially
-      status: 0, // MessageStatus.localCreated
       clientLocalId: const Uuid().v4(), // Generate unique ID for idempotency
     );
   }
@@ -104,7 +103,8 @@ class JournalMessageModel {
       audioDurationSeconds: map['audioDurationSeconds'] as int?,
       transcription: map['transcription'] as String?,
       // NEW fields
-      status: map['status'] as int? ?? 0, // default to localCreated
+      status: map['status'] as int? ??
+          MessageStatus.remoteCreated.index, // default to remoteCreated for backend messages
       failureReason: map['failureReason'] as int?,
       uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
       uploadError: map['uploadError'] as String?,
@@ -216,10 +216,9 @@ class JournalMessageModel {
       uploadError: uploadError,
       aiError: aiError,
       attemptCount: attemptCount,
-      lastAttemptAt:
-          lastAttemptMillis != null && _isValidTimestamp(lastAttemptMillis!)
-              ? DateTime.fromMillisecondsSinceEpoch(lastAttemptMillis!, isUtc: true)
-              : null,
+      lastAttemptAt: lastAttemptMillis != null && _isValidTimestamp(lastAttemptMillis!)
+          ? DateTime.fromMillisecondsSinceEpoch(lastAttemptMillis!, isUtc: true)
+          : null,
       clientLocalId: clientLocalId,
       createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),

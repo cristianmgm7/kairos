@@ -28,13 +28,13 @@ final loggerProvider = Provider<Logger>((ref) {
       errorMethodCount: 5,
       lineLength: 50,
       colors: false,
-
     ),
     level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
   );
 });
 
 final logger = ProviderContainer().read(loggerProvider);
+
 /// Connectivity provider - network connectivity monitoring
 final connectivityProvider = Provider<Connectivity>((ref) {
   return Connectivity();

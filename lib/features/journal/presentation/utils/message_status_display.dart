@@ -86,13 +86,18 @@ class MessageStatusDisplay {
 
   /// Check if message should show status indicator
   static bool shouldShowStatus(JournalMessageEntity message) {
-    // Only show status for user messages that aren't fully synced
+    // Only show status for user messages that aren't in terminal success states
     if (message.role != MessageRole.user) {
       return false;
     }
 
-    return message.status != MessageStatus.remoteCreated ||
-        message.status == MessageStatus.failed;
+    // Hide status for terminal success states
+    if (message.status == MessageStatus.processed ||
+        message.status == MessageStatus.remoteCreated) {
+      return false;
+    }
+
+    // Show status for all other states (processing, uploading, failed)
+    return true;
   }
 }
-

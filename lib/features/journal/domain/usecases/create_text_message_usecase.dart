@@ -45,7 +45,7 @@ class CreateTextMessageUseCase {
   ///
   /// Creates message and orchestrates pipeline. Status updates are written to local DB,
   /// which triggers the repository stream to update the UI automatically.
-  /// 
+  ///
   /// Returns success once pipeline is initiated (AI response will arrive via repository stream).
   Future<Result<void>> call(CreateTextMessageParams params) async {
     try {
@@ -59,9 +59,8 @@ class CreateTextMessageUseCase {
 
       if (params.threadId == null) {
         // Create new thread
-        final threadTitle = params.content.length > 50
-            ? '${params.content.substring(0, 50)}...'
-            : params.content;
+        final threadTitle =
+            params.content.length > 50 ? '${params.content.substring(0, 50)}...' : params.content;
 
         final thread = JournalThreadEntity(
           id: threadId,

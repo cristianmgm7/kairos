@@ -57,7 +57,7 @@ class CreateImageMessageUseCase {
       }
 
       // Determine thread ID
-      String threadId = params.threadId ?? _uuid.v4();
+      final threadId = params.threadId ?? _uuid.v4();
 
       if (params.threadId == null) {
         final thread = JournalThreadEntity(

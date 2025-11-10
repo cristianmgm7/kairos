@@ -63,8 +63,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         final lastMessage = messages.last;
         // Show "AI thinking" if last message is from user and not failed
         // (AI response will arrive as a separate message)
-        return lastMessage.role == MessageRole.user &&
-            lastMessage.status != MessageStatus.failed;
+        return lastMessage.role == MessageRole.user && lastMessage.status != MessageStatus.failed;
       },
       orElse: () => false,
     );
@@ -175,7 +174,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
         // Reset controller state
         ref.read(messageControllerProvider.notifier).reset();
-        
+
         // If this was a new thread, get thread ID from the messages stream
         if (_currentThreadId == null) {
           // Wait a frame for the stream to update, then grab the thread ID
@@ -184,10 +183,10 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
             if (userId != null) {
               ref.read(threadsStreamProvider(userId)).whenData((threads) {
                 if (threads.isNotEmpty && _currentThreadId == null) {
-          setState(() {
+                  setState(() {
                     _currentThreadId = threads.first.id;
-          });
-        }
+                  });
+                }
               });
             }
           });
@@ -212,8 +211,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
             // Check if any message just failed
             final previousMessages = previous?.valueOrNull ?? [];
             for (final message in messages) {
-              if (message.role == MessageRole.user &&
-                  message.status == MessageStatus.failed) {
+              if (message.role == MessageRole.user && message.status == MessageStatus.failed) {
                 // Check if this is a new failure
                 final previousMessage = previousMessages.firstWhere(
                   (m) => m.id == message.id,
@@ -222,9 +220,9 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
                 if (previousMessage.status != MessageStatus.failed) {
                   // Show error snackbar with specific error message
-                  final errorMessage = message.uploadError ?? 
-                                       message.aiError ?? 
-                                       'Message processing failed. Please try again.';
+                  final errorMessage = message.uploadError ??
+                      message.aiError ??
+                      'Message processing failed. Please try again.';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(errorMessage),
@@ -233,8 +231,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                         label: 'Retry',
                         textColor: Colors.white,
                         onPressed: () {
-                          ref.read(messageControllerProvider.notifier)
-                              .retryMessage(message.id);
+                          ref.read(messageControllerProvider.notifier).retryMessage(message.id);
                         },
                       ),
                     ),

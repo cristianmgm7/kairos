@@ -154,7 +154,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       // Upsert all remote messages to local
       for (final remoteModel in updatedMessages) {
         await localDataSource.upsertFromRemote(remoteModel);
-        }
+      }
 
       return const Success(null);
     } on NetworkException catch (e) {

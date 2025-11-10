@@ -101,12 +101,8 @@ class MoodChartWidget extends StatelessWidget {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                    
-                  ),
-                  rightTitles: const AxisTitles(
-                    
-                  ),
+                  topTitles: const AxisTitles(),
+                  rightTitles: const AxisTitles(),
                 ),
                 gridData: const FlGridData(
                   drawVerticalLine: false,

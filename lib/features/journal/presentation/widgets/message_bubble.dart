@@ -70,7 +70,7 @@ class MessageBubble extends ConsumerWidget {
                           fontSize: 11,
                         ),
                       ),
-                      if (message.status != MessageStatus.remoteCreated) ...[
+                      if (MessageStatusDisplay.shouldShowStatus(message)) ...[
                         const SizedBox(height: 2),
                         _buildStatusIndicator(context, ref),
                       ],
@@ -241,7 +241,8 @@ class MessageBubble extends ConsumerWidget {
   }
 
   Widget _buildStatusIndicator(BuildContext context, WidgetRef ref) {
-    if (message.status == MessageStatus.remoteCreated) {
+    // Don't show status for terminal success states
+    if (!MessageStatusDisplay.shouldShowStatus(message)) {
       return const SizedBox.shrink();
     }
 
@@ -253,7 +254,7 @@ class MessageBubble extends ConsumerWidget {
     // Determine icon and color based on status
     late IconData icon;
     late Color color;
-    bool showSpinner = false;
+    var showSpinner = false;
 
     if (message.status == MessageStatus.failed) {
       icon = Icons.error_outline;
@@ -268,6 +269,7 @@ class MessageBubble extends ConsumerWidget {
         color = Colors.blue;
         case MessageStatus.processingAi:
           icon = Icons.smart_toy;
+        // ignore: no_default_cases
         default:
           icon = Icons.sync;
       }

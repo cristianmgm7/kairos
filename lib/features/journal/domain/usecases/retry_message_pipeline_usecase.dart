@@ -50,14 +50,16 @@ class RetryMessagePipelineUseCase {
         return const Error(ValidationFailure(message: 'Message not found'));
       }
 
-      var message = messageData;
+      final message = messageData;
 
       // Step 2: Check if max attempts reached
       if (message.attemptCount >= _maxAttempts) {
         logger.i('Max retry attempts reached for message $messageId');
-        return const Error(ValidationFailure(
-          message: 'Maximum retry attempts reached (5). Please contact support.',
-        ));
+        return const Error(
+          ValidationFailure(
+            message: 'Maximum retry attempts reached (5). Please contact support.',
+          ),
+        );
       }
 
       // Step 3: Check backoff period
@@ -68,13 +70,16 @@ class RetryMessagePipelineUseCase {
 
         if (timeSinceLastAttempt < requiredBackoffSeconds) {
           final remainingSeconds = requiredBackoffSeconds - timeSinceLastAttempt;
-          return Error(ValidationFailure(
-            message: 'Please wait $remainingSeconds seconds before retrying',
-          ));
+          return Error(
+            ValidationFailure(
+              message: 'Please wait $remainingSeconds seconds before retrying',
+            ),
+          );
         }
       }
 
-      logger.i('Retrying message pipeline: $messageId (status: ${message.status}, attempt: ${message.attemptCount})');
+      logger.i(
+          'Retrying message pipeline: $messageId (status: ${message.status}, attempt: ${message.attemptCount})');
 
       // Step 4: Resume based on current status
       return _resumeFromStatus(message);
@@ -110,9 +115,11 @@ class RetryMessagePipelineUseCase {
         return _requestAiResponseStep(message);
 
       default:
-        return const Error(ValidationFailure(
-          message: 'Message is not in a retryable state',
-        ));
+        return const Error(
+          ValidationFailure(
+            message: 'Message is not in a retryable state',
+          ),
+        );
     }
   }
 
@@ -124,6 +131,7 @@ class RetryMessagePipelineUseCase {
     }
 
     if (message.localFilePath == null) {
+      // ignore: parameter_assignments
       message = message.copyWith(
         status: MessageStatus.failed,
         failureReason: FailureReason.uploadFailed,
@@ -137,6 +145,7 @@ class RetryMessagePipelineUseCase {
 
     final file = File(message.localFilePath!);
     if (!file.existsSync()) {
+      // ignore: parameter_assignments
       message = message.copyWith(
         status: MessageStatus.failed,
         failureReason: FailureReason.uploadFailed,
@@ -151,15 +160,15 @@ class RetryMessagePipelineUseCase {
     // Update status to uploading
     message = message.copyWith(
       status: MessageStatus.uploadingMedia,
-      uploadProgress: 0.0,
-      uploadError: null, // Clear previous error
+      uploadProgress: 0,
     );
     await messageRepository.updateMessage(message);
 
     // Determine content type and storage path
     final contentType = message.messageType == MessageType.audio ? 'audio/mp4' : 'image/jpeg';
     final extension = message.messageType == MessageType.audio ? 'm4a' : 'jpg';
-    final storagePath = 'users/${message.userId}/journals/${message.threadId}/${message.id}.$extension';
+    final storagePath =
+        'users/${message.userId}/journals/${message.threadId}/${message.id}.$extension';
 
     logger.i('Uploading ${message.messageType.name} for message ${message.id}');
 
@@ -194,7 +203,7 @@ class RetryMessagePipelineUseCase {
     message = message.copyWith(
       status: MessageStatus.mediaUploaded,
       storageUrl: uploadResult.dataOrNull!.remoteUrl,
-      uploadProgress: 1.0,
+      uploadProgress: 1,
     );
     await messageRepository.updateMessage(message);
 
@@ -206,7 +215,6 @@ class RetryMessagePipelineUseCase {
   Future<Result<void>> _processAiStep(JournalMessageEntity message) async {
     message = message.copyWith(
       status: MessageStatus.processingAi,
-      aiError: null, // Clear previous error
     );
     await messageRepository.updateMessage(message);
 
@@ -327,7 +335,6 @@ class RetryMessagePipelineUseCase {
 
     message = message.copyWith(
       status: MessageStatus.processingAi,
-      aiError: null,
     );
     await messageRepository.updateMessage(message);
 

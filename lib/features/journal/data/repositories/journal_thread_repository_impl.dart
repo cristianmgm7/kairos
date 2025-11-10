@@ -1,4 +1,3 @@
-
 import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/providers/core_providers.dart';
@@ -8,7 +7,6 @@ import 'package:kairos/features/journal/data/datasources/journal_thread_remote_d
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
-
 
 class JournalThreadRepositoryImpl implements JournalThreadRepository {
   JournalThreadRepositoryImpl({

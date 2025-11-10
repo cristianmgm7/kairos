@@ -9,7 +9,9 @@ import 'package:kairos/features/journal/presentation/providers/journal_providers
 /// Input widget for composing and sending messages
 class MessageInput extends ConsumerStatefulWidget {
   const MessageInput({
-    required this.controller, required this.onSendMessage, super.key,
+    required this.controller,
+    required this.onSendMessage,
+    super.key,
     this.threadId,
   });
 
@@ -260,7 +262,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
 class _RecordingDialog extends ConsumerStatefulWidget {
   const _RecordingDialog({
-    required this.onSend, this.threadId,
+    required this.onSend,
+    this.threadId,
   });
 
   final String? threadId;
@@ -306,16 +309,20 @@ class _RecordingDialogState extends ConsumerState<_RecordingDialog> {
     final userId = ref.read(authStateProvider).valueOrNull?.id;
     if (userId == null) return;
 
-    final controller = ref.read(messageControllerProvider.notifier);
-    await controller.stopRecording(
-      userId: userId,
-      threadId: widget.threadId,
-    );
-
+    // Close dialog immediately so user can see the chat screen
     if (mounted) {
       Navigator.pop(context);
       widget.onSend();
     }
+
+    // Continue processing in background (don't await)
+    final controller = ref.read(messageControllerProvider.notifier);
+    unawaited(
+      controller.stopRecording(
+        userId: userId,
+        threadId: widget.threadId,
+      ),
+    );
   }
 
   Future<void> _cancel() async {

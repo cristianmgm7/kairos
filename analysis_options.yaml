@@ -17,6 +17,7 @@ analyzer:
     invalid_annotation_target: error
     missing_required_param: error
     missing_return: error
+    parameter_assignments: ignore
 
   language:
     strict-casts: true

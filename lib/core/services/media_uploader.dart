@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/utils/result.dart';
@@ -83,15 +82,19 @@ class MediaUploader {
       final snapshot = await uploadTask;
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
-      return Success(UploadResult(
-        remoteUrl: downloadUrl,
-        metadata: metadata ?? {},
-      ));
+      return Success(
+        UploadResult(
+          remoteUrl: downloadUrl,
+          metadata: metadata ?? {},
+        ),
+      );
     } on FirebaseException catch (e) {
-      return Error(StorageFailure(
-        message: 'Upload failed: ${e.message}',
-        code: int.tryParse(e.code),
-      ));
+      return Error(
+        StorageFailure(
+          message: 'Upload failed: ${e.message}',
+          code: int.tryParse(e.code),
+        ),
+      );
     } catch (e) {
       return Error(StorageFailure(message: 'Upload failed: $e'));
     }

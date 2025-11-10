@@ -9,10 +9,18 @@ export interface Message {
   storageUrl?: string;
   createdAtMillis: number;
   updatedAtMillis: number;
-  aiProcessingStatus: number; // AiProcessingStatus enum
-  uploadStatus?: number; // UploadStatus enum
+  status: number; // MessageStatus enum: 0=localCreated, 1=uploadingMedia, 2=aiProcessing, 3=completed, 4=failed
+  failureReason?: number;
+  uploadProgress?: number;
+  uploadError?: string;
+  aiError?: string;
+  attemptCount?: number;
+  lastAttemptMillis?: number;
   isDeleted: boolean;
   version: number;
+  // Deprecated - kept for backward compatibility
+  aiProcessingStatus?: number;
+  uploadStatus?: number;
 }
 
 export interface CreateMessageInput {
@@ -23,16 +31,20 @@ export interface CreateMessageInput {
   content?: string;
   transcription?: string;
   storageUrl?: string;
-  aiProcessingStatus?: number;
-  uploadStatus?: number;
+  status?: number;
+  failureReason?: number;
+  uploadError?: string;
+  aiError?: string;
 }
 
 export interface UpdateMessageInput {
   content?: string;
   transcription?: string;
   storageUrl?: string;
-  aiProcessingStatus?: number;
-  uploadStatus?: number;
+  status?: number;
+  failureReason?: number;
+  uploadError?: string;
+  aiError?: string;
   updatedAtMillis?: number;
 }
 

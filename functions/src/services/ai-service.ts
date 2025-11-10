@@ -81,13 +81,19 @@ export class AiService {
   ): Promise<AiResponse> {
     const imageDataUrl = await this.storageService.getImageAsDataUrl(imageUrl);
 
-    const promptParts: any[] = [
-      { text: conversationContext },
+    const promptParts: any[] = [];
+    
+    // Only add context if it's not empty
+    if (conversationContext && conversationContext.trim()) {
+      promptParts.push({ text: conversationContext });
+    }
+    
+    promptParts.push(
       { text: 'User sent this image:' },
       { media: { url: imageDataUrl, contentType: 'image/jpeg' } },
       { text: 'Describe what you see and respond naturally to the user.' },
-      { text: 'Assistant:' },
-    ];
+      { text: 'Assistant:' }
+    );
 
     return this.generate({ prompt: promptParts });
   }
@@ -99,11 +105,17 @@ export class AiService {
     userMessage: string,
     conversationContext: string
   ): Promise<AiResponse> {
-    const promptParts: any[] = [
-      { text: conversationContext },
+    const promptParts: any[] = [];
+    
+    // Only add context if it's not empty
+    if (conversationContext && conversationContext.trim()) {
+      promptParts.push({ text: conversationContext });
+    }
+    
+    promptParts.push(
       { text: `User: ${userMessage}` },
-      { text: 'Assistant:' },
-    ];
+      { text: 'Assistant:' }
+    );
 
     return this.generate({ prompt: promptParts });
   }

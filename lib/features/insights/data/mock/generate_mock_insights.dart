@@ -92,7 +92,10 @@ Future<void> main() async {
 
 InsightModel _generateMockInsight({
   required String userId,
-  required DateTime periodStart, required DateTime periodEnd, required Random random, String? threadId,
+  required DateTime periodStart,
+  required DateTime periodEnd,
+  required Random random,
+  String? threadId,
 }) {
   // Generate realistic mood distribution:
   // 40% positive (0.6-0.9), 30% neutral (0.4-0.6), 30% challenging (0.1-0.4)
