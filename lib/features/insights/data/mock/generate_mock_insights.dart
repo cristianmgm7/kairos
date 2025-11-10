@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:isar/isar.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 /// Run this script to populate mock insights for testing
 /// Execute from terminal: flutter run lib/features/insights/data/mock/generate_mock_insights.dart
 Future<void> main() async {
-  print('🌱 Generating mock insights...');
+  logger.i('🌱 Generating mock insights...');
 
   // Initialize Isar
   final dir = await getApplicationDocumentsDirectory();
@@ -34,7 +35,7 @@ Future<void> main() async {
     await isar.insightModels.filter().userIdEqualTo(userId).deleteAll();
   });
 
-  print('📝 Creating per-thread insights...');
+  logger.i('📝 Creating per-thread insights...');
 
   // Generate 5-7 insights per thread over the last 14 days
   for (final threadId in threadIds) {
@@ -57,11 +58,11 @@ Future<void> main() async {
         await isar.insightModels.put(insight);
       });
 
-      print('  ✓ Created insight for $threadId (${_formatDate(periodEnd)})');
+      logger.i('  ✓ Created insight for $threadId (${_formatDate(periodEnd)})');
     }
   }
 
-  print('🌍 Creating global insights...');
+  logger.i('🌍 Creating global insights...');
 
   // Generate 10 global insights
   for (var i = 0; i < 10; i++) {
@@ -80,11 +81,11 @@ Future<void> main() async {
       await isar.insightModels.put(insight);
     });
 
-    print('  ✓ Created global insight (${_formatDate(periodEnd)})');
+    logger.i('  ✓ Created global insight (${_formatDate(periodEnd)})');
   }
 
-  print('✅ Mock data generation complete!');
-  print('   Total insights created: ${threadIds.length * 6 + 10}');
+  logger.i('✅ Mock data generation complete!');
+  logger.i('   Total insights created: ${threadIds.length * 6 + 10}');
 
   await isar.close();
 }
