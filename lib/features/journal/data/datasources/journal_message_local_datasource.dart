@@ -59,7 +59,19 @@ class JournalMessageLocalDataSourceImpl
         .findAll();
 
     if (messages.isEmpty) return null;
-    return messages.first.updatedAtMillis;
+    
+    // Validate timestamp is within valid range for DateTime
+    // This prevents crashes from invalid/corrupted timestamp values
+    final timestamp = messages.first.updatedAtMillis;
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+    
+    if (timestamp < minValid || timestamp > maxValid) {
+      // Return null for invalid timestamps (will trigger full sync)
+      return null;
+    }
+    
+    return timestamp;
   }
 
   @override

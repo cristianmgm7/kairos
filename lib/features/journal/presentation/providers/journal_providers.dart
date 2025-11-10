@@ -18,6 +18,7 @@ import 'package:kairos/features/journal/domain/usecases/create_text_message_usec
 import 'package:kairos/features/journal/domain/usecases/delete_thread_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
+import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
 // Data sources
@@ -159,4 +160,10 @@ final threadControllerProvider =
     StateNotifierProvider<ThreadController, ThreadState>((ref) {
   final deleteThreadUseCase = ref.watch(deleteThreadUseCaseProvider);
   return ThreadController(deleteThreadUseCase: deleteThreadUseCase);
+});
+
+final syncControllerProvider =
+    StateNotifierProvider<SyncController, SyncState>((ref) {
+  final syncThreadMessagesUseCase = ref.watch(syncThreadMessagesUseCaseProvider);
+  return SyncController(syncThreadMessagesUseCase: syncThreadMessagesUseCase);
 });

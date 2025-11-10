@@ -10,6 +10,7 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
+import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/ai_typing_indicator.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_bubble.dart';
@@ -33,8 +34,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _currentThreadId;
 
-  // For debounced auto-sync
-  Timer? _syncDebounceTimer;
+  // For debounced auto-sync on connectivity changes
+  Timer? _connectivitySyncTimer;
   bool _wasOffline = false;
 
   @override
@@ -42,32 +43,10 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
     super.initState();
     _currentThreadId = widget.threadId;
 
-    // Listen for connectivity changes (auto-sync on reconnect)
-    Future.microtask(() {
-      ref.listen<AsyncValue<bool>>(
-        connectivityStreamProvider,
-        (previous, next) {
-          next.whenData((isOnline) {
-            // Detect transition from offline to online
-            if (_wasOffline && isOnline && _currentThreadId != null) {
-              debugPrint('🌐 Device reconnected - scheduling incremental sync');
-
-              // Cancel any pending sync timer
-              _syncDebounceTimer?.cancel();
-
-              // Debounce sync by 2 seconds after reconnection
-              _syncDebounceTimer = Timer(const Duration(seconds: 2), () {
-                debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
-                _performIncrementalSync();
-              });
-            }
-
-            // Update offline tracking state
-            _wasOffline = !isOnline;
-          });
-        },
-      );
-    });
+    // Trigger initial sync on screen entry if we have a threadId
+    if (_currentThreadId != null) {
+      Future.microtask(() => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!));
+    }
   }
 
   bool get hasAiPending {
@@ -89,53 +68,40 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
     );
   }
 
-  void _performIncrementalSync() {
-    if (_currentThreadId == null) return;
-
-    final syncUseCase = ref.read(syncThreadMessagesUseCaseProvider);
-    syncUseCase.execute(_currentThreadId!).then((result) {
-      result.when(
-        success: (_) {
-          debugPrint('✅ Auto-sync completed successfully');
-        },
-        error: (failure) {
-          debugPrint('❌ Auto-sync failed: ${failure.message}');
-        },
-      );
-    });
-  }
 
   Future<void> _handleRefresh() async {
     if (_currentThreadId == null) return;
 
     debugPrint('🔄 Manual refresh triggered for thread: $_currentThreadId');
 
-    final syncUseCase = ref.read(syncThreadMessagesUseCaseProvider);
-    final result = await syncUseCase.execute(_currentThreadId!);
+    await ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
 
-    result.when(
-      success: (_) {
-        debugPrint('✅ Manual sync completed successfully');
-      },
-      error: (failure) {
-        debugPrint('❌ Manual sync failed: ${failure.message}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Sync failed: ${failure.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-    );
+    // Show feedback based on sync state
+    if (mounted) {
+      final syncState = ref.read(syncControllerProvider);
+      if (syncState is SyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync failed: ${syncState.message}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else if (syncState is SyncSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Messages synced successfully'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _syncDebounceTimer?.cancel();
+    _connectivitySyncTimer?.cancel();
     super.dispose();
   }
 
@@ -155,6 +121,41 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for connectivity changes (auto-sync on reconnect)
+    ref.listen<AsyncValue<bool>>(
+      connectivityStreamProvider,
+      (previous, next) {
+        next.whenData((isOnline) {
+          // Detect transition from offline to online
+          if (_wasOffline && isOnline && _currentThreadId != null) {
+            debugPrint('🌐 Device reconnected - scheduling incremental sync');
+
+            // Cancel any pending sync timer
+            _connectivitySyncTimer?.cancel();
+
+            // Debounce sync by 2 seconds after reconnection
+            _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
+              debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
+              ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
+            });
+          }
+
+          // Update offline tracking state
+          _wasOffline = !isOnline;
+        });
+      },
+    );
+
+    // Listen to sync controller state (optional - for UI feedback)
+    ref.listen<SyncState>(syncControllerProvider, (previous, next) {
+      if (next is SyncError && mounted) {
+        debugPrint('❌ Background sync failed: ${next.message}');
+        // Optionally show a subtle notification
+      } else if (next is SyncSuccess) {
+        debugPrint('✅ Background sync completed successfully');
+      }
+    });
+
     final messagesAsync = _currentThreadId != null
         ? ref.watch(messagesStreamProvider(_currentThreadId!))
         : const AsyncValue<List<JournalMessageEntity>>.data([]);

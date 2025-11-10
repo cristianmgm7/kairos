@@ -155,6 +155,17 @@ class JournalMessageModel {
   }
 
   JournalMessageEntity toEntity() {
+    // Validate timestamps to prevent invalid DateTime conversion
+    // Valid range for DateTime.fromMillisecondsSinceEpoch is approximately:
+    // -8640000000000000 to 8640000000000000
+    final validCreatedAt = _isValidTimestamp(createdAtMillis)
+        ? createdAtMillis
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+    
+    final validUpdatedAt = _isValidTimestamp(updatedAtMillis)
+        ? updatedAtMillis
+        : validCreatedAt;
+
     return JournalMessageEntity(
       id: id,
       threadId: threadId,
@@ -171,15 +182,24 @@ class JournalMessageModel {
       aiProcessingStatus: AiProcessingStatus.values[aiProcessingStatus],
       uploadStatus: UploadStatus.values[uploadStatus],
       uploadRetryCount: uploadRetryCount,
-      lastUploadAttemptAt: lastUploadAttemptMillis != null
+      lastUploadAttemptAt: lastUploadAttemptMillis != null &&
+              _isValidTimestamp(lastUploadAttemptMillis!)
           ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!,
               isUtc: true)
           : null,
       createdAt:
-          DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
+          DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
       updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
+          DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
     );
+  }
+
+  /// Validates that a timestamp is within the valid range for DateTime
+  bool _isValidTimestamp(int millis) {
+    // DateTime.fromMillisecondsSinceEpoch valid range
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+    return millis >= minValid && millis <= maxValid;
   }
 
   JournalMessageModel copyWith({
