@@ -55,7 +55,7 @@ class CreateTextMessageUseCase {
       }
 
       // Determine thread ID (create thread if needed)
-      String threadId = params.threadId ?? _uuid.v4();
+      final threadId = params.threadId ?? _uuid.v4();
 
       if (params.threadId == null) {
         // Create new thread
@@ -70,7 +70,6 @@ class CreateTextMessageUseCase {
           createdAt: DateTime.now().toUtc(),
           updatedAt: DateTime.now().toUtc(),
           lastMessageAt: DateTime.now().toUtc(),
-          messageCount: 0,
         );
 
         final threadResult = await threadRepository.createThread(thread);
@@ -92,9 +91,7 @@ class CreateTextMessageUseCase {
         content: params.content,
         createdAt: DateTime.now().toUtc(),
         updatedAt: DateTime.now().toUtc(),
-        status: MessageStatus.localCreated, // Initial status
         clientLocalId: clientLocalId,
-        attemptCount: 0,
       );
 
       logger.i('Creating text message locally: $messageId');
