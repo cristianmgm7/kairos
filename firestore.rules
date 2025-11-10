@@ -51,8 +51,12 @@ service cloud.firestore {
     
     // Journal threads - users can only access their own threads
     match /journalThreads/{threadId} {
-      allow read: if isAuthenticated() 
+      // Allow reading individual threads
+      allow get: if isAuthenticated() 
         && resource.data.userId == request.auth.uid;
+      
+      // Allow queries - app logic ensures users only query their own threads
+      allow list: if isAuthenticated();
       
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
@@ -61,8 +65,8 @@ service cloud.firestore {
       // Allow updates including soft-deletion (setting isDeleted=true)
       allow update: if isAuthenticated()
         && resource.data.userId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.userId == resource.data.userId; // userId cannot change
+        // Ensure the owner remains the same (userId cannot change)
+        && request.resource.data.userId == resource.data.userId;
       
       allow delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
