@@ -34,6 +34,8 @@ class CreateAudioMessageParams {
 /// 4. Update with transcription (status: processed)
 /// 5. Create remote message (status: remoteCreated)
 /// 6. Request AI response (status: processingAi)
+///
+/// Status updates are written to local DB, which automatically updates UI via repository stream.
 class CreateAudioMessageUseCase {
   CreateAudioMessageUseCase({
     required this.messageRepository,
@@ -49,12 +51,11 @@ class CreateAudioMessageUseCase {
 
   final _uuid = const Uuid();
 
-  Stream<Result<JournalMessageEntity>> call(CreateAudioMessageParams params) async* {
+  Future<Result<void>> call(CreateAudioMessageParams params) async {
     try {
       // Validate audio file
       if (!params.audioFile.existsSync()) {
-        yield const Error(ValidationFailure(message: 'Audio file does not exist'));
-        return;
+        return const Error(ValidationFailure(message: 'Audio file does not exist'));
       }
 
       // Determine thread ID
@@ -73,8 +74,7 @@ class CreateAudioMessageUseCase {
 
         final threadResult = await threadRepository.createThread(thread);
         if (threadResult.isError) {
-          yield Error(threadResult.failureOrNull!);
-          return;
+          return Error(threadResult.failureOrNull!);
         }
       }
 
@@ -101,11 +101,8 @@ class CreateAudioMessageUseCase {
 
       final createResult = await messageRepository.createMessage(message);
       if (createResult.isError) {
-        yield Error(createResult.failureOrNull!);
-        return;
+        return Error(createResult.failureOrNull!);
       }
-
-      yield Success(message);
 
       // STEP 2: Upload audio file
       message = message.copyWith(
@@ -113,7 +110,6 @@ class CreateAudioMessageUseCase {
         uploadProgress: 0.0,
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       final storagePath = 'users/${params.userId}/journals/$threadId/$messageId.m4a';
 
@@ -130,10 +126,9 @@ class CreateAudioMessageUseCase {
           'durationSeconds': params.durationSeconds.toString(),
         },
         onProgress: (progress) async {
-          // Update progress in entity
+          // Update progress in DB (repository stream will update UI)
           message = message.copyWith(uploadProgress: progress);
           await messageRepository.updateMessage(message);
-          // Note: Not yielding here to avoid too many emissions
         },
       );
 
@@ -147,8 +142,7 @@ class CreateAudioMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(uploadResult.failureOrNull!);
-        return;
+        return Error(uploadResult.failureOrNull!);
       }
 
       final audioUrl = uploadResult.dataOrNull!.remoteUrl;
@@ -159,12 +153,10 @@ class CreateAudioMessageUseCase {
         uploadProgress: 1.0,
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 3: Transcribe audio
       message = message.copyWith(status: MessageStatus.processingAi);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       logger.i('Transcribing audio: $messageId');
 
@@ -183,8 +175,7 @@ class CreateAudioMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(transcriptionResult.failureOrNull!);
-        return;
+        return Error(transcriptionResult.failureOrNull!);
       }
 
       // STEP 4: Update with transcription
@@ -196,17 +187,14 @@ class CreateAudioMessageUseCase {
         content: transcription, // Use transcription as content
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 5: Create remote message
       message = message.copyWith(status: MessageStatus.remoteCreated);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 6: Request AI response
       message = message.copyWith(status: MessageStatus.processingAi);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       logger.i('Requesting AI response for audio message: $messageId');
 
@@ -222,17 +210,17 @@ class CreateAudioMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(aiResult.failureOrNull!);
-        return;
+        return Error(aiResult.failureOrNull!);
       }
 
       logger.i('Audio message pipeline complete: $messageId');
-      yield Success(message);
 
       await _updateThreadMetadata(threadId);
+
+      return const Success(null);
     } catch (e) {
       logger.i('Unexpected error in CreateAudioMessageUseCase: $e');
-      yield Error(UnknownFailure(message: 'Failed to create audio message: $e'));
+      return Error(UnknownFailure(message: 'Failed to create audio message: $e'));
     }
   }
 

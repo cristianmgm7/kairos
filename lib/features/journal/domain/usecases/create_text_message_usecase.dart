@@ -27,7 +27,7 @@ class CreateTextMessageParams {
 /// 2. Create remote message (status: remoteCreated)
 /// 3. Request AI response (status: processingAi)
 ///
-/// Emits status updates via stream for UI display
+/// Status updates are written to local DB, which automatically updates UI via repository stream.
 class CreateTextMessageUseCase {
   CreateTextMessageUseCase({
     required this.messageRepository,
@@ -41,16 +41,17 @@ class CreateTextMessageUseCase {
 
   final _uuid = const Uuid();
 
-  /// Execute use case with status stream
+  /// Execute use case
   ///
-  /// Returns stream that emits message entity with updated status at each step.
-  /// Final emission is either success (status: processingAi) or failure (status: failed).
-  Stream<Result<JournalMessageEntity>> call(CreateTextMessageParams params) async* {
+  /// Creates message and orchestrates pipeline. Status updates are written to local DB,
+  /// which triggers the repository stream to update the UI automatically.
+  /// 
+  /// Returns success once pipeline is initiated (AI response will arrive via repository stream).
+  Future<Result<void>> call(CreateTextMessageParams params) async {
     try {
       // Validate content
       if (params.content.trim().isEmpty) {
-        yield const Error(ValidationFailure(message: 'Message content cannot be empty'));
-        return;
+        return const Error(ValidationFailure(message: 'Message content cannot be empty'));
       }
 
       // Determine thread ID (create thread if needed)
@@ -74,8 +75,7 @@ class CreateTextMessageUseCase {
 
         final threadResult = await threadRepository.createThread(thread);
         if (threadResult.isError) {
-          yield Error(threadResult.failureOrNull!);
-          return;
+          return Error(threadResult.failureOrNull!);
         }
       }
 
@@ -101,12 +101,10 @@ class CreateTextMessageUseCase {
 
       final createResult = await messageRepository.createMessage(message);
       if (createResult.isError) {
-        yield Error(createResult.failureOrNull!);
-        return;
+        return Error(createResult.failureOrNull!);
       }
 
-      // Emit: message created locally
-      yield Success(message);
+      // UI updates automatically via repository stream
 
       // STEP 2: Create remote message
       message = message.copyWith(status: MessageStatus.remoteCreated);
@@ -115,7 +113,7 @@ class CreateTextMessageUseCase {
 
       final remoteResult = await messageRepository.updateMessage(message);
       if (remoteResult.isError) {
-        // Mark as failed
+        // Mark as failed (repository stream will show error in UI)
         message = message.copyWith(
           status: MessageStatus.failed,
           failureReason: FailureReason.remoteCreationFailed,
@@ -125,12 +123,8 @@ class CreateTextMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(remoteResult.failureOrNull!);
-        return;
+        return Error(remoteResult.failureOrNull!);
       }
-
-      // Emit: message synced to remote
-      yield Success(message);
 
       // STEP 3: Request AI response
       message = message.copyWith(status: MessageStatus.processingAi);
@@ -138,12 +132,11 @@ class CreateTextMessageUseCase {
       logger.i('Requesting AI response for message: $messageId');
 
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       final aiResult = await aiServiceClient.generateAiResponse(messageId: messageId);
 
       if (aiResult.isError) {
-        // Mark as failed
+        // Mark as failed (repository stream will show error in UI)
         message = message.copyWith(
           status: MessageStatus.failed,
           failureReason: FailureReason.aiResponseFailed,
@@ -153,21 +146,19 @@ class CreateTextMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(aiResult.failureOrNull!);
-        return;
+        return Error(aiResult.failureOrNull!);
       }
 
-      // Success! AI response will be created by backend and appear via stream
+      // Success! AI response will be created by backend and appear via repository stream
       logger.i('Text message pipeline complete: $messageId');
-
-      // Final status remains processingAi since we're waiting for backend response
-      yield Success(message);
 
       // Update thread metadata
       await _updateThreadMetadata(threadId);
+
+      return const Success(null);
     } catch (e) {
       logger.i('Unexpected error in CreateTextMessageUseCase: $e');
-      yield Error(UnknownFailure(message: 'Failed to create text message: $e'));
+      return Error(UnknownFailure(message: 'Failed to create text message: $e'));
     }
   }
 

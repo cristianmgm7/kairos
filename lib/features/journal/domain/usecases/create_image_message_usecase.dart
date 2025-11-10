@@ -32,6 +32,8 @@ class CreateImageMessageParams {
 /// 4. Update with description (status: processed)
 /// 5. Create remote message (status: remoteCreated)
 /// 6. Request AI response (status: processingAi)
+///
+/// Status updates are written to local DB, which automatically updates UI via repository stream.
 class CreateImageMessageUseCase {
   CreateImageMessageUseCase({
     required this.messageRepository,
@@ -47,12 +49,11 @@ class CreateImageMessageUseCase {
 
   final _uuid = const Uuid();
 
-  Stream<Result<JournalMessageEntity>> call(CreateImageMessageParams params) async* {
+  Future<Result<void>> call(CreateImageMessageParams params) async {
     try {
       // Validate image file
       if (!params.imageFile.existsSync()) {
-        yield const Error(ValidationFailure(message: 'Image file does not exist'));
-        return;
+        return const Error(ValidationFailure(message: 'Image file does not exist'));
       }
 
       // Determine thread ID
@@ -71,8 +72,7 @@ class CreateImageMessageUseCase {
 
         final threadResult = await threadRepository.createThread(thread);
         if (threadResult.isError) {
-          yield Error(threadResult.failureOrNull!);
-          return;
+          return Error(threadResult.failureOrNull!);
         }
       }
 
@@ -98,11 +98,8 @@ class CreateImageMessageUseCase {
 
       final createResult = await messageRepository.createMessage(message);
       if (createResult.isError) {
-        yield Error(createResult.failureOrNull!);
-        return;
+        return Error(createResult.failureOrNull!);
       }
-
-      yield Success(message);
 
       // STEP 2: Upload image file
       message = message.copyWith(
@@ -110,7 +107,6 @@ class CreateImageMessageUseCase {
         uploadProgress: 0.0,
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       final storagePath = 'users/${params.userId}/journals/$threadId/$messageId.jpg';
 
@@ -126,10 +122,9 @@ class CreateImageMessageUseCase {
           'type': 'image',
         },
         onProgress: (progress) async {
-          // Update progress in entity
+          // Update progress in DB (repository stream will update UI)
           message = message.copyWith(uploadProgress: progress);
           await messageRepository.updateMessage(message);
-          // Note: Not yielding here to avoid too many emissions
         },
       );
 
@@ -143,8 +138,7 @@ class CreateImageMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(uploadResult.failureOrNull!);
-        return;
+        return Error(uploadResult.failureOrNull!);
       }
 
       final imageUrl = uploadResult.dataOrNull!.remoteUrl;
@@ -155,12 +149,10 @@ class CreateImageMessageUseCase {
         uploadProgress: 1.0,
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 3: Analyze image
       message = message.copyWith(status: MessageStatus.processingAi);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       logger.i('Analyzing image: $messageId');
 
@@ -179,8 +171,7 @@ class CreateImageMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(analysisResult.failureOrNull!);
-        return;
+        return Error(analysisResult.failureOrNull!);
       }
 
       // STEP 4: Update with description
@@ -191,17 +182,14 @@ class CreateImageMessageUseCase {
         content: description, // Use image description as content
       );
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 5: Create remote message
       message = message.copyWith(status: MessageStatus.remoteCreated);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       // STEP 6: Request AI response
       message = message.copyWith(status: MessageStatus.processingAi);
       await messageRepository.updateMessage(message);
-      yield Success(message);
 
       logger.i('Requesting AI response for image message: $messageId');
 
@@ -217,17 +205,17 @@ class CreateImageMessageUseCase {
         );
         await messageRepository.updateMessage(message);
 
-        yield Error(aiResult.failureOrNull!);
-        return;
+        return Error(aiResult.failureOrNull!);
       }
 
       logger.i('Image message pipeline complete: $messageId');
-      yield Success(message);
 
       await _updateThreadMetadata(threadId);
+
+      return const Success(null);
     } catch (e) {
       logger.i('Unexpected error in CreateImageMessageUseCase: $e');
-      yield Error(UnknownFailure(message: 'Failed to create image message: $e'));
+      return Error(UnknownFailure(message: 'Failed to create image message: $e'));
     }
   }
 
