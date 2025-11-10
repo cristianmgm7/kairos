@@ -20,8 +20,7 @@ class InsightRemoteDataSourceImpl implements InsightRemoteDataSource {
   InsightRemoteDataSourceImpl(this.firestore);
   final FirebaseFirestore firestore;
 
-  CollectionReference<Map<String, dynamic>> get _collection =>
-      firestore.collection('insights');
+  CollectionReference<Map<String, dynamic>> get _collection => firestore.collection('insights');
 
   @override
   Future<void> saveInsight(InsightModel insight) async {

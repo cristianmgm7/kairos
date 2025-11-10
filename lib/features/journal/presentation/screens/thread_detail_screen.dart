@@ -45,7 +45,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     // Trigger initial sync on screen entry if we have a threadId
     if (_currentThreadId != null) {
-      Future.microtask(() => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!));
+      Future.microtask(
+          () => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!));
     }
   }
 
@@ -61,13 +62,11 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         final lastMessage = messages.last;
         return lastMessage.role == MessageRole.user &&
             (lastMessage.aiProcessingStatus == AiProcessingStatus.pending ||
-                lastMessage.aiProcessingStatus ==
-                    AiProcessingStatus.processing);
+                lastMessage.aiProcessingStatus == AiProcessingStatus.processing);
       },
       orElse: () => false,
     );
   }
-
 
   Future<void> _handleRefresh() async {
     if (_currentThreadId == null) return;
@@ -208,13 +207,11 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                   orElse: () => message,
                 );
 
-                if (previousMessage.aiProcessingStatus !=
-                    AiProcessingStatus.failed) {
+                if (previousMessage.aiProcessingStatus != AiProcessingStatus.failed) {
                   // Show error snackbar
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          const Text('AI response failed. Please try again.'),
+                      content: const Text('AI response failed. Please try again.'),
                       backgroundColor: Colors.red,
                       action: SnackBarAction(
                         label: 'Retry',
@@ -256,8 +253,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                     Text(
                       '${thread.messageCount} ${thread.messageCount == 1 ? 'message' : 'messages'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ],
@@ -294,10 +290,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                           Icon(
                             Icons.chat_bubble_outline,
                             size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withAlpha(128),
+                            color: Theme.of(context).colorScheme.primary.withAlpha(128),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(
@@ -307,13 +300,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                           const SizedBox(height: AppSpacing.sm),
                           Text(
                             'Type your first message below to begin',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                             textAlign: TextAlign.center,
                           ),

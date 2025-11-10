@@ -48,8 +48,7 @@ class CreateImageMessageUseCase {
     try {
       // Generate thumbnail for instant preview
       String? localThumbnailPath;
-      final thumbnailResult =
-          await storageService.generateThumbnail(params.imageFile);
+      final thumbnailResult = await storageService.generateThumbnail(params.imageFile);
 
       if (thumbnailResult.isSuccess) {
         try {

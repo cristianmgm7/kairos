@@ -22,7 +22,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Future<Result<JournalMessageEntity>> createMessage(
-      JournalMessageEntity message,) async {
+    JournalMessageEntity message,
+  ) async {
     try {
       final model = JournalMessageModel.fromEntity(message);
       await localDataSource.saveMessage(model);
@@ -32,8 +33,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
         await remoteDataSource.saveMessage(model);
 
         // Mark text messages and non-user messages as completed
-        if (message.messageType == MessageType.text ||
-            message.role != MessageRole.user) {
+        if (message.messageType == MessageType.text || message.role != MessageRole.user) {
           final synced = model.copyWith(uploadStatus: UploadStatus.completed.index);
           await localDataSource.updateMessage(synced);
         }
@@ -94,7 +94,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Stream<List<JournalMessageEntity>> watchMessagesByThreadId(
-      String threadId,) async* {
+    String threadId,
+  ) async* {
     StreamSubscription<List<JournalMessageModel>>? remoteSub;
 
     try {
@@ -102,9 +103,7 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
       final since = (await localDataSource.getLastUpdatedAtMillis(threadId)) ?? 0;
 
       // Listen for remote updates and upsert into local
-      remoteSub = remoteDataSource
-          .watchUpdatedMessages(threadId, since)
-          .listen(
+      remoteSub = remoteDataSource.watchUpdatedMessages(threadId, since).listen(
         (remoteModels) async {
           for (final remoteModel in remoteModels) {
             await localDataSource.upsertFromRemote(remoteModel);
@@ -139,7 +138,8 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
         debugPrint('Attempting remote update for: ${message.id}');
         await remoteDataSource.updateMessage(model);
         debugPrint(
-            '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}',);
+          '✅ Synced message update to Firestore: ${model.id} - storageUrl: ${model.storageUrl}',
+        );
       } on NetworkException catch (e) {
         debugPrint('⚠️ Network error updating message (will retry later): ${e.message}');
         // Don't fail the whole operation - local update succeeded
@@ -177,13 +177,14 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
   Future<Result<void>> syncThreadIncremental(String threadId) async {
     try {
       // Get the latest updatedAtMillis from local DB
-      final lastUpdatedAtMillis =
-          await localDataSource.getLastUpdatedAtMillis(threadId);
+      final lastUpdatedAtMillis = await localDataSource.getLastUpdatedAtMillis(threadId);
 
       // If no messages exist locally, use 0 to fetch all messages
       final sinceTimestamp = lastUpdatedAtMillis ?? 0;
 
-      debugPrint('🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',);
+      debugPrint(
+        '🔄 Incremental sync for thread $threadId since timestamp: $sinceTimestamp',
+      );
 
       // Always attempt to fetch updated messages
       final updatedMessages = await remoteDataSource.getUpdatedMessages(
@@ -252,13 +253,15 @@ class JournalMessageRepositoryImpl implements JournalMessageRepository {
 
   @override
   Future<Result<List<JournalMessageEntity>>> getPendingUploads(
-      String userId,) async {
+    String userId,
+  ) async {
     try {
       final messages = await localDataSource.getPendingUploads(userId);
       return Success(messages.map((m) => m.toEntity()).toList());
     } catch (e) {
       return Error(
-          CacheFailure(message: 'Failed to query pending uploads: $e'),);
+        CacheFailure(message: 'Failed to query pending uploads: $e'),
+      );
     }
   }
 }

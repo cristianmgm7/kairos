@@ -129,13 +129,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             IconButton(
               icon: Icon(
                 _hasText ? Icons.send : Icons.mic,
-                color: _hasText
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+                color: _hasText ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
               ),
-              onPressed: _hasText
-                  ? _handleSend
-                  : () => _showRecordingDialog(context, ref),
+              onPressed: _hasText ? _handleSend : () => _showRecordingDialog(context, ref),
               tooltip: _hasText ? 'Send' : 'Voice message',
             ),
           ],
@@ -160,8 +156,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Photo from gallery'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller =
-                      ref.read(messageControllerProvider.notifier);
+                  final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromGallery();
 
                   // If image selected, show it in preview
@@ -177,8 +172,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Take photo'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller =
-                      ref.read(messageControllerProvider.notifier);
+                  final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromCamera();
 
                   if (controller.selectedImage != null) {

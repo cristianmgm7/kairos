@@ -13,8 +13,7 @@ abstract class JournalMessageLocalDataSource {
   Future<void> upsertFromRemote(JournalMessageModel remote);
 }
 
-class JournalMessageLocalDataSourceImpl
-    implements JournalMessageLocalDataSource {
+class JournalMessageLocalDataSourceImpl implements JournalMessageLocalDataSource {
   JournalMessageLocalDataSourceImpl(this.isar);
   final Isar isar;
 
@@ -59,18 +58,18 @@ class JournalMessageLocalDataSourceImpl
         .findAll();
 
     if (messages.isEmpty) return null;
-    
+
     // Validate timestamp is within valid range for DateTime
     // This prevents crashes from invalid/corrupted timestamp values
     final timestamp = messages.first.updatedAtMillis;
     const minValid = -8640000000000000;
     const maxValid = 8640000000000000;
-    
+
     if (timestamp < minValid || timestamp > maxValid) {
       // Return null for invalid timestamps (will trigger full sync)
       return null;
     }
-    
+
     return timestamp;
   }
 
@@ -93,8 +92,7 @@ class JournalMessageLocalDataSourceImpl
         .isDeletedEqualTo(false)
         .watch(fireImmediately: true)
         .map(
-          (messages) => messages
-            ..sort((a, b) => a.createdAtMillis.compareTo(b.createdAtMillis)),
+          (messages) => messages..sort((a, b) => a.createdAtMillis.compareTo(b.createdAtMillis)),
         );
   }
 
@@ -124,9 +122,7 @@ class JournalMessageLocalDataSourceImpl
       final isNonUser = remote.role != MessageRole.user.index;
       final isText = remote.messageType == MessageType.text.index;
       final normalized = remote.copyWith(
-        uploadStatus: (isNonUser || isText)
-            ? UploadStatus.completed.index
-            : (remote.uploadStatus),
+        uploadStatus: (isNonUser || isText) ? UploadStatus.completed.index : (remote.uploadStatus),
       );
       await saveMessage(normalized);
       return;

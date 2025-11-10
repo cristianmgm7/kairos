@@ -59,8 +59,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       // 1. Try to fetch from remote if online
       if (await _isOnline) {
         try {
-          final remoteProfile =
-              await remoteDataSource.getProfileByUserId(userId);
+          final remoteProfile = await remoteDataSource.getProfileByUserId(userId);
           if (remoteProfile != null) {
             // Save to local cache
             await localDataSource.saveProfile(remoteProfile);
@@ -87,8 +86,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       // 1. Try to fetch from remote if online
       if (await _isOnline) {
         try {
-          final remoteProfile =
-              await remoteDataSource.getProfileById(profileId);
+          final remoteProfile = await remoteDataSource.getProfileById(profileId);
           if (remoteProfile != null) {
             // Save to local cache
             await localDataSource.saveProfile(remoteProfile);
@@ -157,9 +155,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
   @override
   Stream<UserProfileEntity?> watchProfileByUserId(String userId) {
-    return localDataSource
-        .watchProfileByUserId(userId)
-        .map((model) => model?.toEntity());
+    return localDataSource.watchProfileByUserId(userId).map((model) => model?.toEntity());
   }
 
   @override
@@ -177,20 +173,17 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       for (final localProfile in localProfiles) {
         try {
           // Fetch remote version
-          final remoteProfile =
-              await remoteDataSource.getProfileByUserId(localProfile.userId);
+          final remoteProfile = await remoteDataSource.getProfileByUserId(localProfile.userId);
 
           if (remoteProfile == null) {
             // No remote version, push local to remote
             await remoteDataSource.saveProfile(localProfile);
           } else {
             // Both exist - use simple last-write-wins strategy
-            if (localProfile.modifiedAtMillis >
-                remoteProfile.modifiedAtMillis) {
+            if (localProfile.modifiedAtMillis > remoteProfile.modifiedAtMillis) {
               // Local is newer, push to remote
               await remoteDataSource.updateProfile(localProfile);
-            } else if (remoteProfile.modifiedAtMillis >
-                localProfile.modifiedAtMillis) {
+            } else if (remoteProfile.modifiedAtMillis > localProfile.modifiedAtMillis) {
               // Remote is newer, pull to local
               await localDataSource.updateProfile(remoteProfile);
             }

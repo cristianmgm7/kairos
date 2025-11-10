@@ -42,9 +42,8 @@ class InsightModel {
     final now = DateTime.now().toUtc();
     final startMillis = periodStart.millisecondsSinceEpoch;
     final insightType = threadId != null ? 0 : 1; // 0=thread, 1=global
-    final insightId = threadId != null
-        ? '${userId}_${threadId}_$startMillis'
-        : '${userId}_global_$startMillis';
+    final insightId =
+        threadId != null ? '${userId}_${threadId}_$startMillis' : '${userId}_global_$startMillis';
 
     return InsightModel(
       id: insightId,
@@ -167,20 +166,16 @@ class InsightModel {
       id: id,
       userId: userId,
       type: InsightType.values[type],
-      periodStart:
-          DateTime.fromMillisecondsSinceEpoch(periodStartMillis, isUtc: true),
-      periodEnd:
-          DateTime.fromMillisecondsSinceEpoch(periodEndMillis, isUtc: true),
+      periodStart: DateTime.fromMillisecondsSinceEpoch(periodStartMillis, isUtc: true),
+      periodEnd: DateTime.fromMillisecondsSinceEpoch(periodEndMillis, isUtc: true),
       moodScore: moodScore,
       dominantEmotion: EmotionType.values[dominantEmotion],
       keywords: keywords,
       aiThemes: aiThemes,
       summary: summary,
       messageCount: messageCount,
-      createdAt:
-          DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
-      updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
       threadId: threadId,
       guidanceSuggestion: guidanceSuggestion,
       actionPrompt: actionPrompt,

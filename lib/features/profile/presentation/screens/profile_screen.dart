@@ -45,12 +45,9 @@ class ProfileScreen extends ConsumerWidget {
                     // Avatar
                     CircleAvatar(
                       radius: 60,
-                      backgroundImage: profile.avatarUrl != null
-                          ? NetworkImage(profile.avatarUrl!)
-                          : null,
-                      child: profile.avatarUrl == null
-                          ? const Icon(Icons.person, size: 60)
-                          : null,
+                      backgroundImage:
+                          profile.avatarUrl != null ? NetworkImage(profile.avatarUrl!) : null,
+                      child: profile.avatarUrl == null ? const Icon(Icons.person, size: 60) : null,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     // Name
@@ -87,8 +84,7 @@ class ProfileScreen extends ConsumerWidget {
                       title: l10n.experienceLevel,
                       value: profile.experienceLevel ?? l10n.notSet,
                     ),
-                    if (profile.interests != null &&
-                        profile.interests!.isNotEmpty)
+                    if (profile.interests != null && profile.interests!.isNotEmpty)
                       _ProfileDetailTile(
                         icon: Icons.favorite,
                         title: l10n.interests,

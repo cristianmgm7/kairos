@@ -102,8 +102,7 @@ class MessageController extends StateNotifier<MessageState> {
         uploadService.uploadImageMessage(message).then((uploadResult) {
           uploadResult.when(
             success: (_) {
-              debugPrint(
-                  '✅ Image upload completed successfully for: ${message.id}');
+              debugPrint('✅ Image upload completed successfully for: ${message.id}');
             },
             error: (failure) {
               debugPrint('❌ Upload failed: ${failure.message}');
@@ -161,8 +160,7 @@ class MessageController extends StateNotifier<MessageState> {
       ValidationFailure() => failure.message,
       NetworkFailure() => 'Network error. Please check your connection.',
       StorageFailure() => 'Storage error: ${failure.message}',
-      PermissionFailure() =>
-        'Permission denied. Please enable access in Settings.',
+      PermissionFailure() => 'Permission denied. Please enable access in Settings.',
       UserCancelledFailure() => failure.message,
       CacheFailure() => 'Local storage error: ${failure.message}',
       ServerFailure() => 'Server error: ${failure.message}',

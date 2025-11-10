@@ -111,8 +111,7 @@ class InsightLocalDataSourceImpl implements InsightLocalDataSource {
   @override
   Future<void> deleteInsight(String insightId) async {
     await isar.writeTxn(() async {
-      final insight =
-          await isar.insightModels.filter().idEqualTo(insightId).findFirst();
+      final insight = await isar.insightModels.filter().idEqualTo(insightId).findFirst();
 
       if (insight != null) {
         final deleted = insight.copyWith(isDeleted: true);

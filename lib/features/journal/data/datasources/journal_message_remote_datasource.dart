@@ -21,8 +21,7 @@ abstract class JournalMessageRemoteDataSource {
   );
 }
 
-class JournalMessageRemoteDataSourceImpl
-    implements JournalMessageRemoteDataSource {
+class JournalMessageRemoteDataSourceImpl implements JournalMessageRemoteDataSource {
   JournalMessageRemoteDataSourceImpl(this.firestore);
   final FirebaseFirestore firestore;
 

@@ -9,8 +9,7 @@ import 'package:kairos/features/journal/data/datasources/journal_thread_local_da
     as _i2;
 import 'package:kairos/features/journal/data/datasources/journal_thread_remote_datasource.dart'
     as _i5;
-import 'package:kairos/features/journal/data/models/journal_thread_model.dart'
-    as _i4;
+import 'package:kairos/features/journal/data/models/journal_thread_model.dart' as _i4;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -36,8 +35,7 @@ class MockJournalThreadLocalDataSource extends _i1.Mock
   }
 
   @override
-  _i3.Future<void> saveThread(_i4.JournalThreadModel? thread) =>
-      (super.noSuchMethod(
+  _i3.Future<void> saveThread(_i4.JournalThreadModel? thread) => (super.noSuchMethod(
         Invocation.method(
           #saveThread,
           [thread],
@@ -47,8 +45,7 @@ class MockJournalThreadLocalDataSource extends _i1.Mock
       ) as _i3.Future<void>);
 
   @override
-  _i3.Future<_i4.JournalThreadModel?> getThreadById(String? threadId) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.JournalThreadModel?> getThreadById(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #getThreadById,
           [threadId],
@@ -63,13 +60,11 @@ class MockJournalThreadLocalDataSource extends _i1.Mock
           #getThreadsByUserId,
           [userId],
         ),
-        returnValue: _i3.Future<List<_i4.JournalThreadModel>>.value(
-            <_i4.JournalThreadModel>[]),
+        returnValue: _i3.Future<List<_i4.JournalThreadModel>>.value(<_i4.JournalThreadModel>[]),
       ) as _i3.Future<List<_i4.JournalThreadModel>>);
 
   @override
-  _i3.Future<void> updateThread(_i4.JournalThreadModel? thread) =>
-      (super.noSuchMethod(
+  _i3.Future<void> updateThread(_i4.JournalThreadModel? thread) => (super.noSuchMethod(
         Invocation.method(
           #updateThread,
           [thread],
@@ -89,8 +84,7 @@ class MockJournalThreadLocalDataSource extends _i1.Mock
       ) as _i3.Future<void>);
 
   @override
-  _i3.Stream<List<_i4.JournalThreadModel>> watchThreadsByUserId(
-          String? userId) =>
+  _i3.Stream<List<_i4.JournalThreadModel>> watchThreadsByUserId(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #watchThreadsByUserId,
@@ -100,8 +94,7 @@ class MockJournalThreadLocalDataSource extends _i1.Mock
       ) as _i3.Stream<List<_i4.JournalThreadModel>>);
 
   @override
-  _i3.Future<void> hardDeleteThreadAndMessages(String? threadId) =>
-      (super.noSuchMethod(
+  _i3.Future<void> hardDeleteThreadAndMessages(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #hardDeleteThreadAndMessages,
           [threadId],
@@ -121,8 +114,7 @@ class MockJournalThreadRemoteDataSource extends _i1.Mock
   }
 
   @override
-  _i3.Future<void> saveThread(_i4.JournalThreadModel? thread) =>
-      (super.noSuchMethod(
+  _i3.Future<void> saveThread(_i4.JournalThreadModel? thread) => (super.noSuchMethod(
         Invocation.method(
           #saveThread,
           [thread],
@@ -132,8 +124,7 @@ class MockJournalThreadRemoteDataSource extends _i1.Mock
       ) as _i3.Future<void>);
 
   @override
-  _i3.Future<_i4.JournalThreadModel?> getThreadById(String? threadId) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.JournalThreadModel?> getThreadById(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #getThreadById,
           [threadId],
@@ -148,13 +139,11 @@ class MockJournalThreadRemoteDataSource extends _i1.Mock
           #getThreadsByUserId,
           [userId],
         ),
-        returnValue: _i3.Future<List<_i4.JournalThreadModel>>.value(
-            <_i4.JournalThreadModel>[]),
+        returnValue: _i3.Future<List<_i4.JournalThreadModel>>.value(<_i4.JournalThreadModel>[]),
       ) as _i3.Future<List<_i4.JournalThreadModel>>);
 
   @override
-  _i3.Future<void> updateThread(_i4.JournalThreadModel? thread) =>
-      (super.noSuchMethod(
+  _i3.Future<void> updateThread(_i4.JournalThreadModel? thread) => (super.noSuchMethod(
         Invocation.method(
           #updateThread,
           [thread],

@@ -16,8 +16,7 @@ class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
 
   @override
-  ConsumerState<CreateProfileScreen> createState() =>
-      _CreateProfileScreenState();
+  ConsumerState<CreateProfileScreen> createState() => _CreateProfileScreenState();
 }
 
 class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
@@ -171,11 +170,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 60,
-                backgroundImage: _selectedAvatar != null
-                    ? FileImage(_selectedAvatar!)
-                    : null,
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerHighest,
+                backgroundImage: _selectedAvatar != null ? FileImage(_selectedAvatar!) : null,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: _selectedAvatar == null
                     ? Icon(
                         Icons.person,
@@ -227,8 +223,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue:
-          _genderController.text.isNotEmpty ? _genderController.text : null,
+      initialValue: _genderController.text.isNotEmpty ? _genderController.text : null,
       decoration: const InputDecoration(
         labelText: 'Gender',
         hintText: 'Select your gender',
@@ -252,9 +247,8 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
   Widget _buildExperienceLevelDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: _experienceLevelController.text.isNotEmpty
-          ? _experienceLevelController.text
-          : null,
+      initialValue:
+          _experienceLevelController.text.isNotEmpty ? _experienceLevelController.text : null,
       decoration: const InputDecoration(
         labelText: 'Experience Level',
         hintText: 'Select your experience level',
@@ -275,8 +269,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   Future<void> _selectDateOfBirth() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now()
-          .subtract(const Duration(days: 365 * 18)), // 18 years ago
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // 18 years ago
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -332,15 +325,9 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     profileController.createProfile(
       name: _nameController.text.trim(),
       dateOfBirth: _selectedDateOfBirth,
-      country: _countryController.text.trim().isNotEmpty
-          ? _countryController.text
-          : null,
-      gender: _genderController.text.trim().isNotEmpty
-          ? _genderController.text
-          : null,
-      mainGoal: _mainGoalController.text.trim().isNotEmpty
-          ? _mainGoalController.text
-          : null,
+      country: _countryController.text.trim().isNotEmpty ? _countryController.text : null,
+      gender: _genderController.text.trim().isNotEmpty ? _genderController.text : null,
+      mainGoal: _mainGoalController.text.trim().isNotEmpty ? _mainGoalController.text : null,
       experienceLevel: _experienceLevelController.text.trim().isNotEmpty
           ? _experienceLevelController.text
           : null,

@@ -78,8 +78,7 @@ class MoodChartWidget extends StatelessWidget {
                           return const SizedBox();
                         }
                         final insight = displayInsights[value.toInt()];
-                        final date =
-                            DateFormat('M/d').format(insight.periodEnd);
+                        final date = DateFormat('M/d').format(insight.periodEnd);
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(

@@ -27,8 +27,7 @@ class MessageBubble extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
-        mainAxisAlignment:
-            isUserMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUserMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUserMessage) ...[
@@ -37,9 +36,7 @@ class MessageBubble extends ConsumerWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isUserMessage
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Container(
                   decoration: BoxDecoration(
@@ -63,9 +60,8 @@ class MessageBubble extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Column(
-                    crossAxisAlignment: isUserMessage
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
                       Text(
                         timeAgo,
@@ -78,8 +74,7 @@ class MessageBubble extends ConsumerWidget {
                         const SizedBox(height: 2),
                         _buildUploadStatusIndicator(context, ref),
                       ] else if (message.role == MessageRole.user &&
-                          message.aiProcessingStatus !=
-                              AiProcessingStatus.completed) ...[
+                          message.aiProcessingStatus != AiProcessingStatus.completed) ...[
                         const SizedBox(height: 2),
                         _buildProcessingStatusIndicator(context),
                       ],
@@ -110,9 +105,7 @@ class MessageBubble extends ConsumerWidget {
       child: Icon(
         isUser ? Icons.person : Icons.smart_toy,
         size: 18,
-        color: isUser
-            ? theme.colorScheme.onPrimary
-            : theme.colorScheme.onSecondary,
+        color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
       ),
     );
   }
@@ -125,9 +118,8 @@ class MessageBubble extends ConsumerWidget {
         return Text(
           message.content ?? '',
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: isUserMessage
-                ? theme.colorScheme.onPrimaryContainer
-                : theme.colorScheme.onSurface,
+            color:
+                isUserMessage ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurface,
           ),
         );
 
@@ -388,10 +380,8 @@ class MessageBubble extends ConsumerWidget {
             InkWell(
               onTap: () async {
                 try {
-                  final callable = FirebaseFunctions.instance
-                      .httpsCallable('retryAiResponse');
-                  await callable
-                      .call<Map<String, dynamic>>({'messageId': message.id});
+                  final callable = FirebaseFunctions.instance.httpsCallable('retryAiResponse');
+                  await callable.call<Map<String, dynamic>>({'messageId': message.id});
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

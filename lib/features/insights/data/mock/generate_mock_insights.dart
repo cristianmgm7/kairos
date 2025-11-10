@@ -105,11 +105,7 @@ InsightModel _generateMockInsight({
   if (moodCategory < 0.4) {
     // Positive mood
     moodScore = 0.6 + random.nextDouble() * 0.3; // 0.6 to 0.9
-    final positiveEmotions = [
-      EmotionType.joy,
-      EmotionType.calm,
-      EmotionType.excitement
-    ];
+    final positiveEmotions = [EmotionType.joy, EmotionType.calm, EmotionType.excitement];
     dominantEmotion = positiveEmotions[random.nextInt(positiveEmotions.length)];
   } else if (moodCategory < 0.7) {
     // Neutral mood
@@ -125,8 +121,7 @@ InsightModel _generateMockInsight({
       EmotionType.fear,
       EmotionType.anger
     ];
-    dominantEmotion =
-        challengingEmotions[random.nextInt(challengingEmotions.length)];
+    dominantEmotion = challengingEmotions[random.nextInt(challengingEmotions.length)];
   }
 
   // Generate keywords based on thread
@@ -207,9 +202,7 @@ List<String> _generateKeywords(String? threadId, Random random) {
     'improvement'
   ];
 
-  final pool = threadId != null
-      ? (keywordSets[threadId] ?? globalKeywords)
-      : globalKeywords;
+  final pool = threadId != null ? (keywordSets[threadId] ?? globalKeywords) : globalKeywords;
 
   final shuffled = List<String>.from(pool)..shuffle(random);
   return shuffled.take(10).toList();
@@ -280,8 +273,7 @@ List<String> _generateThemes(EmotionType emotion, Random random) {
   return shuffled.take(5).toList();
 }
 
-String _generateSummary(
-    EmotionType emotion, double moodScore, String? threadId) {
+String _generateSummary(EmotionType emotion, double moodScore, String? threadId) {
   final moodDescriptors = {
     'high': ['positive', 'optimistic', 'energized', 'motivated'],
     'medium': ['balanced', 'steady', 'reflective', 'thoughtful'],

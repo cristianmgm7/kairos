@@ -28,8 +28,7 @@ void main() {
 
     test('should delete thread successfully when online', () async {
       // Arrange
-      when(mockRepository.deleteThread(testThreadId))
-          .thenAnswer((_) async => const Success(null));
+      when(mockRepository.deleteThread(testThreadId)).thenAnswer((_) async => const Success(null));
 
       // Act
       final result = await useCase(testThreadId);
@@ -79,4 +78,3 @@ void main() {
     });
   });
 }
-

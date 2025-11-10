@@ -95,20 +95,14 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
   Future<void> hardDeleteThreadAndMessages(String threadId) async {
     await isar.writeTxn(() async {
       // Delete the thread
-      final thread = await isar.journalThreadModels
-          .filter()
-          .idEqualTo(threadId)
-          .findFirst();
+      final thread = await isar.journalThreadModels.filter().idEqualTo(threadId).findFirst();
 
       if (thread != null) {
         await isar.journalThreadModels.delete(thread.isarId);
       }
 
       // Delete all messages for this thread
-      final messages = await isar.journalMessageModels
-          .filter()
-          .threadIdEqualTo(threadId)
-          .findAll();
+      final messages = await isar.journalMessageModels.filter().threadIdEqualTo(threadId).findAll();
 
       for (final message in messages) {
         await isar.journalMessageModels.delete(message.isarId);

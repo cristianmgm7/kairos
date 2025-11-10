@@ -52,9 +52,7 @@ class JournalMessageModel {
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: nowMillis,
       updatedAtMillis: nowMillis, // same as created initially
-      uploadStatus: messageType == MessageType.text
-          ? 2
-          : 0, // text=completed, media=notStarted
+      uploadStatus: messageType == MessageType.text ? 2 : 0, // text=completed, media=notStarted
     );
   }
 
@@ -75,8 +73,7 @@ class JournalMessageModel {
       aiProcessingStatus: entity.aiProcessingStatus.index,
       uploadStatus: entity.uploadStatus.index,
       uploadRetryCount: entity.uploadRetryCount,
-      lastUploadAttemptMillis:
-          entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
+      lastUploadAttemptMillis: entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
       updatedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
@@ -98,7 +95,8 @@ class JournalMessageModel {
       aiProcessingStatus: map['aiProcessingStatus'] as int? ?? 0,
       uploadStatus: map['uploadStatus'] as int? ?? 0,
       createdAtMillis: createdAt,
-      updatedAtMillis: map['updatedAtMillis'] as int? ?? createdAt, // default to createdAt for backwards compatibility
+      updatedAtMillis: map['updatedAtMillis'] as int? ??
+          createdAt, // default to createdAt for backwards compatibility
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
     );
@@ -161,10 +159,8 @@ class JournalMessageModel {
     final validCreatedAt = _isValidTimestamp(createdAtMillis)
         ? createdAtMillis
         : DateTime.now().toUtc().millisecondsSinceEpoch;
-    
-    final validUpdatedAt = _isValidTimestamp(updatedAtMillis)
-        ? updatedAtMillis
-        : validCreatedAt;
+
+    final validUpdatedAt = _isValidTimestamp(updatedAtMillis) ? updatedAtMillis : validCreatedAt;
 
     return JournalMessageEntity(
       id: id,
@@ -182,15 +178,12 @@ class JournalMessageModel {
       aiProcessingStatus: AiProcessingStatus.values[aiProcessingStatus],
       uploadStatus: UploadStatus.values[uploadStatus],
       uploadRetryCount: uploadRetryCount,
-      lastUploadAttemptAt: lastUploadAttemptMillis != null &&
-              _isValidTimestamp(lastUploadAttemptMillis!)
-          ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!,
-              isUtc: true)
-          : null,
-      createdAt:
-          DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
-      updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
+      lastUploadAttemptAt:
+          lastUploadAttemptMillis != null && _isValidTimestamp(lastUploadAttemptMillis!)
+              ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!, isUtc: true)
+              : null,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
     );
   }
 
@@ -240,8 +233,7 @@ class JournalMessageModel {
       aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
       uploadStatus: uploadStatus ?? this.uploadStatus,
       uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
-      lastUploadAttemptMillis:
-          lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
+      lastUploadAttemptMillis: lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
       updatedAtMillis: updatedAtMillis ?? this.updatedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,
