@@ -88,7 +88,7 @@ class MessageController extends StateNotifier<MessageState> {
     final result = await createImageMessageUseCase.call(params);
 
     result.when<void>(
-      success: (_) {
+            success: (_) {
         // Use case handles upload, analysis, and remote creation
         // Status updates flow through repository stream to UI
         state = MessageSuccess();

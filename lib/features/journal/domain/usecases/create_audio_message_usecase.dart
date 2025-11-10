@@ -59,7 +59,7 @@ class CreateAudioMessageUseCase {
       }
 
       // Determine thread ID
-      String threadId = params.threadId ?? _uuid.v4();
+      final threadId = params.threadId ?? _uuid.v4();
 
       if (params.threadId == null) {
         final thread = JournalThreadEntity(
@@ -69,7 +69,6 @@ class CreateAudioMessageUseCase {
           createdAt: DateTime.now().toUtc(),
           updatedAt: DateTime.now().toUtc(),
           lastMessageAt: DateTime.now().toUtc(),
-          messageCount: 0,
         );
 
         final threadResult = await threadRepository.createThread(thread);
@@ -92,9 +91,7 @@ class CreateAudioMessageUseCase {
         audioDurationSeconds: params.durationSeconds,
         createdAt: DateTime.now().toUtc(),
         updatedAt: DateTime.now().toUtc(),
-        status: MessageStatus.localCreated,
         clientLocalId: clientLocalId,
-        attemptCount: 0,
       );
 
       logger.i('Creating audio message locally: $messageId');
@@ -150,7 +147,7 @@ class CreateAudioMessageUseCase {
       message = message.copyWith(
         status: MessageStatus.mediaUploaded,
         storageUrl: audioUrl,
-        uploadProgress: 1.0,
+        uploadProgress: 1,
       );
       await messageRepository.updateMessage(message);
 

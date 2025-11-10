@@ -231,7 +231,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 await controller.createImageMessage(
                   userId: userId,
                   imageFile: image,
-                  thumbnailPath: '', // Will be generated in use case
                   threadId: widget.threadId,
                 );
                 controller.clearSelectedImage();

@@ -67,7 +67,6 @@ class CreateImageMessageUseCase {
           createdAt: DateTime.now().toUtc(),
           updatedAt: DateTime.now().toUtc(),
           lastMessageAt: DateTime.now().toUtc(),
-          messageCount: 0,
         );
 
         final threadResult = await threadRepository.createThread(thread);
@@ -89,9 +88,7 @@ class CreateImageMessageUseCase {
         localFilePath: params.imageFile.path,
         createdAt: DateTime.now().toUtc(),
         updatedAt: DateTime.now().toUtc(),
-        status: MessageStatus.localCreated,
         clientLocalId: clientLocalId,
-        attemptCount: 0,
       );
 
       logger.i('Creating image message locally: $messageId');
@@ -104,7 +101,7 @@ class CreateImageMessageUseCase {
       // STEP 2: Upload image file
       message = message.copyWith(
         status: MessageStatus.uploadingMedia,
-        uploadProgress: 0.0,
+        uploadProgress: 0,
       );
       await messageRepository.updateMessage(message);
 
@@ -146,7 +143,7 @@ class CreateImageMessageUseCase {
       message = message.copyWith(
         status: MessageStatus.mediaUploaded,
         storageUrl: imageUrl,
-        uploadProgress: 1.0,
+        uploadProgress: 1,
       );
       await messageRepository.updateMessage(message);
 

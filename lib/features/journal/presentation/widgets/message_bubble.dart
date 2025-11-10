@@ -264,8 +264,8 @@ class MessageBubble extends ConsumerWidget {
       color = theme.colorScheme.primary;
       switch (message.status) {
         case MessageStatus.uploadingMedia:
-          icon = Icons.cloud_upload;
-          color = Colors.blue;
+        icon = Icons.cloud_upload;
+        color = Colors.blue;
         case MessageStatus.processingAi:
           icon = Icons.smart_toy;
         default:

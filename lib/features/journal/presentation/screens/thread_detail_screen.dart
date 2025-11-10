@@ -184,10 +184,10 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
             if (userId != null) {
               ref.read(threadsStreamProvider(userId)).whenData((threads) {
                 if (threads.isNotEmpty && _currentThreadId == null) {
-                  setState(() {
+          setState(() {
                     _currentThreadId = threads.first.id;
-                  });
-                }
+          });
+        }
               });
             }
           });
