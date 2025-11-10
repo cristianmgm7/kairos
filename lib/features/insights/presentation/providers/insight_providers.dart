@@ -14,8 +14,7 @@ final insightLocalDataSourceProvider = Provider<InsightLocalDataSource>((ref) {
   return InsightLocalDataSourceImpl(isar);
 });
 
-final insightRemoteDataSourceProvider =
-    Provider<InsightRemoteDataSource>((ref) {
+final insightRemoteDataSourceProvider = Provider<InsightRemoteDataSource>((ref) {
   final firestore = ref.watch(firestoreProvider);
   return InsightRemoteDataSourceImpl(firestore);
 });
@@ -45,8 +44,7 @@ final threadInsightsStreamProvider =
 });
 
 // Current user's global insights (convenience provider)
-final currentUserGlobalInsightsProvider =
-    StreamProvider<List<InsightEntity>>((ref) {
+final currentUserGlobalInsightsProvider = StreamProvider<List<InsightEntity>>((ref) {
   final user = ref.watch(currentUserProvider);
   final userId = user?.id;
 

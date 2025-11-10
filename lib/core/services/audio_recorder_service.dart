@@ -102,7 +102,7 @@ class AudioRecorderService {
         return Error(
           UnknownFailure(
               message:
-                  'Recording file is too small ($fileSize bytes). Please try recording again with a longer message.'),
+                  'Recording file is too small ($fileSize bytes). Please try recording again with a longer message.',),
         );
       }
 

@@ -22,26 +22,22 @@ import 'package:kairos/features/journal/presentation/controllers/sync_controller
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
 // Data sources
-final threadLocalDataSourceProvider =
-    Provider<JournalThreadLocalDataSource>((ref) {
+final threadLocalDataSourceProvider = Provider<JournalThreadLocalDataSource>((ref) {
   final isar = ref.watch(isarProvider);
   return JournalThreadLocalDataSourceImpl(isar);
 });
 
-final threadRemoteDataSourceProvider =
-    Provider<JournalThreadRemoteDataSource>((ref) {
+final threadRemoteDataSourceProvider = Provider<JournalThreadRemoteDataSource>((ref) {
   final firestore = ref.watch(firestoreProvider);
   return JournalThreadRemoteDataSourceImpl(firestore);
 });
 
-final messageLocalDataSourceProvider =
-    Provider<JournalMessageLocalDataSource>((ref) {
+final messageLocalDataSourceProvider = Provider<JournalMessageLocalDataSource>((ref) {
   final isar = ref.watch(isarProvider);
   return JournalMessageLocalDataSourceImpl(isar);
 });
 
-final messageRemoteDataSourceProvider =
-    Provider<JournalMessageRemoteDataSource>((ref) {
+final messageRemoteDataSourceProvider = Provider<JournalMessageRemoteDataSource>((ref) {
   final firestore = ref.watch(firestoreProvider);
   return JournalMessageRemoteDataSourceImpl(firestore);
 });
@@ -78,8 +74,7 @@ final journalUploadServiceProvider = Provider<JournalUploadService>((ref) {
 });
 
 // Use cases
-final createTextMessageUseCaseProvider =
-    Provider<CreateTextMessageUseCase>((ref) {
+final createTextMessageUseCaseProvider = Provider<CreateTextMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
   return CreateTextMessageUseCase(
@@ -88,8 +83,7 @@ final createTextMessageUseCaseProvider =
   );
 });
 
-final createImageMessageUseCaseProvider =
-    Provider<CreateImageMessageUseCase>((ref) {
+final createImageMessageUseCaseProvider = Provider<CreateImageMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
   final storageService = ref.watch(firebaseStorageServiceProvider);
@@ -100,8 +94,7 @@ final createImageMessageUseCaseProvider =
   );
 });
 
-final createAudioMessageUseCaseProvider =
-    Provider<CreateAudioMessageUseCase>((ref) {
+final createAudioMessageUseCaseProvider = Provider<CreateAudioMessageUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final threadRepository = ref.watch(threadRepositoryProvider);
   return CreateAudioMessageUseCase(
@@ -115,8 +108,7 @@ final deleteThreadUseCaseProvider = Provider<DeleteThreadUseCase>((ref) {
   return DeleteThreadUseCase(threadRepository: threadRepository);
 });
 
-final syncThreadMessagesUseCaseProvider =
-    Provider<SyncThreadMessagesUseCase>((ref) {
+final syncThreadMessagesUseCaseProvider = Provider<SyncThreadMessagesUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   return SyncThreadMessagesUseCase(messageRepository: messageRepository);
 });
@@ -135,13 +127,10 @@ final messagesStreamProvider =
 });
 
 // Controllers
-final messageControllerProvider =
-    StateNotifierProvider<MessageController, MessageState>((ref) {
+final messageControllerProvider = StateNotifierProvider<MessageController, MessageState>((ref) {
   final createTextMessageUseCase = ref.watch(createTextMessageUseCaseProvider);
-  final createImageMessageUseCase =
-      ref.watch(createImageMessageUseCaseProvider);
-  final createAudioMessageUseCase =
-      ref.watch(createAudioMessageUseCaseProvider);
+  final createImageMessageUseCase = ref.watch(createImageMessageUseCaseProvider);
+  final createAudioMessageUseCase = ref.watch(createAudioMessageUseCaseProvider);
   final uploadService = ref.watch(journalUploadServiceProvider);
   final imagePickerService = ref.watch(imagePickerServiceProvider);
   final audioRecorderService = ref.watch(audioRecorderServiceProvider);
@@ -156,14 +145,12 @@ final messageControllerProvider =
   );
 });
 
-final threadControllerProvider =
-    StateNotifierProvider<ThreadController, ThreadState>((ref) {
+final threadControllerProvider = StateNotifierProvider<ThreadController, ThreadState>((ref) {
   final deleteThreadUseCase = ref.watch(deleteThreadUseCaseProvider);
   return ThreadController(deleteThreadUseCase: deleteThreadUseCase);
 });
 
-final syncControllerProvider =
-    StateNotifierProvider<SyncController, SyncState>((ref) {
+final syncControllerProvider = StateNotifierProvider<SyncController, SyncState>((ref) {
   final syncThreadMessagesUseCase = ref.watch(syncThreadMessagesUseCaseProvider);
   return SyncController(syncThreadMessagesUseCase: syncThreadMessagesUseCase);
 });

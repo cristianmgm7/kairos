@@ -79,4 +79,3 @@ class SyncController extends StateNotifier<SyncState> {
     state = const SyncInitial();
   }
 }
-

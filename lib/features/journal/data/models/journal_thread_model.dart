@@ -102,13 +102,10 @@ class JournalThreadModel {
       id: id,
       userId: userId,
       title: title,
-      createdAt:
-          DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
-      updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
       lastMessageAt: lastMessageAtMillis != null
-          ? DateTime.fromMillisecondsSinceEpoch(lastMessageAtMillis!,
-              isUtc: true)
+          ? DateTime.fromMillisecondsSinceEpoch(lastMessageAtMillis!, isUtc: true)
           : null,
       messageCount: messageCount,
       isArchived: isArchived,

@@ -68,10 +68,8 @@ class InsightRepositoryImpl implements InsightRepository {
               debugPrint('Synced new global insight: ${remoteModel.id}');
             } else {
               // Check if we need to update
-              final localModel =
-                  await localDataSource.getInsightById(remoteModel.id);
-              if (localModel != null &&
-                  localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
+              final localModel = await localDataSource.getInsightById(remoteModel.id);
+              if (localModel != null && localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
                 await localDataSource.updateInsight(remoteModel);
                 debugPrint('Updated global insight: ${remoteModel.id}');
               }
@@ -109,8 +107,7 @@ class InsightRepositoryImpl implements InsightRepository {
         // Always attempt remote sync when we have userId
         remoteSub = remoteDataSource.watchThreadInsights(userId, threadId).listen(
           (remoteModels) async {
-            final localInsights =
-                await localDataSource.getThreadInsights(threadId);
+            final localInsights = await localDataSource.getThreadInsights(threadId);
             final localIds = localInsights.map((m) => m.id).toSet();
 
             for (final remoteModel in remoteModels) {
@@ -118,8 +115,7 @@ class InsightRepositoryImpl implements InsightRepository {
                 await localDataSource.saveInsight(remoteModel);
                 debugPrint('Synced new thread insight: ${remoteModel.id}');
               } else {
-                final localModel =
-                    await localDataSource.getInsightById(remoteModel.id);
+                final localModel = await localDataSource.getInsightById(remoteModel.id);
                 if (localModel != null &&
                     localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
                   await localDataSource.updateInsight(remoteModel);
@@ -148,8 +144,7 @@ class InsightRepositoryImpl implements InsightRepository {
   Future<Result<void>> syncInsights(String userId) async {
     try {
       // Sync global insights
-      final remoteGlobalInsights =
-          await remoteDataSource.getGlobalInsights(userId);
+      final remoteGlobalInsights = await remoteDataSource.getGlobalInsights(userId);
       for (final insight in remoteGlobalInsights) {
         await localDataSource.saveInsight(insight);
       }

@@ -9,10 +9,8 @@ import 'dart:typed_data' as _i7;
 
 import 'package:kairos/core/services/firebase_storage_service.dart' as _i2;
 import 'package:kairos/core/utils/result.dart' as _i5;
-import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart'
-    as _i9;
-import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart'
-    as _i8;
+import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart' as _i9;
+import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
 
@@ -32,8 +30,7 @@ import 'package:mockito/src/dummies.dart' as _i3;
 /// A class which mocks [FirebaseStorageService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFirebaseStorageService extends _i1.Mock
-    implements _i2.FirebaseStorageService {
+class MockFirebaseStorageService extends _i1.Mock implements _i2.FirebaseStorageService {
   MockFirebaseStorageService() {
     _i1.throwOnMissingStub(this);
   }
@@ -92,8 +89,7 @@ class MockFirebaseStorageService extends _i1.Mock
             #onProgress: onProgress,
           },
         ),
-        returnValue: _i4.Future<_i5.Result<String>>.value(
-            _i3.dummyValue<_i5.Result<String>>(
+        returnValue: _i4.Future<_i5.Result<String>>.value(_i3.dummyValue<_i5.Result<String>>(
           this,
           Invocation.method(
             #uploadFile,
@@ -122,8 +118,8 @@ class MockFirebaseStorageService extends _i1.Mock
           [imageFile],
           {#size: size},
         ),
-        returnValue: _i4.Future<_i5.Result<_i7.Uint8List>>.value(
-            _i3.dummyValue<_i5.Result<_i7.Uint8List>>(
+        returnValue:
+            _i4.Future<_i5.Result<_i7.Uint8List>>.value(_i3.dummyValue<_i5.Result<_i7.Uint8List>>(
           this,
           Invocation.method(
             #generateThumbnail,
@@ -134,14 +130,12 @@ class MockFirebaseStorageService extends _i1.Mock
       ) as _i4.Future<_i5.Result<_i7.Uint8List>>);
 
   @override
-  _i4.Future<_i5.Result<void>> deleteFile(String? downloadUrl) =>
-      (super.noSuchMethod(
+  _i4.Future<_i5.Result<void>> deleteFile(String? downloadUrl) => (super.noSuchMethod(
         Invocation.method(
           #deleteFile,
           [downloadUrl],
         ),
-        returnValue:
-            _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
+        returnValue: _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
           this,
           Invocation.method(
             #deleteFile,
@@ -154,8 +148,7 @@ class MockFirebaseStorageService extends _i1.Mock
 /// A class which mocks [JournalMessageRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockJournalMessageRepository extends _i1.Mock
-    implements _i8.JournalMessageRepository {
+class MockJournalMessageRepository extends _i1.Mock implements _i8.JournalMessageRepository {
   MockJournalMessageRepository() {
     _i1.throwOnMissingStub(this);
   }
@@ -179,8 +172,7 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<_i9.JournalMessageEntity>>);
 
   @override
-  _i4.Future<_i5.Result<_i9.JournalMessageEntity?>> getMessageById(
-          String? messageId) =>
+  _i4.Future<_i5.Result<_i9.JournalMessageEntity?>> getMessageById(String? messageId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getMessageById,
@@ -197,8 +189,7 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<_i9.JournalMessageEntity?>>);
 
   @override
-  _i4.Stream<List<_i9.JournalMessageEntity>> watchMessagesByThreadId(
-          String? threadId) =>
+  _i4.Stream<List<_i9.JournalMessageEntity>> watchMessagesByThreadId(String? threadId) =>
       (super.noSuchMethod(
         Invocation.method(
           #watchMessagesByThreadId,
@@ -208,15 +199,13 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Stream<List<_i9.JournalMessageEntity>>);
 
   @override
-  _i4.Future<_i5.Result<void>> updateMessage(
-          _i9.JournalMessageEntity? message) =>
+  _i4.Future<_i5.Result<void>> updateMessage(_i9.JournalMessageEntity? message) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateMessage,
           [message],
         ),
-        returnValue:
-            _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
+        returnValue: _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
           this,
           Invocation.method(
             #updateMessage,
@@ -226,14 +215,12 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<void>>);
 
   @override
-  _i4.Future<_i5.Result<void>> syncMessages(String? threadId) =>
-      (super.noSuchMethod(
+  _i4.Future<_i5.Result<void>> syncMessages(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #syncMessages,
           [threadId],
         ),
-        returnValue:
-            _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
+        returnValue: _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
           this,
           Invocation.method(
             #syncMessages,
@@ -243,14 +230,12 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<void>>);
 
   @override
-  _i4.Future<_i5.Result<void>> syncThreadIncremental(String? threadId) =>
-      (super.noSuchMethod(
+  _i4.Future<_i5.Result<void>> syncThreadIncremental(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #syncThreadIncremental,
           [threadId],
         ),
-        returnValue:
-            _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
+        returnValue: _i4.Future<_i5.Result<void>>.value(_i3.dummyValue<_i5.Result<void>>(
           this,
           Invocation.method(
             #syncThreadIncremental,
@@ -260,16 +245,14 @@ class MockJournalMessageRepository extends _i1.Mock
       ) as _i4.Future<_i5.Result<void>>);
 
   @override
-  _i4.Future<_i5.Result<List<_i9.JournalMessageEntity>>> getPendingUploads(
-          String? userId) =>
+  _i4.Future<_i5.Result<List<_i9.JournalMessageEntity>>> getPendingUploads(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getPendingUploads,
           [userId],
         ),
-        returnValue:
-            _i4.Future<_i5.Result<List<_i9.JournalMessageEntity>>>.value(
-                _i3.dummyValue<_i5.Result<List<_i9.JournalMessageEntity>>>(
+        returnValue: _i4.Future<_i5.Result<List<_i9.JournalMessageEntity>>>.value(
+            _i3.dummyValue<_i5.Result<List<_i9.JournalMessageEntity>>>(
           this,
           Invocation.method(
             #getPendingUploads,

@@ -1,8 +1,9 @@
 import 'dart:math';
+
 import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Run this script to populate mock insights for testing
 /// Execute from terminal: flutter run lib/features/insights/data/mock/generate_mock_insights.dart
@@ -39,7 +40,7 @@ Future<void> main() async {
   for (final threadId in threadIds) {
     final insightCount = 5 + random.nextInt(3); // 5-7 insights
 
-    for (int i = 0; i < insightCount; i++) {
+    for (var i = 0; i < insightCount; i++) {
       final daysAgo = i * 2; // Every 2 days
       final periodEnd = now.subtract(Duration(days: daysAgo));
       final periodStart = periodEnd.subtract(const Duration(days: 3));
@@ -63,14 +64,13 @@ Future<void> main() async {
   print('🌍 Creating global insights...');
 
   // Generate 10 global insights
-  for (int i = 0; i < 10; i++) {
+  for (var i = 0; i < 10; i++) {
     final daysAgo = i * 1; // Daily
     final periodEnd = now.subtract(Duration(days: daysAgo));
     final periodStart = periodEnd.subtract(const Duration(days: 3));
 
     final insight = _generateMockInsight(
       userId: userId,
-      threadId: null, // Global insight
       periodStart: periodStart,
       periodEnd: periodEnd,
       random: random,
@@ -91,10 +91,7 @@ Future<void> main() async {
 
 InsightModel _generateMockInsight({
   required String userId,
-  String? threadId,
-  required DateTime periodStart,
-  required DateTime periodEnd,
-  required Random random,
+  required DateTime periodStart, required DateTime periodEnd, required Random random, String? threadId,
 }) {
   // Generate realistic mood distribution:
   // 40% positive (0.6-0.9), 30% neutral (0.4-0.6), 30% challenging (0.1-0.4)
@@ -105,11 +102,7 @@ InsightModel _generateMockInsight({
   if (moodCategory < 0.4) {
     // Positive mood
     moodScore = 0.6 + random.nextDouble() * 0.3; // 0.6 to 0.9
-    final positiveEmotions = [
-      EmotionType.joy,
-      EmotionType.calm,
-      EmotionType.excitement
-    ];
+    final positiveEmotions = [EmotionType.joy, EmotionType.calm, EmotionType.excitement];
     dominantEmotion = positiveEmotions[random.nextInt(positiveEmotions.length)];
   } else if (moodCategory < 0.7) {
     // Neutral mood
@@ -123,10 +116,9 @@ InsightModel _generateMockInsight({
       EmotionType.sadness,
       EmotionType.stress,
       EmotionType.fear,
-      EmotionType.anger
+      EmotionType.anger,
     ];
-    dominantEmotion =
-        challengingEmotions[random.nextInt(challengingEmotions.length)];
+    dominantEmotion = challengingEmotions[random.nextInt(challengingEmotions.length)];
   }
 
   // Generate keywords based on thread
@@ -166,7 +158,7 @@ List<String> _generateKeywords(String? threadId, Random random) {
       'goals',
       'progress',
       'challenges',
-      'success'
+      'success',
     ],
     'thread_personal_growth': [
       'learning',
@@ -178,7 +170,7 @@ List<String> _generateKeywords(String? threadId, Random random) {
       'mindfulness',
       'growth',
       'reflection',
-      'progress'
+      'progress',
     ],
     'thread_relationships': [
       'family',
@@ -190,7 +182,7 @@ List<String> _generateKeywords(String? threadId, Random random) {
       'quality time',
       'listening',
       'empathy',
-      'boundaries'
+      'boundaries',
     ],
   };
 
@@ -204,12 +196,10 @@ List<String> _generateKeywords(String? threadId, Random random) {
     'positive',
     'grateful',
     'challenge',
-    'improvement'
+    'improvement',
   ];
 
-  final pool = threadId != null
-      ? (keywordSets[threadId] ?? globalKeywords)
-      : globalKeywords;
+  final pool = threadId != null ? (keywordSets[threadId] ?? globalKeywords) : globalKeywords;
 
   final shuffled = List<String>.from(pool)..shuffle(random);
   return shuffled.take(10).toList();
@@ -222,56 +212,56 @@ List<String> _generateThemes(EmotionType emotion, Random random) {
       'Positive outlook on challenges',
       'Gratitude practice',
       'Strong social connections',
-      'Sense of accomplishment'
+      'Sense of accomplishment',
     ],
     EmotionType.calm: [
       'Inner peace and balance',
       'Mindfulness practice',
       'Healthy boundaries',
       'Self-care routines',
-      'Stress management'
+      'Stress management',
     ],
     EmotionType.neutral: [
       'Steady emotional state',
       'Routine maintenance',
       'Balanced perspective',
       'Processing experiences',
-      'Gradual progress'
+      'Gradual progress',
     ],
     EmotionType.sadness: [
       'Processing difficult emotions',
       'Seeking support',
       'Self-compassion',
       'Acknowledging feelings',
-      'Gentle self-reflection'
+      'Gentle self-reflection',
     ],
     EmotionType.stress: [
       'Managing overwhelm',
       'Time pressure concerns',
       'Seeking coping strategies',
       'Workload balance',
-      'Need for rest'
+      'Need for rest',
     ],
     EmotionType.anger: [
       'Expressing frustration',
       'Setting boundaries',
       'Processing conflict',
       'Seeking resolution',
-      'Emotional release'
+      'Emotional release',
     ],
     EmotionType.fear: [
       'Facing uncertainties',
       'Building courage',
       'Addressing anxieties',
       'Seeking reassurance',
-      'Gradual exposure'
+      'Gradual exposure',
     ],
     EmotionType.excitement: [
       'Anticipating positive changes',
       'New opportunities',
       'Creative energy',
       'Motivated action',
-      'Future planning'
+      'Future planning',
     ],
   };
 
@@ -280,8 +270,7 @@ List<String> _generateThemes(EmotionType emotion, Random random) {
   return shuffled.take(5).toList();
 }
 
-String _generateSummary(
-    EmotionType emotion, double moodScore, String? threadId) {
+String _generateSummary(EmotionType emotion, double moodScore, String? threadId) {
   final moodDescriptors = {
     'high': ['positive', 'optimistic', 'energized', 'motivated'],
     'medium': ['balanced', 'steady', 'reflective', 'thoughtful'],
@@ -310,7 +299,7 @@ String _generateSummary(
       ? 'in your ${threadId.replaceAll('thread_', '').replaceAll('_', ' ')} conversations'
       : 'overall';
 
-  return 'You\'ve been $descriptor $context, ${emotionDescriptors[emotion]}. '
+  return "You've been $descriptor $context, ${emotionDescriptors[emotion]}. "
       'Your reflections show genuine engagement with your emotional journey.';
 }
 

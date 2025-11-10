@@ -87,8 +87,7 @@ class ThreadListScreen extends ConsumerWidget {
                         bottom: 80, // Space for FAB
                       ),
                       itemCount: threads.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1),
+                      separatorBuilder: (context, index) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final thread = threads[index];
                         return _buildThreadItem(context, ref, thread);
@@ -141,13 +140,12 @@ class ThreadListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildThreadItem(
-      BuildContext context, WidgetRef ref, JournalThreadEntity thread) {
+  Widget _buildThreadItem(BuildContext context, WidgetRef ref, JournalThreadEntity thread) {
     return Dismissible(
       key: Key(thread.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        return await _showDeleteConfirmationDialog(context);
+        return _showDeleteConfirmationDialog(context);
       },
       onDismissed: (direction) {
         ref.read(threadControllerProvider.notifier).deleteThread(thread.id);

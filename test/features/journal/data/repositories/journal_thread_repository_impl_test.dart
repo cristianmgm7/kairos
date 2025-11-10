@@ -36,8 +36,7 @@ void main() {
   group('deleteThread', () {
     const testThreadId = 'test-thread-123';
 
-    test('should return NetworkFailure when remote throws NetworkException',
-        () async {
+    test('should return NetworkFailure when remote throws NetworkException', () async {
       // Arrange
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenThrow(NetworkException(message: 'Network error'));
@@ -53,8 +52,7 @@ void main() {
       verifyNever(mockLocalDataSource.hardDeleteThreadAndMessages(any));
     });
 
-    test('should soft-delete remotely then hard-delete locally on success',
-        () async {
+    test('should soft-delete remotely then hard-delete locally on success', () async {
       // Arrange
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenAnswer((_) async => Future.value());
@@ -70,8 +68,7 @@ void main() {
       verify(mockLocalDataSource.hardDeleteThreadAndMessages(testThreadId));
     });
 
-    test('should return ServerFailure when remote throws ServerException',
-        () async {
+    test('should return ServerFailure when remote throws ServerException', () async {
       // Arrange
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenThrow(ServerException(message: 'Server error'));
@@ -85,8 +82,7 @@ void main() {
       verifyNever(mockLocalDataSource.hardDeleteThreadAndMessages(any));
     });
 
-    test('should succeed even if local deletion fails after remote success',
-        () async {
+    test('should succeed even if local deletion fails after remote success', () async {
       // Arrange
       when(mockRemoteDataSource.softDeleteThread(testThreadId))
           .thenAnswer((_) async => Future.value());
@@ -103,5 +99,3 @@ void main() {
     });
   });
 }
-
-

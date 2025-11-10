@@ -104,8 +104,7 @@ class HomeScreen extends ConsumerWidget {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No insights yet',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(context).textTheme.titleMedium,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(

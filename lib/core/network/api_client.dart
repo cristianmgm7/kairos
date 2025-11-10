@@ -94,8 +94,7 @@ class ApiClient {
 
       case DioExceptionType.badResponse:
         final data = error.response?.data;
-        final message =
-            data is Map<String, dynamic> ? data['message'] as String? : null;
+        final message = data is Map<String, dynamic> ? data['message'] as String? : null;
         return ServerException(
           message: message ?? 'Server error occurred',
           statusCode: error.response?.statusCode,

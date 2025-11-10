@@ -27,11 +27,9 @@ class CreateTextMessageUseCase {
   final JournalMessageRepository messageRepository;
   final JournalThreadRepository threadRepository;
 
-  Future<Result<JournalMessageEntity>> call(
-      CreateTextMessageParams params) async {
+  Future<Result<JournalMessageEntity>> call(CreateTextMessageParams params) async {
     if (params.content.trim().isEmpty) {
-      return const Error(
-          ValidationFailure(message: 'Message content cannot be empty'));
+      return const Error(ValidationFailure(message: 'Message content cannot be empty'));
     }
 
     try {
@@ -39,9 +37,8 @@ class CreateTextMessageUseCase {
       if (params.threadId != null) {
         threadId = params.threadId!;
       } else {
-        final threadTitle = params.content.length > 50
-            ? '${params.content.substring(0, 50)}...'
-            : params.content;
+        final threadTitle =
+            params.content.length > 50 ? '${params.content.substring(0, 50)}...' : params.content;
 
         final now = DateTime.now().toUtc();
         final newThread = JournalThreadEntity(

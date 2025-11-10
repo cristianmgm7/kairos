@@ -8,8 +8,7 @@ import 'dart:typed_data' as _i5;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:record/src/record.dart' as _i3;
-import 'package:record_platform_interface/record_platform_interface.dart'
-    as _i2;
+import 'package:record_platform_interface/record_platform_interface.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -64,8 +63,7 @@ class MockAudioRecorder extends _i1.Mock implements _i3.AudioRecorder {
           #startStream,
           [config],
         ),
-        returnValue: _i4.Future<_i4.Stream<_i5.Uint8List>>.value(
-            _i4.Stream<_i5.Uint8List>.empty()),
+        returnValue: _i4.Future<_i4.Stream<_i5.Uint8List>>.value(_i4.Stream<_i5.Uint8List>.empty()),
       ) as _i4.Future<_i4.Stream<_i5.Uint8List>>);
 
   @override
@@ -140,8 +138,7 @@ class MockAudioRecorder extends _i1.Mock implements _i3.AudioRecorder {
           #listInputDevices,
           [],
         ),
-        returnValue:
-            _i4.Future<List<_i2.InputDevice>>.value(<_i2.InputDevice>[]),
+        returnValue: _i4.Future<List<_i2.InputDevice>>.value(<_i2.InputDevice>[]),
       ) as _i4.Future<List<_i2.InputDevice>>);
 
   @override
@@ -160,8 +157,7 @@ class MockAudioRecorder extends _i1.Mock implements _i3.AudioRecorder {
       ) as _i4.Future<_i2.Amplitude>);
 
   @override
-  _i4.Future<bool> isEncoderSupported(_i2.AudioEncoder? encoder) =>
-      (super.noSuchMethod(
+  _i4.Future<bool> isEncoderSupported(_i2.AudioEncoder? encoder) => (super.noSuchMethod(
         Invocation.method(
           #isEncoderSupported,
           [encoder],
@@ -189,8 +185,7 @@ class MockAudioRecorder extends _i1.Mock implements _i3.AudioRecorder {
       ) as _i4.Stream<_i2.RecordState>);
 
   @override
-  _i4.Stream<_i2.Amplitude> onAmplitudeChanged(Duration? interval) =>
-      (super.noSuchMethod(
+  _i4.Stream<_i2.Amplitude> onAmplitudeChanged(Duration? interval) => (super.noSuchMethod(
         Invocation.method(
           #onAmplitudeChanged,
           [interval],

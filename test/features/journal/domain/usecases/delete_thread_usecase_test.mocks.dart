@@ -6,10 +6,8 @@
 import 'dart:async' as _i3;
 
 import 'package:kairos/core/utils/result.dart' as _i4;
-import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart'
-    as _i5;
-import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart'
-    as _i2;
+import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart' as _i5;
+import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i6;
 
@@ -29,15 +27,13 @@ import 'package:mockito/src/dummies.dart' as _i6;
 /// A class which mocks [JournalThreadRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockJournalThreadRepository extends _i1.Mock
-    implements _i2.JournalThreadRepository {
+class MockJournalThreadRepository extends _i1.Mock implements _i2.JournalThreadRepository {
   MockJournalThreadRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Result<_i5.JournalThreadEntity>> createThread(
-          _i5.JournalThreadEntity? thread) =>
+  _i3.Future<_i4.Result<_i5.JournalThreadEntity>> createThread(_i5.JournalThreadEntity? thread) =>
       (super.noSuchMethod(
         Invocation.method(
           #createThread,
@@ -54,8 +50,7 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Future<_i4.Result<_i5.JournalThreadEntity>>);
 
   @override
-  _i3.Future<_i4.Result<_i5.JournalThreadEntity?>> getThreadById(
-          String? threadId) =>
+  _i3.Future<_i4.Result<_i5.JournalThreadEntity?>> getThreadById(String? threadId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getThreadById,
@@ -72,8 +67,7 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Future<_i4.Result<_i5.JournalThreadEntity?>>);
 
   @override
-  _i3.Stream<List<_i5.JournalThreadEntity>> watchThreadsByUserId(
-          String? userId) =>
+  _i3.Stream<List<_i5.JournalThreadEntity>> watchThreadsByUserId(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #watchThreadsByUserId,
@@ -83,14 +77,12 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Stream<List<_i5.JournalThreadEntity>>);
 
   @override
-  _i3.Future<_i4.Result<void>> updateThread(_i5.JournalThreadEntity? thread) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.Result<void>> updateThread(_i5.JournalThreadEntity? thread) => (super.noSuchMethod(
         Invocation.method(
           #updateThread,
           [thread],
         ),
-        returnValue:
-            _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
+        returnValue: _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
           this,
           Invocation.method(
             #updateThread,
@@ -100,14 +92,12 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Future<_i4.Result<void>>);
 
   @override
-  _i3.Future<_i4.Result<void>> archiveThread(String? threadId) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.Result<void>> archiveThread(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #archiveThread,
           [threadId],
         ),
-        returnValue:
-            _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
+        returnValue: _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
           this,
           Invocation.method(
             #archiveThread,
@@ -117,14 +107,12 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Future<_i4.Result<void>>);
 
   @override
-  _i3.Future<_i4.Result<void>> syncThreads(String? userId) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.Result<void>> syncThreads(String? userId) => (super.noSuchMethod(
         Invocation.method(
           #syncThreads,
           [userId],
         ),
-        returnValue:
-            _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
+        returnValue: _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
           this,
           Invocation.method(
             #syncThreads,
@@ -134,14 +122,12 @@ class MockJournalThreadRepository extends _i1.Mock
       ) as _i3.Future<_i4.Result<void>>);
 
   @override
-  _i3.Future<_i4.Result<void>> deleteThread(String? threadId) =>
-      (super.noSuchMethod(
+  _i3.Future<_i4.Result<void>> deleteThread(String? threadId) => (super.noSuchMethod(
         Invocation.method(
           #deleteThread,
           [threadId],
         ),
-        returnValue:
-            _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
+        returnValue: _i3.Future<_i4.Result<void>>.value(_i6.dummyValue<_i4.Result<void>>(
           this,
           Invocation.method(
             #deleteThread,

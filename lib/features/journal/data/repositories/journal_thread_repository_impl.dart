@@ -20,7 +20,8 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
   @override
   Future<Result<JournalThreadEntity>> createThread(
-      JournalThreadEntity thread,) async {
+    JournalThreadEntity thread,
+  ) async {
     try {
       final model = JournalThreadModel.fromEntity(thread);
       await localDataSource.saveThread(model);

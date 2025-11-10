@@ -88,27 +88,21 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
             final aTime = a.lastMessageAtMillis ?? a.createdAtMillis;
             final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
             return bTime.compareTo(aTime);
-          }));
+          }),);
   }
 
   @override
   Future<void> hardDeleteThreadAndMessages(String threadId) async {
     await isar.writeTxn(() async {
       // Delete the thread
-      final thread = await isar.journalThreadModels
-          .filter()
-          .idEqualTo(threadId)
-          .findFirst();
+      final thread = await isar.journalThreadModels.filter().idEqualTo(threadId).findFirst();
 
       if (thread != null) {
         await isar.journalThreadModels.delete(thread.isarId);
       }
 
       // Delete all messages for this thread
-      final messages = await isar.journalMessageModels
-          .filter()
-          .threadIdEqualTo(threadId)
-          .findAll();
+      final messages = await isar.journalMessageModels.filter().threadIdEqualTo(threadId).findAll();
 
       for (final message in messages) {
         await isar.journalMessageModels.delete(message.isarId);

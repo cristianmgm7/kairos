@@ -17,6 +17,5 @@ class UserEntity extends Equatable {
   List<Object?> get props => [id, email, displayName, photoUrl];
 
   @override
-  String toString() =>
-      'UserEntity(id: $id, email: $email, displayName: $displayName)';
+  String toString() => 'UserEntity(id: $id, email: $email, displayName: $displayName)';
 }

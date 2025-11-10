@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
+import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 
 void main() {
   group('Insights Integration Tests', () {
@@ -79,7 +79,6 @@ void main() {
       final now = DateTime.now();
       final model = InsightModel.create(
         userId: 'user_123',
-        threadId: null, // Global insight
         periodStart: now.subtract(const Duration(days: 3)),
         periodEnd: now,
         moodScore: 0.6,
@@ -106,7 +105,7 @@ void main() {
         threadId: 'thread_456',
         periodStart: now.subtract(const Duration(days: 3)),
         periodEnd: now,
-        moodScore: 1.0,
+        moodScore: 1,
         dominantEmotion: EmotionType.joy,
         keywords: const ['excellent'],
         aiThemes: const ['Peak performance'],
@@ -125,7 +124,7 @@ void main() {
         threadId: 'thread_456',
         periodStart: now.subtract(const Duration(days: 3)),
         periodEnd: now,
-        moodScore: 0.0,
+        moodScore: 0,
         dominantEmotion: EmotionType.sadness,
         keywords: const ['difficult'],
         aiThemes: const ['Challenging times'],

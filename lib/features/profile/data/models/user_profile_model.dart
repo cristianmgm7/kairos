@@ -86,9 +86,7 @@ class UserProfileModel {
       avatarLocalPath: map['avatarLocalPath'] as String?,
       mainGoal: map['mainGoal'] as String?,
       experienceLevel: map['experienceLevel'] as String?,
-      interests: map['interests'] != null
-          ? List<String>.from(map['interests'] as List)
-          : null,
+      interests: map['interests'] != null ? List<String>.from(map['interests'] as List) : null,
       createdAtMillis: map['createdAtMillis'] as int,
       modifiedAtMillis: map['modifiedAtMillis'] as int,
       isDeleted: map['isDeleted'] as bool? ?? false,
@@ -239,9 +237,7 @@ class UserProfileModel {
     return hash;
   }
 
-  DateTime get createdAt =>
-      DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
+  DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
 
-  DateTime get modifiedAt =>
-      DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis);
+  DateTime get modifiedAt => DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis);
 }

@@ -12,8 +12,7 @@ abstract class JournalThreadRemoteDataSource {
   Future<void> softDeleteThread(String threadId);
 }
 
-class JournalThreadRemoteDataSourceImpl
-    implements JournalThreadRemoteDataSource {
+class JournalThreadRemoteDataSourceImpl implements JournalThreadRemoteDataSource {
   JournalThreadRemoteDataSourceImpl(this.firestore);
   final FirebaseFirestore firestore;
 
@@ -50,9 +49,7 @@ class JournalThreadRemoteDataSourceImpl
           .orderBy('lastMessageAtMillis', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => JournalThreadModel.fromMap(doc.data()))
-          .toList();
+      return querySnapshot.docs.map((doc) => JournalThreadModel.fromMap(doc.data())).toList();
     } catch (e) {
       mapFirestoreException(e, context: 'Failed to get threads by user');
     }

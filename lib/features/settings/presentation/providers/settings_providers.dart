@@ -9,8 +9,7 @@ import 'package:kairos/features/settings/domain/repositories/settings_repository
 import 'package:kairos/features/settings/presentation/controllers/settings_controller.dart';
 
 /// Local data source provider
-final settingsLocalDataSourceProvider =
-    Provider<SettingsLocalDataSource>((ref) {
+final settingsLocalDataSourceProvider = Provider<SettingsLocalDataSource>((ref) {
   final isar = ref.watch(isarProvider);
   return SettingsLocalDataSourceImpl(isar);
 });
@@ -28,8 +27,7 @@ final settingsStreamProvider = StreamProvider<SettingsEntity>((ref) {
 });
 
 /// Settings controller provider
-final settingsControllerProvider =
-    StateNotifierProvider<SettingsController, SettingsState>((ref) {
+final settingsControllerProvider = StateNotifierProvider<SettingsController, SettingsState>((ref) {
   final repository = ref.watch(settingsRepositoryProvider);
   return SettingsController(repository);
 });

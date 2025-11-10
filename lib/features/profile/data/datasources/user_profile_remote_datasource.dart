@@ -30,8 +30,7 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   UserProfileRemoteDataSourceImpl(this.firestore);
   final FirebaseFirestore firestore;
 
-  CollectionReference<Map<String, dynamic>> get _collection =>
-      firestore.collection('userProfiles');
+  CollectionReference<Map<String, dynamic>> get _collection => firestore.collection('userProfiles');
 
   @override
   Future<void> saveProfile(UserProfileModel profile) async {
@@ -85,8 +84,6 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
         )
         .get();
 
-    return querySnapshot.docs
-        .map((doc) => UserProfileModel.fromMap(doc.data()))
-        .toList();
+    return querySnapshot.docs.map((doc) => UserProfileModel.fromMap(doc.data())).toList();
   }
 }
