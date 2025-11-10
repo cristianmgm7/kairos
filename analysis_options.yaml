@@ -11,6 +11,7 @@ analyzer:
     - '**/*.config.dart'
     - 'lib/generated/**'
     - 'build/**'
+    - '**/*.mocks.dart'
 
   errors:
     invalid_annotation_target: error
