@@ -11,9 +11,18 @@ enum EmotionType {
   excitement,
 }
 
+enum InsightPeriod {
+  oneDay,    // Last 24 hours
+  threeDays, // Last 3 days
+  oneWeek,   // Last 7 days
+  oneMonth,  // Last 30 days
+  daily,     // Single day snapshot (for aggregation)
+}
+
 enum InsightType {
-  thread,
-  global,
+  thread,       // Per-thread insight
+  global,       // Global aggregated insight
+  dailyGlobal,  // Single day global snapshot
 }
 
 class InsightEntity extends Equatable {
@@ -32,6 +41,7 @@ class InsightEntity extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.threadId, // null for global insights
+    this.period, // null for thread insights, set for global insights
     this.guidanceSuggestion, // Placeholder for future Guidance feature
     this.actionPrompt, // Placeholder for future Guidance feature
     this.metadata,
@@ -51,6 +61,7 @@ class InsightEntity extends Equatable {
   final int messageCount; // Number of messages analyzed
   final DateTime createdAt;
   final DateTime updatedAt;
+  final InsightPeriod? period; // null for thread insights, set for global insights
 
   // Future-compatibility fields
   final String? guidanceSuggestion;
@@ -73,6 +84,7 @@ class InsightEntity extends Equatable {
         messageCount,
         createdAt,
         updatedAt,
+        period,
         guidanceSuggestion,
         actionPrompt,
         metadata,
@@ -93,6 +105,7 @@ class InsightEntity extends Equatable {
     int? messageCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    InsightPeriod? period,
     String? guidanceSuggestion,
     String? actionPrompt,
     Map<String, dynamic>? metadata,
@@ -112,6 +125,7 @@ class InsightEntity extends Equatable {
       messageCount: messageCount ?? this.messageCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      period: period ?? this.period,
       guidanceSuggestion: guidanceSuggestion ?? this.guidanceSuggestion,
       actionPrompt: actionPrompt ?? this.actionPrompt,
       metadata: metadata ?? this.metadata,
