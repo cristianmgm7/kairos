@@ -74,7 +74,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                   Icon(
                     Icons.insights_outlined,
                     size: 64,
-                    color: theme.colorScheme.primary.withOpacity(0.5),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
@@ -132,7 +132,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                           'Emotion: ${insight.dominantEmotion.name}',
                         ),
                       ),
-                    )),
+                    ),),
               ],
             ),
           );
@@ -284,7 +284,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             Icon(
               Icons.lightbulb_outline,
               size: 48,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
