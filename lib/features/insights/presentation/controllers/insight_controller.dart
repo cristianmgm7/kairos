@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 import 'package:kairos/features/insights/domain/usecases/generate_global_insight_usecase.dart';
 import 'package:kairos/features/insights/domain/usecases/generate_thread_insight_usecase.dart';

@@ -50,9 +50,9 @@ class _MainBottomNavigationBar extends StatelessWidget {
           label: l10n.journal,
         ),
         NavigationDestination(
-          icon: const Icon(Icons.notifications_outlined),
-          selectedIcon: const Icon(Icons.notifications),
-          label: l10n.notifications,
+          icon: const Icon(Icons.insights_outlined),
+          selectedIcon: const Icon(Icons.insights),
+          label: 'Insights',
         ),
         NavigationDestination(
           icon: const Icon(Icons.settings_outlined),
@@ -66,7 +66,7 @@ class _MainBottomNavigationBar extends StatelessWidget {
   int _getSelectedIndex(String location) {
     if (location.startsWith(AppRoutes.home)) return 0;
     if (location.startsWith(AppRoutes.journal)) return 1;
-    if (location.startsWith(AppRoutes.notifications)) return 2;
+    if (location.startsWith(AppRoutes.insights)) return 2;
     if (location.startsWith(AppRoutes.settings)) return 3;
     return 0; // Default to home
   }
@@ -78,7 +78,7 @@ class _MainBottomNavigationBar extends StatelessWidget {
       case 1:
         context.go(AppRoutes.journal);
       case 2:
-        context.go(AppRoutes.notifications);
+        context.go(AppRoutes.insights);
       case 3:
         context.go(AppRoutes.settings);
     }

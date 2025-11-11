@@ -16,13 +16,14 @@ export class InsightGenerator {
 
   /**
    * Generate or update thread-level insight
+   * Returns the insight data for caching on thread document
    */
   async generateThreadInsight(
     ai: any,
     threadId: string,
     userId: string,
     now: number
-  ): Promise<void> {
+  ): Promise<{ summary: string; dominantEmotion: number } | null> {
     const threeDaysAgo = now - INSIGHTS_CONFIG.threeDaysMs;
     const oneHourAgo = now - INSIGHTS_CONFIG.oneHourMs;
     const oneDayAgo = now - INSIGHTS_CONFIG.oneDayMs;
@@ -36,7 +37,7 @@ export class InsightGenerator {
 
     if (wasRecentlyUpdated) {
       console.log(`Skipping insight generation - updated within last hour for thread ${threadId}`);
-      return;
+      return null;
     }
 
     // Get recent messages
@@ -48,7 +49,7 @@ export class InsightGenerator {
 
     if (messages.length === 0) {
       console.log('No recent messages found for insight generation');
-      return;
+      return null;
     }
 
     // Extract keywords
@@ -102,6 +103,12 @@ export class InsightGenerator {
 
       console.log(`Created new insight ${insightId}`);
     }
+
+    // Return summary and emotion for caching on thread
+    return {
+      summary: analysis.summary,
+      dominantEmotion: analysis.dominantEmotion,
+    };
   }
 
   /**
