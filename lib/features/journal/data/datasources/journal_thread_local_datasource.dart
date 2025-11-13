@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 
@@ -18,6 +19,12 @@ abstract class JournalThreadLocalDataSource {
   /// Returns null if no threads exist locally for this user.
   /// Used to determine the starting point for incremental sync.
   Future<int?> getLastUpdatedAtMillis(String userId);
+
+  /// Upserts a thread from remote sync, handling all sync logic:
+  /// - If thread.isDeleted is true: hard-deletes the thread and its messages
+  /// - Otherwise: upserts the thread, preserving remote timestamps and version
+  /// Unlike updateThread(), this does NOT auto-increment version or update timestamps.
+  Future<void> upsertFromRemote(JournalThreadModel remote);
 }
 
 class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
@@ -140,5 +147,20 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
     }
 
     return timestamp;
+  }
+
+  @override
+  Future<void> upsertFromRemote(JournalThreadModel remote) async {
+    if (remote.isDeleted) {
+      // Hard delete locally when remote is soft-deleted
+      await hardDeleteThreadAndMessages(remote.id);
+      logger.i('✅ Hard-deleted thread ${remote.id} and its messages');
+    } else {
+      // Upsert active thread to local database
+      await isar.writeTxn(() async {
+        await isar.journalThreadModels.put(remote);
+      });
+      logger.i('💾 Upserted thread from remote: ${remote.id}');
+    }
   }
 }
