@@ -10,6 +10,15 @@ abstract class JournalThreadRemoteDataSource {
 
   /// Soft-deletes a thread in Firestore by setting isDeleted=true and deletedAtMillis.
   Future<void> softDeleteThread(String threadId);
+
+  /// Fetches threads updated after the given timestamp.
+  /// This includes both updated threads (isDeleted=false) and soft-deleted threads (isDeleted=true).
+  ///
+  /// The client is responsible for handling soft-deleted threads by performing hard deletes locally.
+  Future<List<JournalThreadModel>> getUpdatedThreads(
+    String userId,
+    int lastUpdatedAtMillis,
+  );
 }
 
 class JournalThreadRemoteDataSourceImpl implements JournalThreadRemoteDataSource {
@@ -75,6 +84,28 @@ class JournalThreadRemoteDataSourceImpl implements JournalThreadRemoteDataSource
       });
     } catch (e) {
       mapFirestoreException(e, context: 'Failed to delete thread');
+    }
+  }
+
+  @override
+  Future<List<JournalThreadModel>> getUpdatedThreads(
+    String userId,
+    int lastUpdatedAtMillis,
+  ) async {
+    try {
+      // Query for all threads updated after lastUpdatedAtMillis
+      // NOTE: We do NOT filter by isDeleted here - we need to know about deletions
+      final querySnapshot = await _collection
+          .where('userId', isEqualTo: userId)
+          .where('updatedAtMillis', isGreaterThan: lastUpdatedAtMillis)
+          .orderBy('updatedAtMillis', descending: false)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => JournalThreadModel.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      mapFirestoreException(e, context: 'Failed to get updated threads');
     }
   }
 }

@@ -19,6 +19,7 @@ import 'package:kairos/features/journal/domain/usecases/create_text_message_usec
 import 'package:kairos/features/journal/domain/usecases/delete_thread_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
+import 'package:kairos/features/journal/domain/usecases/sync_threads_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
@@ -118,6 +119,11 @@ final syncThreadMessagesUseCaseProvider = Provider<SyncThreadMessagesUseCase>((r
   return SyncThreadMessagesUseCase(messageRepository: messageRepository);
 });
 
+final syncThreadsUseCaseProvider = Provider<SyncThreadsUseCase>((ref) {
+  final threadRepository = ref.watch(threadRepositoryProvider);
+  return SyncThreadsUseCase(threadRepository: threadRepository);
+});
+
 final retryMessagePipelineUseCaseProvider = Provider<RetryMessagePipelineUseCase>((ref) {
   final messageRepository = ref.watch(messageRepositoryProvider);
   final mediaUploader = ref.watch(mediaUploaderProvider);
@@ -168,5 +174,9 @@ final threadControllerProvider = StateNotifierProvider<ThreadController, ThreadS
 
 final syncControllerProvider = StateNotifierProvider<SyncController, SyncState>((ref) {
   final syncThreadMessagesUseCase = ref.watch(syncThreadMessagesUseCaseProvider);
-  return SyncController(syncThreadMessagesUseCase: syncThreadMessagesUseCase);
+  final syncThreadsUseCase = ref.watch(syncThreadsUseCaseProvider);
+  return SyncController(
+    syncThreadMessagesUseCase: syncThreadMessagesUseCase,
+    syncThreadsUseCase: syncThreadsUseCase,
+  );
 });

@@ -15,6 +15,20 @@
       ]
     },
     {
+      "collectionGroup": "journalThreads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAtMillis",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "journalMessages",
       "queryScope": "COLLECTION",
       "fields": [

@@ -13,6 +13,11 @@ abstract class JournalThreadLocalDataSource {
   /// Hard-deletes a thread and all its messages from local storage.
   /// This physically removes the data from Isar to free up space.
   Future<void> hardDeleteThreadAndMessages(String threadId);
+
+  /// Gets the most recent updatedAtMillis for threads belonging to a user.
+  /// Returns null if no threads exist locally for this user.
+  /// Used to determine the starting point for incremental sync.
+  Future<int?> getLastUpdatedAtMillis(String userId);
 }
 
 class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
@@ -110,5 +115,30 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
         await isar.journalMessageModels.delete(message.isarId);
       }
     });
+  }
+
+  @override
+  Future<int?> getLastUpdatedAtMillis(String userId) async {
+    final threads = await isar.journalThreadModels
+        .filter()
+        .userIdEqualTo(userId)
+        .and()
+        .isDeletedEqualTo(false)
+        .sortByUpdatedAtMillisDesc()
+        .findAll();
+
+    if (threads.isEmpty) return null;
+
+    final timestamp = threads.first.updatedAtMillis;
+
+    // Validate timestamp is within valid DateTime range
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+
+    if (timestamp < minValid || timestamp > maxValid) {
+      return null; // Return null for invalid timestamps (will trigger full sync)
+    }
+
+    return timestamp;
   }
 }

@@ -158,4 +158,72 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
       );
     }
   }
+
+  @override
+  Future<Result<void>> syncThreadsIncremental(String userId) async {
+    try {
+      // Get the latest updatedAtMillis from local DB
+      final lastUpdatedAtMillis = await localDataSource.getLastUpdatedAtMillis(userId);
+
+      // If no threads exist locally, use 0 to fetch all threads
+      final sinceTimestamp = lastUpdatedAtMillis ?? 0;
+
+      logger.i(
+        '🔄 Incremental thread sync for user $userId since timestamp: $sinceTimestamp',
+      );
+
+      // Fetch updated threads from remote (includes soft-deleted threads)
+      final updatedThreads = await remoteDataSource.getUpdatedThreads(
+        userId,
+        sinceTimestamp,
+      );
+
+      logger.i('📥 Fetched ${updatedThreads.length} updated threads');
+
+      if (updatedThreads.isEmpty) {
+        logger.i('✅ No thread updates to sync');
+        return const Success(null);
+      }
+
+      // Process each updated thread
+      for (final thread in updatedThreads) {
+        if (thread.isDeleted) {
+          // Hard delete locally when remote is soft-deleted
+          logger.i('🗑️  Hard-deleting soft-deleted thread: ${thread.id}');
+          try {
+            await localDataSource.hardDeleteThreadAndMessages(thread.id);
+            logger.i('✅ Hard-deleted thread ${thread.id} and its messages');
+          } catch (e) {
+            logger.w('⚠️  Failed to hard-delete thread ${thread.id}: $e');
+            // Continue processing other threads
+          }
+        } else {
+          // Upsert active thread to local database
+          final existingThread = await localDataSource.getThreadById(thread.id);
+
+          if (existingThread != null) {
+            // Update existing thread
+            await localDataSource.updateThread(thread);
+            logger.i('📝 Updated thread: ${thread.id}');
+          } else {
+            // New thread from remote
+            await localDataSource.saveThread(thread);
+            logger.i('✨ Added new thread: ${thread.id}');
+          }
+        }
+      }
+
+      logger.i('✅ Incremental thread sync completed successfully');
+      return const Success(null);
+    } on NetworkException catch (e) {
+      logger.i('❌ Network error during incremental thread sync: ${e.message}');
+      return Error(NetworkFailure(message: e.message));
+    } on ServerException catch (e) {
+      logger.i('❌ Server error during incremental thread sync: ${e.message}');
+      return Error(ServerFailure(message: e.message));
+    } catch (e) {
+      logger.i('❌ Incremental thread sync failed: $e');
+      return Error(ServerFailure(message: 'Failed to sync threads: $e'));
+    }
+  }
 }
