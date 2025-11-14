@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class EmotionDistributionWidget extends StatelessWidget {
   const EmotionDistributionWidget({

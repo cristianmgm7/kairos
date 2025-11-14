@@ -7,6 +7,7 @@ import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 
 /// Use case for retrying/resuming failed or interrupted message pipelines
 ///
@@ -55,9 +56,11 @@ class RetryMessagePipelineUseCase {
       // Step 2: Check if max attempts reached
       if (message.attemptCount >= _maxAttempts) {
         logger.i('Max retry attempts reached for message $messageId');
-        return const Error(ValidationFailure(
-          message: 'Maximum retry attempts reached (5). Please contact support.',
-        ),);
+        return const Error(
+          ValidationFailure(
+            message: 'Maximum retry attempts reached (5). Please contact support.',
+          ),
+        );
       }
 
       // Step 3: Check backoff period
@@ -68,13 +71,17 @@ class RetryMessagePipelineUseCase {
 
         if (timeSinceLastAttempt < requiredBackoffSeconds) {
           final remainingSeconds = requiredBackoffSeconds - timeSinceLastAttempt;
-          return Error(ValidationFailure(
-            message: 'Please wait $remainingSeconds seconds before retrying',
-          ),);
+          return Error(
+            ValidationFailure(
+              message: 'Please wait $remainingSeconds seconds before retrying',
+            ),
+          );
         }
       }
 
-      logger.i('Retrying message pipeline: $messageId (status: ${message.status}, attempt: ${message.attemptCount})');
+      logger.i(
+        'Retrying message pipeline: $messageId (status: ${message.status}, attempt: ${message.attemptCount})',
+      );
 
       // Step 4: Resume based on current status
       return _resumeFromStatus(message);
@@ -111,9 +118,11 @@ class RetryMessagePipelineUseCase {
 
       // ignore: no_default_cases
       default:
-        return const Error(ValidationFailure(
-          message: 'Message is not in a retryable state',
-        ),);
+        return const Error(
+          ValidationFailure(
+            message: 'Message is not in a retryable state',
+          ),
+        );
     }
   }
 
@@ -162,7 +171,8 @@ class RetryMessagePipelineUseCase {
     // Determine content type and storage path
     final contentType = message.messageType == MessageType.audio ? 'audio/mp4' : 'image/jpeg';
     final extension = message.messageType == MessageType.audio ? 'm4a' : 'jpg';
-    final storagePath = 'users/${message.userId}/journals/${message.threadId}/${message.id}.$extension';
+    final storagePath =
+        'users/${message.userId}/journals/${message.threadId}/${message.id}.$extension';
 
     logger.i('Uploading ${message.messageType.name} for message ${message.id}');
 

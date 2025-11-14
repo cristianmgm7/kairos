@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 void main() {
   group('Insights Integration Tests', () {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/utils/message_status_display.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -250,7 +251,7 @@ class MessageBubble extends ConsumerWidget {
     final statusText = MessageStatusDisplay.getStatusText(message);
     final errorText = MessageStatusDisplay.getErrorText(message);
     final isRetryable = MessageStatusDisplay.isRetryable(message);
-    
+
     // Determine icon and color based on status
     late IconData icon;
     late Color color;
@@ -265,8 +266,8 @@ class MessageBubble extends ConsumerWidget {
       color = theme.colorScheme.primary;
       switch (message.status) {
         case MessageStatus.uploadingMedia:
-        icon = Icons.cloud_upload;
-        color = Colors.blue;
+          icon = Icons.cloud_upload;
+          color = Colors.blue;
         case MessageStatus.processingAi:
           icon = Icons.smart_toy;
         // ignore: no_default_cases

@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class MoodChartWidget extends StatelessWidget {
   const MoodChartWidget({

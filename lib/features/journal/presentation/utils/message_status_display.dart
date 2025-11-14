@@ -1,4 +1,5 @@
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 
 /// Helper for converting MessageStatus to user-friendly display text
 class MessageStatusDisplay {

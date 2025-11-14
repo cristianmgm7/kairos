@@ -9,6 +9,7 @@ import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';

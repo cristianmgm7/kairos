@@ -9,6 +9,7 @@ import 'package:kairos/features/journal/domain/entities/journal_thread_entity.da
 import 'package:kairos/features/journal/domain/repositories/journal_message_repository.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
 import 'package:kairos/features/journal/domain/services/ai_service_client.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateImageMessageParams {

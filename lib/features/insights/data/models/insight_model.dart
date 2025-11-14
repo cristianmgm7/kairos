@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 part 'insight_model.g.dart';
 

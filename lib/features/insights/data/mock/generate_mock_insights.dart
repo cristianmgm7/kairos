@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:isar/isar.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
-import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Run this script to populate mock insights for testing

@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:uuid/uuid.dart';
 
 part 'journal_message_model.g.dart';
