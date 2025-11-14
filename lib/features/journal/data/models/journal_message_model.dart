@@ -49,8 +49,8 @@ class JournalMessageModel {
       id: const Uuid().v4(),
       threadId: threadId,
       userId: userId,
-      role: 0, // user
-      messageType: messageType.index,
+      role: MessageRole.user.value,
+      messageType: messageType.value,
       content: content,
       localFilePath: localFilePath,
       localThumbnailPath: localThumbnailPath,
@@ -66,8 +66,8 @@ class JournalMessageModel {
       id: entity.id,
       threadId: entity.threadId,
       userId: entity.userId,
-      role: entity.role.index,
-      messageType: entity.messageType.index,
+      role: entity.role.value,
+      messageType: entity.messageType.value,
       content: entity.content,
       storageUrl: entity.storageUrl,
       thumbnailUrl: entity.thumbnailUrl,
@@ -76,8 +76,8 @@ class JournalMessageModel {
       audioDurationSeconds: entity.audioDurationSeconds,
       transcription: entity.transcription,
       // NEW fields
-      status: entity.status.index,
-      failureReason: entity.failureReason?.index,
+      status: entity.status.value,
+      failureReason: entity.failureReason?.value,
       uploadProgress: entity.uploadProgress,
       uploadError: entity.uploadError,
       aiError: entity.aiError,
@@ -104,7 +104,7 @@ class JournalMessageModel {
       transcription: map['transcription'] as String?,
       // NEW fields
       status: map['status'] as int? ??
-          MessageStatus.remoteCreated.index, // default to remoteCreated for backend messages
+          MessageStatus.remoteCreated.value, // default to remoteCreated for backend messages
       failureReason: map['failureReason'] as int?,
       uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
       uploadError: map['uploadError'] as String?,
@@ -200,8 +200,8 @@ class JournalMessageModel {
       id: id,
       threadId: threadId,
       userId: userId,
-      role: MessageRole.values[role],
-      messageType: MessageType.values[messageType],
+      role: MessageRole.fromInt(role),
+      messageType: MessageType.fromInt(messageType),
       content: content,
       storageUrl: storageUrl,
       thumbnailUrl: thumbnailUrl,
@@ -210,8 +210,8 @@ class JournalMessageModel {
       audioDurationSeconds: audioDurationSeconds,
       transcription: transcription,
       // NEW fields
-      status: MessageStatus.values[status],
-      failureReason: failureReason != null ? FailureReason.values[failureReason!] : null,
+      status: MessageStatus.fromInt(status),
+      failureReason: failureReason != null ? FailureReason.fromInt(failureReason!) : null,
       uploadProgress: uploadProgress,
       uploadError: uploadError,
       aiError: aiError,

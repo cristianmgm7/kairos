@@ -67,12 +67,12 @@ class InsightModel {
     return InsightModel(
       id: entity.id,
       userId: entity.userId,
-      type: entity.type.index,
+      type: entity.type.value,
       threadId: entity.threadId,
       periodStartMillis: entity.periodStart.millisecondsSinceEpoch,
       periodEndMillis: entity.periodEnd.millisecondsSinceEpoch,
       moodScore: entity.moodScore,
-      dominantEmotion: entity.dominantEmotion.index,
+      dominantEmotion: entity.dominantEmotion.value,
       keywords: entity.keywords,
       aiThemes: entity.aiThemes,
       summary: entity.summary,
@@ -113,7 +113,7 @@ class InsightModel {
   @Index()
   final String userId;
 
-  final int type; // 0=thread, 1=global (InsightType.index)
+  final int type; // 0=thread, 1=global (InsightType.value)
 
   @Index()
   final String? threadId; // null for global insights
@@ -121,7 +121,7 @@ class InsightModel {
   final int periodStartMillis;
   final int periodEndMillis;
   final double moodScore;
-  final int dominantEmotion; // EmotionType.index
+  final int dominantEmotion; // EmotionType.value
   final List<String> keywords;
   final List<String> aiThemes;
   final String summary;
@@ -165,11 +165,11 @@ class InsightModel {
     return InsightEntity(
       id: id,
       userId: userId,
-      type: InsightType.values[type],
+      type: InsightType.fromInt(type),
       periodStart: DateTime.fromMillisecondsSinceEpoch(periodStartMillis, isUtc: true),
       periodEnd: DateTime.fromMillisecondsSinceEpoch(periodEndMillis, isUtc: true),
       moodScore: moodScore,
-      dominantEmotion: EmotionType.values[dominantEmotion],
+      dominantEmotion: EmotionType.fromInt(dominantEmotion),
       keywords: keywords,
       aiThemes: aiThemes,
       summary: summary,

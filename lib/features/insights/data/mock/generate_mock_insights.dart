@@ -142,7 +142,7 @@ InsightModel _generateMockInsight({
     periodStart: periodStart,
     periodEnd: periodEnd,
     moodScore: moodScore,
-    dominantEmotion: dominantEmotion.index,
+    dominantEmotion: dominantEmotion.value,
     keywords: keywords,
     aiThemes: themes,
     summary: summary,
