@@ -13,7 +13,7 @@ class AppRoutes {
   // Main app routes (inside shell)
   static const String home = '/home';
   static const String journal = '/journal';
-  static const String notifications = '/notifications';
+  static const String insights = '/insights';
   static const String settings = '/settings';
 
   // Error
