@@ -16,13 +16,14 @@ export class InsightGenerator {
 
   /**
    * Generate or update thread-level insight
+   * Returns the insight data for caching on thread document
    */
   async generateThreadInsight(
     ai: any,
     threadId: string,
     userId: string,
     now: number
-  ): Promise<void> {
+  ): Promise<{ summary: string; dominantEmotion: number } | null> {
     const threeDaysAgo = now - INSIGHTS_CONFIG.threeDaysMs;
     const oneHourAgo = now - INSIGHTS_CONFIG.oneHourMs;
     const oneDayAgo = now - INSIGHTS_CONFIG.oneDayMs;
@@ -36,7 +37,7 @@ export class InsightGenerator {
 
     if (wasRecentlyUpdated) {
       console.log(`Skipping insight generation - updated within last hour for thread ${threadId}`);
-      return;
+      return null;
     }
 
     // Get recent messages
@@ -48,7 +49,7 @@ export class InsightGenerator {
 
     if (messages.length === 0) {
       console.log('No recent messages found for insight generation');
-      return;
+      return null;
     }
 
     // Extract keywords
@@ -102,6 +103,12 @@ export class InsightGenerator {
 
       console.log(`Created new insight ${insightId}`);
     }
+
+    // Return summary and emotion for caching on thread
+    return {
+      summary: analysis.summary,
+      dominantEmotion: analysis.dominantEmotion,
+    };
   }
 
   /**
@@ -162,6 +169,64 @@ export class InsightGenerator {
 
       console.log(`Created global insight ${globalInsightId}`);
     }
+  }
+
+  /**
+   * Generate daily global insight snapshot
+   * Analyzes all messages from the last 24 hours
+   */
+  async generateDailyGlobalInsight(userId: string, now: number): Promise<void> {
+    const oneDayAgo = now - INSIGHTS_CONFIG.oneDayMs;
+    const periodStart = this.getStartOfDay(now); // Midnight of current day
+
+    // Check if daily insight already exists for today
+    const todayInsightId = `${userId}_daily_${periodStart}`;
+    const existingInsight = await this.insightRepo.getById(todayInsightId);
+
+    if (existingInsight) {
+      console.log(`Daily insight already exists for ${userId} on ${new Date(periodStart).toISOString()}`);
+      return;
+    }
+
+    // Get all thread insights from last 24 hours
+    const threadInsights = await this.insightRepo.getThreadInsights(userId, oneDayAgo);
+
+    if (threadInsights.length === 0) {
+      console.log(`No thread insights found for user ${userId} in last 24 hours`);
+      return;
+    }
+
+    // Aggregate thread insights into daily snapshot
+    const aggregated = aggregateInsights(threadInsights);
+    if (!aggregated) return;
+
+    // Create daily global insight
+    await this.insightRepo.create({
+      id: todayInsightId,
+      userId,
+      type: InsightType.DAILY_GLOBAL,
+      threadId: null,
+      periodStartMillis: periodStart,
+      periodEndMillis: now,
+      period: 'daily',
+      moodScore: aggregated.moodScore,
+      dominantEmotion: aggregated.dominantEmotion,
+      keywords: aggregated.keywords,
+      aiThemes: aggregated.aiThemes,
+      summary: aggregated.summary,
+      messageCount: aggregated.messageCount,
+    });
+
+    console.log(`Created daily global insight ${todayInsightId}`);
+  }
+
+  /**
+   * Helper: Get start of day timestamp (midnight UTC)
+   */
+  private getStartOfDay(timestamp: number): number {
+    const date = new Date(timestamp);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.getTime();
   }
 }
 

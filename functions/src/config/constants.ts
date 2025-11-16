@@ -49,6 +49,7 @@ export enum UploadStatus {
 export enum InsightType {
   THREAD = 0,
   GLOBAL = 1,
+  DAILY_GLOBAL = 2,
 }
 
 // Emotion enum

@@ -1,8 +1,9 @@
 export interface Insight {
   id: string;
   userId: string;
-  type: number; // InsightType enum: 0=thread, 1=global
+  type: number; // InsightType enum: 0=thread, 1=global, 2=dailyGlobal
   threadId: string | null;
+  period?: string; // Period enum as string (oneDay, threeDays, oneWeek, oneMonth, daily)
   periodStartMillis: number;
   periodEndMillis: number;
   moodScore: number;
@@ -22,6 +23,7 @@ export interface CreateInsightInput {
   userId: string;
   type: number;
   threadId: string | null;
+  period?: string;
   periodStartMillis: number;
   periodEndMillis: number;
   moodScore: number;
