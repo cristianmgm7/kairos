@@ -3,6 +3,10 @@ import { getAI } from '../config/genkit';
 import { getStorageService } from './storage-service';
 import { AI_CONFIG } from '../config/constants';
 
+// Factory function
+export function createAiService(apiKey: string): AiService {
+  return new AiService(apiKey);
+}
 export interface AiGenerateOptions {
   prompt: any[];
   temperature?: number;
@@ -132,8 +136,4 @@ export class AiService {
   }
 }
 
-// Factory function
-export function createAiService(apiKey: string): AiService {
-  return new AiService(apiKey);
-}
 
