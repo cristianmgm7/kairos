@@ -663,13 +663,13 @@ Keep existing implementation unchanged for backward compatibility. The new `Kair
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compilation succeeds: `cd functions && npm run build`
-- [ ] Session class exports successfully
-- [ ] Session can be instantiated:
+- [x] TypeScript compilation succeeds: `cd functions && npm run build`
+- [x] Session class exports successfully
+- [x] Session can be instantiated:
   ```typescript
   const session = new KairosSession({ threadId: 'test', userId: 'test' });
   ```
-- [ ] History manipulation methods work:
+- [x] History manipulation methods work:
   ```typescript
   session.addUserMessage('Hello');
   session.addAssistantMessage('Hi there');
