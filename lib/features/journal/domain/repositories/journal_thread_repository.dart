@@ -1,3 +1,4 @@
+import 'package:kairos/core/errors/failures.dart' show NetworkFailure, ServerFailure;
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 
@@ -22,4 +23,15 @@ abstract class JournalThreadRepository {
   /// Returns [Error] with [NetworkFailure] if offline.
   /// Returns [Error] with [ServerFailure] if remote deletion fails.
   Future<Result<void>> deleteThread(String threadId);
+
+  /// Performs incremental sync for threads belonging to a user.
+  ///
+  /// Fetches only threads updated since the last local sync timestamp.
+  /// For soft-deleted threads (isDeleted=true), performs hard delete locally
+  /// along with cascade deletion of all associated messages.
+  ///
+  /// Returns [Success] if sync completes successfully (even if no updates).
+  /// Returns [Error] with [NetworkFailure] if offline.
+  /// Returns [Error] with [ServerFailure] if remote fetch fails.
+  Future<Result<void>> syncThreadsIncremental(String userId);
 }

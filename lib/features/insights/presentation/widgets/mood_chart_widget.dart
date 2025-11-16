@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class MoodChartWidget extends StatelessWidget {
   const MoodChartWidget({
@@ -48,8 +49,8 @@ class MoodChartWidget extends StatelessWidget {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: 1.0,
-                minY: 0.0,
+                maxY: 1,
+                minY: 0,
                 barGroups: displayInsights.asMap().entries.map((entry) {
                   final index = entry.key;
                   final insight = entry.value;
@@ -69,7 +70,6 @@ class MoodChartWidget extends StatelessWidget {
                   );
                 }).toList(),
                 titlesData: FlTitlesData(
-                  show: true,
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -78,8 +78,7 @@ class MoodChartWidget extends StatelessWidget {
                           return const SizedBox();
                         }
                         final insight = displayInsights[value.toInt()];
-                        final date =
-                            DateFormat('M/d').format(insight.periodEnd);
+                        final date = DateFormat('M/d').format(insight.periodEnd);
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
@@ -103,15 +102,10 @@ class MoodChartWidget extends StatelessWidget {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(),
+                  rightTitles: const AxisTitles(),
                 ),
-                gridData: FlGridData(
-                  show: true,
+                gridData: const FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: 0.25,
                 ),

@@ -1,20 +1,5 @@
 import 'package:equatable/equatable.dart';
-
-enum EmotionType {
-  joy,
-  calm,
-  neutral,
-  sadness,
-  stress,
-  anger,
-  fear,
-  excitement,
-}
-
-enum InsightType {
-  thread,
-  global,
-}
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class InsightEntity extends Equatable {
   const InsightEntity({
@@ -32,6 +17,7 @@ class InsightEntity extends Equatable {
     required this.createdAt,
     required this.updatedAt,
     this.threadId, // null for global insights
+    this.period, // null for thread insights, set for global insights
     this.guidanceSuggestion, // Placeholder for future Guidance feature
     this.actionPrompt, // Placeholder for future Guidance feature
     this.metadata,
@@ -51,6 +37,7 @@ class InsightEntity extends Equatable {
   final int messageCount; // Number of messages analyzed
   final DateTime createdAt;
   final DateTime updatedAt;
+  final InsightPeriod? period; // null for thread insights, set for global insights
 
   // Future-compatibility fields
   final String? guidanceSuggestion;
@@ -73,6 +60,7 @@ class InsightEntity extends Equatable {
         messageCount,
         createdAt,
         updatedAt,
+        period,
         guidanceSuggestion,
         actionPrompt,
         metadata,
@@ -93,6 +81,7 @@ class InsightEntity extends Equatable {
     int? messageCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    InsightPeriod? period,
     String? guidanceSuggestion,
     String? actionPrompt,
     Map<String, dynamic>? metadata,
@@ -112,6 +101,7 @@ class InsightEntity extends Equatable {
       messageCount: messageCount ?? this.messageCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      period: period ?? this.period,
       guidanceSuggestion: guidanceSuggestion ?? this.guidanceSuggestion,
       actionPrompt: actionPrompt ?? this.actionPrompt,
       metadata: metadata ?? this.metadata,

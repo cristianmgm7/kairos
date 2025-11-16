@@ -1,32 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 
-enum MessageRole {
-  user, // Human-created content
-  ai, // AI-generated responses
-  system, // App-generated metadata
-}
-
-enum MessageType {
-  text,
-  image,
-  audio,
-}
-
-enum UploadStatus {
-  notStarted,
-  uploading,
-  completed,
-  failed,
-  retrying,
-}
-
-enum AiProcessingStatus {
-  pending,
-  processing,
-  completed,
-  failed,
-}
-
+// DEPRECATED: Legacy enums kept for backward compatibility during migration
 class JournalMessageEntity extends Equatable {
   const JournalMessageEntity({
     required this.id,
@@ -43,10 +18,18 @@ class JournalMessageEntity extends Equatable {
     this.localThumbnailPath,
     this.audioDurationSeconds,
     this.transcription,
-    this.aiProcessingStatus = AiProcessingStatus.pending,
-    this.uploadStatus = UploadStatus.notStarted,
-    this.uploadRetryCount = 0,
-    this.lastUploadAttemptAt,
+    // NEW: Single pipeline status (replaces uploadStatus and aiProcessingStatus)
+    this.status = MessageStatus.localCreated,
+    this.failureReason,
+    // NEW: Progress and error tracking
+    this.uploadProgress,
+    this.uploadError,
+    this.aiError,
+    // NEW: Retry tracking (replaces uploadRetryCount and lastUploadAttemptAt)
+    this.attemptCount = 0,
+    this.lastAttemptAt,
+    // NEW: Idempotency
+    this.clientLocalId,
     this.metadata,
     this.isTemporary = false,
   });
@@ -68,11 +51,21 @@ class JournalMessageEntity extends Equatable {
   final int? audioDurationSeconds;
   final String? transcription;
 
-  // Processing
-  final AiProcessingStatus aiProcessingStatus;
-  final UploadStatus uploadStatus;
-  final int uploadRetryCount;
-  final DateTime? lastUploadAttemptAt;
+  // Pipeline status (REPLACES: uploadStatus, aiProcessingStatus)
+  final MessageStatus status;
+  final FailureReason? failureReason;
+
+  // Progress tracking
+  final double? uploadProgress; // 0.0 to 1.0
+  final String? uploadError;
+  final String? aiError;
+
+  // Retry tracking (REPLACES: uploadRetryCount, lastUploadAttemptAt)
+  final int attemptCount;
+  final DateTime? lastAttemptAt;
+
+  // Idempotency key for remote writes
+  final String? clientLocalId;
 
   // Extensibility
   final Map<String, dynamic>? metadata;
@@ -96,10 +89,14 @@ class JournalMessageEntity extends Equatable {
         localThumbnailPath,
         audioDurationSeconds,
         transcription,
-        aiProcessingStatus,
-        uploadStatus,
-        uploadRetryCount,
-        lastUploadAttemptAt,
+        status,
+        failureReason,
+        uploadProgress,
+        uploadError,
+        aiError,
+        attemptCount,
+        lastAttemptAt,
+        clientLocalId,
         metadata,
         isTemporary,
       ];
@@ -119,10 +116,14 @@ class JournalMessageEntity extends Equatable {
     String? localThumbnailPath,
     int? audioDurationSeconds,
     String? transcription,
-    AiProcessingStatus? aiProcessingStatus,
-    UploadStatus? uploadStatus,
-    int? uploadRetryCount,
-    DateTime? lastUploadAttemptAt,
+    MessageStatus? status,
+    FailureReason? failureReason,
+    double? uploadProgress,
+    String? uploadError,
+    String? aiError,
+    int? attemptCount,
+    DateTime? lastAttemptAt,
+    String? clientLocalId,
     Map<String, dynamic>? metadata,
     bool? isTemporary,
   }) {
@@ -141,10 +142,14 @@ class JournalMessageEntity extends Equatable {
       localThumbnailPath: localThumbnailPath ?? this.localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
-      aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
-      uploadStatus: uploadStatus ?? this.uploadStatus,
-      uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
-      lastUploadAttemptAt: lastUploadAttemptAt ?? this.lastUploadAttemptAt,
+      status: status ?? this.status,
+      failureReason: failureReason ?? this.failureReason,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      uploadError: uploadError ?? this.uploadError,
+      aiError: aiError ?? this.aiError,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      clientLocalId: clientLocalId ?? this.clientLocalId,
       metadata: metadata ?? this.metadata,
       isTemporary: isTemporary ?? this.isTemporary,
     );

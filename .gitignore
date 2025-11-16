@@ -106,3 +106,4 @@ lib/**/*.freezed.dart
 lib/**/*.g.dart
 lib/**/*.gen.dart
 lib/**/*.gr.dart
+test/**/*.mocks.dart

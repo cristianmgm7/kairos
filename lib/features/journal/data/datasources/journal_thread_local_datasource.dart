@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 
@@ -13,6 +14,17 @@ abstract class JournalThreadLocalDataSource {
   /// Hard-deletes a thread and all its messages from local storage.
   /// This physically removes the data from Isar to free up space.
   Future<void> hardDeleteThreadAndMessages(String threadId);
+
+  /// Gets the most recent updatedAtMillis for threads belonging to a user.
+  /// Returns null if no threads exist locally for this user.
+  /// Used to determine the starting point for incremental sync.
+  Future<int?> getLastUpdatedAtMillis(String userId);
+
+  /// Upserts a thread from remote sync, handling all sync logic:
+  /// - If thread.isDeleted is true: hard-deletes the thread and its messages
+  /// - Otherwise: upserts the thread, preserving remote timestamps and version
+  /// Unlike updateThread(), this does NOT auto-increment version or update timestamps.
+  Future<void> upsertFromRemote(JournalThreadModel remote);
 }
 
 class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
@@ -83,36 +95,72 @@ class JournalThreadLocalDataSourceImpl implements JournalThreadLocalDataSource {
         .and()
         .isArchivedEqualTo(false)
         .watch(fireImmediately: true)
-        .map((threads) => threads
-          ..sort((a, b) {
-            final aTime = a.lastMessageAtMillis ?? a.createdAtMillis;
-            final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
-            return bTime.compareTo(aTime);
-          }));
+        .map(
+          (threads) => threads
+            ..sort((a, b) {
+              final aTime = a.lastMessageAtMillis ?? a.createdAtMillis;
+              final bTime = b.lastMessageAtMillis ?? b.createdAtMillis;
+              return bTime.compareTo(aTime);
+            }),
+        );
   }
 
   @override
   Future<void> hardDeleteThreadAndMessages(String threadId) async {
     await isar.writeTxn(() async {
       // Delete the thread
-      final thread = await isar.journalThreadModels
-          .filter()
-          .idEqualTo(threadId)
-          .findFirst();
+      final thread = await isar.journalThreadModels.filter().idEqualTo(threadId).findFirst();
 
       if (thread != null) {
         await isar.journalThreadModels.delete(thread.isarId);
       }
 
       // Delete all messages for this thread
-      final messages = await isar.journalMessageModels
-          .filter()
-          .threadIdEqualTo(threadId)
-          .findAll();
+      final messages = await isar.journalMessageModels.filter().threadIdEqualTo(threadId).findAll();
 
       for (final message in messages) {
         await isar.journalMessageModels.delete(message.isarId);
       }
     });
+  }
+
+  @override
+  Future<int?> getLastUpdatedAtMillis(String userId) async {
+    final threads = await isar.journalThreadModels
+        .filter()
+        .userIdEqualTo(userId)
+        .and()
+        .isDeletedEqualTo(false)
+        .sortByUpdatedAtMillisDesc()
+        .findAll();
+
+    if (threads.isEmpty) return null;
+
+    final timestamp = threads.first.updatedAtMillis;
+
+    // Validate timestamp is within valid DateTime range
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+
+    if (timestamp < minValid || timestamp > maxValid) {
+      return null; // Return null for invalid timestamps (will trigger full sync)
+    }
+
+    return timestamp;
+  }
+
+  @override
+  Future<void> upsertFromRemote(JournalThreadModel remote) async {
+    if (remote.isDeleted) {
+      // Hard delete locally when remote is soft-deleted
+      await hardDeleteThreadAndMessages(remote.id);
+      logger.i('✅ Hard-deleted thread ${remote.id} and its messages');
+    } else {
+      // Upsert active thread to local database
+      await isar.writeTxn(() async {
+        await isar.journalThreadModels.put(remote);
+      });
+      logger.i('💾 Upserted thread from remote: ${remote.id}');
+    }
   }
 }

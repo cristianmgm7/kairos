@@ -1,16 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/services/audio_recorder_service.dart';
 import 'package:kairos/core/services/image_picker_service.dart';
 import 'package:kairos/core/utils/result.dart';
-import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
-import 'package:kairos/features/journal/domain/services/journal_upload_service.dart';
 import 'package:kairos/features/journal/domain/usecases/create_audio_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
+import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_usecase.dart';
 
 sealed class MessageState {}
 
@@ -18,10 +16,7 @@ class MessageInitial extends MessageState {}
 
 class MessageLoading extends MessageState {}
 
-class MessageSuccess extends MessageState {
-  MessageSuccess(this.message);
-  final JournalMessageEntity message;
-}
+class MessageSuccess extends MessageState {}
 
 class MessageError extends MessageState {
   MessageError(this.message);
@@ -33,7 +28,7 @@ class MessageController extends StateNotifier<MessageState> {
     required this.createTextMessageUseCase,
     required this.createImageMessageUseCase,
     required this.createAudioMessageUseCase,
-    required this.uploadService,
+    required this.retryMessagePipelineUseCase,
     required this.imagePickerService,
     required this.audioRecorderService,
   }) : super(MessageInitial());
@@ -41,7 +36,7 @@ class MessageController extends StateNotifier<MessageState> {
   final CreateTextMessageUseCase createTextMessageUseCase;
   final CreateImageMessageUseCase createImageMessageUseCase;
   final CreateAudioMessageUseCase createAudioMessageUseCase;
-  final JournalUploadService uploadService;
+  final RetryMessagePipelineUseCase retryMessagePipelineUseCase;
   final ImagePickerService imagePickerService;
   final AudioRecorderService audioRecorderService;
 
@@ -67,8 +62,9 @@ class MessageController extends StateNotifier<MessageState> {
     final result = await createTextMessageUseCase.call(params);
 
     result.when<void>(
-      success: (JournalMessageEntity message) {
-        state = MessageSuccess(message);
+      success: (_) {
+        // Use case handles everything - status updates flow through repository stream
+        state = MessageSuccess();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));
@@ -79,7 +75,6 @@ class MessageController extends StateNotifier<MessageState> {
   Future<void> createImageMessage({
     required String userId,
     required File imageFile,
-    required String thumbnailPath,
     String? threadId,
   }) async {
     state = MessageLoading();
@@ -87,32 +82,16 @@ class MessageController extends StateNotifier<MessageState> {
     final params = CreateImageMessageParams(
       userId: userId,
       imageFile: imageFile,
-      thumbnailPath: thumbnailPath,
       threadId: threadId,
     );
 
     final result = await createImageMessageUseCase.call(params);
 
     result.when<void>(
-      success: (JournalMessageEntity message) {
-        state = MessageSuccess(message);
-
-        // Trigger background upload
-        debugPrint('🎬 Triggering background upload for: ${message.id}');
-        uploadService.uploadImageMessage(message).then((uploadResult) {
-          uploadResult.when(
-            success: (_) {
-              debugPrint(
-                  '✅ Image upload completed successfully for: ${message.id}');
-            },
-            error: (failure) {
-              debugPrint('❌ Upload failed: ${failure.message}');
-              // Message saved locally, will retry later
-            },
-          );
-        }).catchError((Object error) {
-          debugPrint('❌ Unexpected error in upload: $error');
-        });
+      success: (_) {
+        // Use case handles upload, analysis, and remote creation
+        // Status updates flow through repository stream to UI
+        state = MessageSuccess();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));
@@ -138,17 +117,10 @@ class MessageController extends StateNotifier<MessageState> {
     final result = await createAudioMessageUseCase.call(params);
 
     result.when<void>(
-      success: (JournalMessageEntity message) {
-        state = MessageSuccess(message);
-
-        // Trigger background upload
-        uploadService.uploadAudioMessage(message).then((uploadResult) {
-          if (uploadResult.isError) {
-            debugPrint(
-              'Upload failed: ${uploadResult.failureOrNull?.message}',
-            );
-          }
-        });
+      success: (_) {
+        // Use case handles upload, transcription, and remote creation
+        // Status updates flow through repository stream to UI
+        state = MessageSuccess();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));
@@ -161,8 +133,7 @@ class MessageController extends StateNotifier<MessageState> {
       ValidationFailure() => failure.message,
       NetworkFailure() => 'Network error. Please check your connection.',
       StorageFailure() => 'Storage error: ${failure.message}',
-      PermissionFailure() =>
-        'Permission denied. Please enable access in Settings.',
+      PermissionFailure() => 'Permission denied. Please enable access in Settings.',
       UserCancelledFailure() => failure.message,
       CacheFailure() => 'Local storage error: ${failure.message}',
       ServerFailure() => 'Server error: ${failure.message}',
@@ -235,7 +206,7 @@ class MessageController extends StateNotifier<MessageState> {
   }) async {
     final result = await audioRecorderService.stopRecording();
 
-    result.when(
+    await result.when(
       success: (recordingResult) async {
         _isRecording = false;
 
@@ -264,15 +235,16 @@ class MessageController extends StateNotifier<MessageState> {
   /// Get current recording duration
   int get recordingDuration => audioRecorderService.currentDurationSeconds;
 
-  /// Manually retry a failed upload
-  Future<void> retryUpload(JournalMessageEntity message) async {
+  /// Retry a failed message pipeline
+  Future<void> retryMessage(String messageId) async {
     state = MessageLoading();
 
-    final result = await uploadService.retryUpload(message);
+    final result = await retryMessagePipelineUseCase.call(messageId);
 
     result.when<void>(
       success: (_) {
-        state = MessageSuccess(message);
+        // Status updates flow through repository stream to UI
+        state = MessageSuccess();
       },
       error: (failure) {
         state = MessageError(_getErrorMessage(failure));

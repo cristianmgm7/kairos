@@ -28,8 +28,7 @@ void main() {
 
     test('should delete thread successfully when online', () async {
       // Arrange
-      when(mockRepository.deleteThread(testThreadId))
-          .thenAnswer((_) async => const Success(null));
+      when(mockRepository.deleteThread(testThreadId)).thenAnswer((_) async => const Success(null));
 
       // Act
       final result = await useCase(testThreadId);
@@ -54,7 +53,7 @@ void main() {
       // Assert
       expect(result.isError, true);
       expect(result.failureOrNull, isA<NetworkFailure>());
-      final failure = result.failureOrNull as NetworkFailure;
+      final failure = result.failureOrNull! as NetworkFailure;
       expect(failure.message, 'You must be online to delete this thread');
       verify(mockRepository.deleteThread(testThreadId));
     });
@@ -73,10 +72,9 @@ void main() {
       // Assert
       expect(result.isError, true);
       expect(result.failureOrNull, isA<ServerFailure>());
-      final failure = result.failureOrNull as ServerFailure;
+      final failure = result.failureOrNull! as ServerFailure;
       expect(failure.message, 'Failed to delete thread');
       verify(mockRepository.deleteThread(testThreadId));
     });
   });
 }
-

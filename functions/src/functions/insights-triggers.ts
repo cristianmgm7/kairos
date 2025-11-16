@@ -40,12 +40,23 @@ export const generateInsight = onDocumentCreated(
 
     try {
       // Generate thread insight
-      await insightGenerator.generateThreadInsight(
+      const insightData = await insightGenerator.generateThreadInsight(
         ai,
         threadId,
         userId,
         now
       );
+
+      // Update thread document with insight cache
+      if (insightData) {
+        const threadRef = db.collection('journalThreads').doc(threadId);
+        await threadRef.update({
+          latestInsightSummary: insightData.summary,
+          latestInsightMood: insightData.dominantEmotion,
+          updatedAtMillis: now,
+        });
+        console.log(`Updated thread ${threadId} with insight cache`);
+      }
 
       // Generate global insight
       await insightGenerator.generateGlobalInsight(userId, now);

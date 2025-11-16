@@ -1,17 +1,23 @@
 include: package:very_good_analysis/analysis_options.yaml
 
+formatter:
+  page_width: 100
+  trailing_commas: preserve
+
 analyzer:
   exclude:
-    - "**/*.g.dart"
-    - "**/*.freezed.dart"
-    - "**/*.config.dart"
-    - "lib/generated/**"
-    - "build/**"
+    - '**/*.g.dart'
+    - '**/*.freezed.dart'
+    - '**/*.config.dart'
+    - 'lib/generated/**'
+    - 'build/**'
+    - '**/*.mocks.dart'
 
   errors:
     invalid_annotation_target: error
     missing_required_param: error
     missing_return: error
+    parameter_assignments: ignore
 
   language:
     strict-casts: true
@@ -33,3 +39,5 @@ linter:
     directives_ordering: true
     sort_constructors_first: true
     unawaited_futures: true
+    avoid_js_rounded_ints: false
+    cascade_invocations: false

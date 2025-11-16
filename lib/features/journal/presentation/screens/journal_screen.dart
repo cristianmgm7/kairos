@@ -26,10 +26,7 @@ class JournalScreen extends StatelessWidget {
                       Icon(
                         Icons.book,
                         size: 80,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withAlpha(128),
+                        color: Theme.of(context).colorScheme.primary.withAlpha(128),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       Text(
@@ -46,9 +43,7 @@ class JournalScreen extends StatelessWidget {
                       Text(
                         'Coming soon...',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                         textAlign: TextAlign.center,
                       ),

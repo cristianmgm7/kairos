@@ -183,8 +183,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 }
 
 /// Provider for the profile controller
-final profileControllerProvider =
-    StateNotifierProvider<ProfileController, ProfileState>((ref) {
+final profileControllerProvider = StateNotifierProvider<ProfileController, ProfileState>((ref) {
   final createProfileUseCase = ref.watch(createUserProfileUseCaseProvider);
   final getProfileUseCase = ref.watch(getUserProfileUseCaseProvider);
   final imagePickerService = ref.watch(imagePickerServiceProvider);

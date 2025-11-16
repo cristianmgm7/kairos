@@ -11,6 +11,7 @@ import 'package:kairos/core/config/flavor_config.dart';
 import 'package:kairos/core/services/audio_recorder_service.dart';
 import 'package:kairos/core/services/firebase_storage_service.dart';
 import 'package:kairos/core/services/image_picker_service.dart';
+import 'package:kairos/core/services/media_uploader.dart';
 import 'package:logger/logger.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:record/record.dart';
@@ -26,10 +27,13 @@ final loggerProvider = Provider<Logger>((ref) {
       methodCount: 0,
       errorMethodCount: 5,
       lineLength: 50,
+      colors: false,
     ),
     level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
   );
 });
+
+final logger = ProviderContainer().read(loggerProvider);
 
 /// Connectivity provider - network connectivity monitoring
 final connectivityProvider = Provider<Connectivity>((ref) {
@@ -102,4 +106,10 @@ final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
 final audioRecorderServiceProvider = Provider<AudioRecorderService>((ref) {
   final recorder = AudioRecorder();
   return AudioRecorderService(recorder);
+});
+
+/// Media uploader provider - Thin utility for Firebase Storage uploads
+final mediaUploaderProvider = Provider<MediaUploader>((ref) {
+  final storage = ref.watch(firebaseStorageProvider);
+  return MediaUploader(storage);
 });

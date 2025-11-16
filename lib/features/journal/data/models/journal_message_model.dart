@@ -1,5 +1,6 @@
 import 'package:isar/isar.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:uuid/uuid.dart';
 
 part 'journal_message_model.g.dart';
@@ -21,10 +22,15 @@ class JournalMessageModel {
     this.localThumbnailPath,
     this.audioDurationSeconds,
     this.transcription,
-    this.aiProcessingStatus = 0,
-    this.uploadStatus = 0,
-    this.uploadRetryCount = 0,
-    this.lastUploadAttemptMillis,
+    // NEW: Single pipeline status
+    this.status = 0, // MessageStatus.localCreated
+    this.failureReason,
+    this.uploadProgress,
+    this.uploadError,
+    this.aiError,
+    this.attemptCount = 0,
+    this.lastAttemptMillis,
+    this.clientLocalId,
     this.isDeleted = false,
     this.version = 1,
   });
@@ -44,17 +50,15 @@ class JournalMessageModel {
       id: const Uuid().v4(),
       threadId: threadId,
       userId: userId,
-      role: 0, // user
-      messageType: messageType.index,
+      role: MessageRole.user.value,
+      messageType: messageType.value,
       content: content,
       localFilePath: localFilePath,
       localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
       createdAtMillis: nowMillis,
       updatedAtMillis: nowMillis, // same as created initially
-      uploadStatus: messageType == MessageType.text
-          ? 2
-          : 0, // text=completed, media=notStarted
+      clientLocalId: const Uuid().v4(), // Generate unique ID for idempotency
     );
   }
 
@@ -63,8 +67,8 @@ class JournalMessageModel {
       id: entity.id,
       threadId: entity.threadId,
       userId: entity.userId,
-      role: entity.role.index,
-      messageType: entity.messageType.index,
+      role: entity.role.value,
+      messageType: entity.messageType.value,
       content: entity.content,
       storageUrl: entity.storageUrl,
       thumbnailUrl: entity.thumbnailUrl,
@@ -72,11 +76,15 @@ class JournalMessageModel {
       localThumbnailPath: entity.localThumbnailPath,
       audioDurationSeconds: entity.audioDurationSeconds,
       transcription: entity.transcription,
-      aiProcessingStatus: entity.aiProcessingStatus.index,
-      uploadStatus: entity.uploadStatus.index,
-      uploadRetryCount: entity.uploadRetryCount,
-      lastUploadAttemptMillis:
-          entity.lastUploadAttemptAt?.millisecondsSinceEpoch,
+      // NEW fields
+      status: entity.status.value,
+      failureReason: entity.failureReason?.value,
+      uploadProgress: entity.uploadProgress,
+      uploadError: entity.uploadError,
+      aiError: entity.aiError,
+      attemptCount: entity.attemptCount,
+      lastAttemptMillis: entity.lastAttemptAt?.millisecondsSinceEpoch,
+      clientLocalId: entity.clientLocalId,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
       updatedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
@@ -95,10 +103,19 @@ class JournalMessageModel {
       thumbnailUrl: map['thumbnailUrl'] as String?,
       audioDurationSeconds: map['audioDurationSeconds'] as int?,
       transcription: map['transcription'] as String?,
-      aiProcessingStatus: map['aiProcessingStatus'] as int? ?? 0,
-      uploadStatus: map['uploadStatus'] as int? ?? 0,
+      // NEW fields
+      status: map['status'] as int? ??
+          MessageStatus.remoteCreated.value, // default to remoteCreated for backend messages
+      failureReason: map['failureReason'] as int?,
+      uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
+      uploadError: map['uploadError'] as String?,
+      aiError: map['aiError'] as String?,
+      attemptCount: map['attemptCount'] as int? ?? 0,
+      lastAttemptMillis: map['lastAttemptMillis'] as int?,
+      clientLocalId: map['clientLocalId'] as String?,
       createdAtMillis: createdAt,
-      updatedAtMillis: map['updatedAtMillis'] as int? ?? createdAt, // default to createdAt for backwards compatibility
+      updatedAtMillis: map['updatedAtMillis'] as int? ??
+          createdAt, // default to createdAt for backwards compatibility
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
     );
@@ -122,10 +139,18 @@ class JournalMessageModel {
   final String? localThumbnailPath;
   final int? audioDurationSeconds;
   final String? transcription;
-  final int aiProcessingStatus;
-  final int uploadStatus;
-  final int uploadRetryCount;
-  final int? lastUploadAttemptMillis;
+
+  // NEW: Single pipeline status fields
+  @enumerated
+  final int status; // MessageStatus enum index
+  final int? failureReason; // FailureReason enum index
+  final double? uploadProgress;
+  final String? uploadError;
+  final String? aiError;
+  final int attemptCount;
+  final int? lastAttemptMillis;
+  final String? clientLocalId;
+
   final int createdAtMillis;
   @Index()
   final int updatedAtMillis;
@@ -146,7 +171,15 @@ class JournalMessageModel {
       'thumbnailUrl': thumbnailUrl,
       'audioDurationSeconds': audioDurationSeconds,
       'transcription': transcription,
-      'aiProcessingStatus': aiProcessingStatus,
+      // NEW fields
+      'status': status,
+      'failureReason': failureReason,
+      'uploadProgress': uploadProgress,
+      'uploadError': uploadError,
+      'aiError': aiError,
+      'attemptCount': attemptCount,
+      'lastAttemptMillis': lastAttemptMillis,
+      'clientLocalId': clientLocalId,
       'createdAtMillis': createdAtMillis,
       'updatedAtMillis': updatedAtMillis,
       'isDeleted': isDeleted,
@@ -161,17 +194,15 @@ class JournalMessageModel {
     final validCreatedAt = _isValidTimestamp(createdAtMillis)
         ? createdAtMillis
         : DateTime.now().toUtc().millisecondsSinceEpoch;
-    
-    final validUpdatedAt = _isValidTimestamp(updatedAtMillis)
-        ? updatedAtMillis
-        : validCreatedAt;
+
+    final validUpdatedAt = _isValidTimestamp(updatedAtMillis) ? updatedAtMillis : validCreatedAt;
 
     return JournalMessageEntity(
       id: id,
       threadId: threadId,
       userId: userId,
-      role: MessageRole.values[role],
-      messageType: MessageType.values[messageType],
+      role: MessageRole.fromInt(role),
+      messageType: MessageType.fromInt(messageType),
       content: content,
       storageUrl: storageUrl,
       thumbnailUrl: thumbnailUrl,
@@ -179,18 +210,19 @@ class JournalMessageModel {
       localThumbnailPath: localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds,
       transcription: transcription,
-      aiProcessingStatus: AiProcessingStatus.values[aiProcessingStatus],
-      uploadStatus: UploadStatus.values[uploadStatus],
-      uploadRetryCount: uploadRetryCount,
-      lastUploadAttemptAt: lastUploadAttemptMillis != null &&
-              _isValidTimestamp(lastUploadAttemptMillis!)
-          ? DateTime.fromMillisecondsSinceEpoch(lastUploadAttemptMillis!,
-              isUtc: true)
+      // NEW fields
+      status: MessageStatus.fromInt(status),
+      failureReason: failureReason != null ? FailureReason.fromInt(failureReason!) : null,
+      uploadProgress: uploadProgress,
+      uploadError: uploadError,
+      aiError: aiError,
+      attemptCount: attemptCount,
+      lastAttemptAt: lastAttemptMillis != null && _isValidTimestamp(lastAttemptMillis!)
+          ? DateTime.fromMillisecondsSinceEpoch(lastAttemptMillis!, isUtc: true)
           : null,
-      createdAt:
-          DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
-      updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
+      clientLocalId: clientLocalId,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
     );
   }
 
@@ -215,10 +247,14 @@ class JournalMessageModel {
     String? localThumbnailPath,
     int? audioDurationSeconds,
     String? transcription,
-    int? aiProcessingStatus,
-    int? uploadStatus,
-    int? uploadRetryCount,
-    int? lastUploadAttemptMillis,
+    int? status,
+    int? failureReason,
+    double? uploadProgress,
+    String? uploadError,
+    String? aiError,
+    int? attemptCount,
+    int? lastAttemptMillis,
+    String? clientLocalId,
     int? createdAtMillis,
     int? updatedAtMillis,
     bool? isDeleted,
@@ -237,11 +273,14 @@ class JournalMessageModel {
       localThumbnailPath: localThumbnailPath ?? this.localThumbnailPath,
       audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       transcription: transcription ?? this.transcription,
-      aiProcessingStatus: aiProcessingStatus ?? this.aiProcessingStatus,
-      uploadStatus: uploadStatus ?? this.uploadStatus,
-      uploadRetryCount: uploadRetryCount ?? this.uploadRetryCount,
-      lastUploadAttemptMillis:
-          lastUploadAttemptMillis ?? this.lastUploadAttemptMillis,
+      status: status ?? this.status,
+      failureReason: failureReason ?? this.failureReason,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      uploadError: uploadError ?? this.uploadError,
+      aiError: aiError ?? this.aiError,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastAttemptMillis: lastAttemptMillis ?? this.lastAttemptMillis,
+      clientLocalId: clientLocalId ?? this.clientLocalId,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
       updatedAtMillis: updatedAtMillis ?? this.updatedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,

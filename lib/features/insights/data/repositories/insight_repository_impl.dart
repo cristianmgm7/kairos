@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
 import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/insights/data/datasources/insight_local_datasource.dart';
 import 'package:kairos/features/insights/data/datasources/insight_remote_datasource.dart';
@@ -65,15 +65,13 @@ class InsightRepositoryImpl implements InsightRepository {
             if (!localIds.contains(remoteModel.id)) {
               // New insight from remote
               await localDataSource.saveInsight(remoteModel);
-              debugPrint('Synced new global insight: ${remoteModel.id}');
+              logger.i('Synced new global insight: ${remoteModel.id}');
             } else {
               // Check if we need to update
-              final localModel =
-                  await localDataSource.getInsightById(remoteModel.id);
-              if (localModel != null &&
-                  localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
+              final localModel = await localDataSource.getInsightById(remoteModel.id);
+              if (localModel != null && localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
                 await localDataSource.updateInsight(remoteModel);
-                debugPrint('Updated global insight: ${remoteModel.id}');
+                logger.i('Updated global insight: ${remoteModel.id}');
               }
             }
           }
@@ -81,7 +79,7 @@ class InsightRepositoryImpl implements InsightRepository {
         onError: (Object error) {
           // Network errors are transient - just log and continue
           // The local stream continues to work offline
-          debugPrint('Remote sync error (will retry when online): $error');
+          logger.i('Remote sync error (will retry when online): $error');
         },
       );
 
@@ -109,28 +107,26 @@ class InsightRepositoryImpl implements InsightRepository {
         // Always attempt remote sync when we have userId
         remoteSub = remoteDataSource.watchThreadInsights(userId, threadId).listen(
           (remoteModels) async {
-            final localInsights =
-                await localDataSource.getThreadInsights(threadId);
+            final localInsights = await localDataSource.getThreadInsights(threadId);
             final localIds = localInsights.map((m) => m.id).toSet();
 
             for (final remoteModel in remoteModels) {
               if (!localIds.contains(remoteModel.id)) {
                 await localDataSource.saveInsight(remoteModel);
-                debugPrint('Synced new thread insight: ${remoteModel.id}');
+                logger.i('Synced new thread insight: ${remoteModel.id}');
               } else {
-                final localModel =
-                    await localDataSource.getInsightById(remoteModel.id);
+                final localModel = await localDataSource.getInsightById(remoteModel.id);
                 if (localModel != null &&
                     localModel.updatedAtMillis < remoteModel.updatedAtMillis) {
                   await localDataSource.updateInsight(remoteModel);
-                  debugPrint('Updated thread insight: ${remoteModel.id}');
+                  logger.i('Updated thread insight: ${remoteModel.id}');
                 }
               }
             }
           },
           onError: (Object error) {
             // Network errors are transient - just log and continue
-            debugPrint('Remote sync error (will retry when online): $error');
+            logger.i('Remote sync error (will retry when online): $error');
           },
         );
       }
@@ -148,8 +144,7 @@ class InsightRepositoryImpl implements InsightRepository {
   Future<Result<void>> syncInsights(String userId) async {
     try {
       // Sync global insights
-      final remoteGlobalInsights =
-          await remoteDataSource.getGlobalInsights(userId);
+      final remoteGlobalInsights = await remoteDataSource.getGlobalInsights(userId);
       for (final insight in remoteGlobalInsights) {
         await localDataSource.saveInsight(insight);
       }

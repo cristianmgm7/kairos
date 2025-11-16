@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class EmotionDistributionWidget extends StatelessWidget {
   const EmotionDistributionWidget({
@@ -24,8 +25,7 @@ class EmotionDistributionWidget extends StatelessWidget {
     // Count emotions
     final emotionCounts = <EmotionType, int>{};
     for (final insight in insights) {
-      emotionCounts[insight.dominantEmotion] =
-          (emotionCounts[insight.dominantEmotion] ?? 0) + 1;
+      emotionCounts[insight.dominantEmotion] = (emotionCounts[insight.dominantEmotion] ?? 0) + 1;
     }
 
     final total = insights.length;
@@ -49,7 +49,7 @@ class EmotionDistributionWidget extends StatelessWidget {
                 child: PieChart(
                   PieChartData(
                     sections: emotionCounts.entries.map((entry) {
-                      final percentage = (entry.value / total * 100);
+                      final percentage = entry.value / total * 100;
                       return PieChartSectionData(
                         value: entry.value.toDouble(),
                         title: '${percentage.toStringAsFixed(0)}%',

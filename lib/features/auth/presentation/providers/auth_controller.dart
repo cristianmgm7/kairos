@@ -5,8 +5,7 @@ import 'package:kairos/features/auth/domain/repositories/auth_repository.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 
 /// Provider for auth controller
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return AuthController(repository);
 });

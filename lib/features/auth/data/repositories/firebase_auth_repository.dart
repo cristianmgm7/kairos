@@ -47,8 +47,7 @@ class FirebaseAuthRepository implements AuthRepository {
       );
 
       // Sign in to Firebase with Google credentials
-      final userCredential =
-          await _firebaseAuth.signInWithCredential(credential);
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
 
       if (userCredential.user == null) {
         return Error(

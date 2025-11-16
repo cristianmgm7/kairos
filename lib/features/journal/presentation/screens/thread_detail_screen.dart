@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kairos/core/network/network_info.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
@@ -45,7 +46,9 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     // Trigger initial sync on screen entry if we have a threadId
     if (_currentThreadId != null) {
-      Future.microtask(() => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!));
+      Future.microtask(
+        () => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!),
+      );
     }
   }
 
@@ -56,23 +59,21 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     return messagesAsync.maybeWhen(
       data: (messages) {
-        // Check if last message is from user and has pending/processing AI status
+        // Check if last message is from user and AI response is pending
         if (messages.isEmpty) return false;
         final lastMessage = messages.last;
-        return lastMessage.role == MessageRole.user &&
-            (lastMessage.aiProcessingStatus == AiProcessingStatus.pending ||
-                lastMessage.aiProcessingStatus ==
-                    AiProcessingStatus.processing);
+        // Show "AI thinking" if last message is from user and not failed
+        // (AI response will arrive as a separate message)
+        return lastMessage.role == MessageRole.user && lastMessage.status != MessageStatus.failed;
       },
       orElse: () => false,
     );
   }
 
-
   Future<void> _handleRefresh() async {
     if (_currentThreadId == null) return;
 
-    debugPrint('🔄 Manual refresh triggered for thread: $_currentThreadId');
+    logger.i('🔄 Manual refresh triggered for thread: $_currentThreadId');
 
     await ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
 
@@ -122,39 +123,40 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   @override
   Widget build(BuildContext context) {
     // Listen for connectivity changes (auto-sync on reconnect)
-    ref.listen<AsyncValue<bool>>(
-      connectivityStreamProvider,
-      (previous, next) {
-        next.whenData((isOnline) {
-          // Detect transition from offline to online
-          if (_wasOffline && isOnline && _currentThreadId != null) {
-            debugPrint('🌐 Device reconnected - scheduling incremental sync');
+    ref
+      ..listen<AsyncValue<bool>>(
+        connectivityStreamProvider,
+        (previous, next) {
+          next.whenData((isOnline) {
+            // Detect transition from offline to online
+            if (_wasOffline && isOnline && _currentThreadId != null) {
+              logger.i('🌐 Device reconnected - scheduling incremental sync');
 
-            // Cancel any pending sync timer
-            _connectivitySyncTimer?.cancel();
+              // Cancel any pending sync timer
+              _connectivitySyncTimer?.cancel();
 
-            // Debounce sync by 2 seconds after reconnection
-            _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
-              debugPrint('🔄 Triggering auto-sync for thread: $_currentThreadId');
-              ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
-            });
-          }
+              // Debounce sync by 2 seconds after reconnection
+              _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
+                logger.i('🔄 Triggering auto-sync for thread: $_currentThreadId');
+                ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
+              });
+            }
 
-          // Update offline tracking state
-          _wasOffline = !isOnline;
-        });
-      },
-    );
+            // Update offline tracking state
+            _wasOffline = !isOnline;
+          });
+        },
+      )
 
-    // Listen to sync controller state (optional - for UI feedback)
-    ref.listen<SyncState>(syncControllerProvider, (previous, next) {
-      if (next is SyncError && mounted) {
-        debugPrint('❌ Background sync failed: ${next.message}');
-        // Optionally show a subtle notification
-      } else if (next is SyncSuccess) {
-        debugPrint('✅ Background sync completed successfully');
-      }
-    });
+      // Listen to sync controller state (optional - for UI feedback)
+      ..listen<SyncState>(syncControllerProvider, (previous, next) {
+        if (next is SyncError && mounted) {
+          logger.i('❌ Background sync failed: ${next.message}');
+          // Optionally show a subtle notification
+        } else if (next is SyncSuccess) {
+          logger.i('✅ Background sync completed successfully');
+        }
+      });
 
     final messagesAsync = _currentThreadId != null
         ? ref.watch(messagesStreamProvider(_currentThreadId!))
@@ -171,15 +173,25 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         _messageController.clear();
         _scrollToBottom();
 
-        // If this was a new thread, update the thread ID
-        if (_currentThreadId == null) {
-          setState(() {
-            _currentThreadId = next.message.threadId;
-          });
-        }
-
         // Reset controller state
         ref.read(messageControllerProvider.notifier).reset();
+
+        // If this was a new thread, get thread ID from the messages stream
+        if (_currentThreadId == null) {
+          // Wait a frame for the stream to update, then grab the thread ID
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final userId = ref.read(currentUserProvider)?.id;
+            if (userId != null) {
+              ref.read(threadsStreamProvider(userId)).whenData((threads) {
+                if (threads.isNotEmpty && _currentThreadId == null) {
+                  setState(() {
+                    _currentThreadId = threads.first.id;
+                  });
+                }
+              });
+            }
+          });
+        }
       } else if (next is MessageError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -191,36 +203,36 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
       }
     });
 
-    // Listen for AI processing failures
+    // Listen for message processing failures
     if (_currentThreadId != null) {
       ref.listen<AsyncValue<List<JournalMessageEntity>>>(
         messagesStreamProvider(_currentThreadId!),
         (previous, next) {
           next.whenData((messages) {
-            // Check if any message just failed AI processing
+            // Check if any message just failed
             final previousMessages = previous?.valueOrNull ?? [];
             for (final message in messages) {
-              if (message.role == MessageRole.user &&
-                  message.aiProcessingStatus == AiProcessingStatus.failed) {
+              if (message.role == MessageRole.user && message.status == MessageStatus.failed) {
                 // Check if this is a new failure
                 final previousMessage = previousMessages.firstWhere(
                   (m) => m.id == message.id,
                   orElse: () => message,
                 );
 
-                if (previousMessage.aiProcessingStatus !=
-                    AiProcessingStatus.failed) {
-                  // Show error snackbar
+                if (previousMessage.status != MessageStatus.failed) {
+                  // Show error snackbar with specific error message
+                  final errorMessage = message.uploadError ??
+                      message.aiError ??
+                      'Message processing failed. Please try again.';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content:
-                          const Text('AI response failed. Please try again.'),
+                      content: Text(errorMessage),
                       backgroundColor: Colors.red,
                       action: SnackBarAction(
                         label: 'Retry',
                         textColor: Colors.white,
                         onPressed: () {
-                          // TODO(Phase 3): Implement retry logic
+                          ref.read(messageControllerProvider.notifier).retryMessage(message.id);
                         },
                       ),
                     ),
@@ -256,8 +268,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                     Text(
                       '${thread.messageCount} ${thread.messageCount == 1 ? 'message' : 'messages'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ],
@@ -294,10 +305,7 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                           Icon(
                             Icons.chat_bubble_outline,
                             size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withAlpha(128),
+                            color: Theme.of(context).colorScheme.primary.withAlpha(128),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(
@@ -307,13 +315,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
                           const SizedBox(height: AppSpacing.sm),
                           Text(
                             'Type your first message below to begin',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                             textAlign: TextAlign.center,
                           ),

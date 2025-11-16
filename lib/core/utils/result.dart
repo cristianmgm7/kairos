@@ -31,8 +31,7 @@ extension ResultExtension<T> on Result<T> {
 
   T? get dataOrNull => this is Success<T> ? (this as Success<T>).data : null;
 
-  Failure? get failureOrNull =>
-      this is Error<T> ? (this as Error<T>).failure : null;
+  Failure? get failureOrNull => this is Error<T> ? (this as Error<T>).failure : null;
 
   R when<R>({
     required R Function(T data) success,

@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/journal/domain/entities/journal_message_entity.dart';
+import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
+import 'package:kairos/features/journal/presentation/utils/message_status_display.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 /// Displays a single message in a chat bubble
@@ -27,8 +28,7 @@ class MessageBubble extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
-        mainAxisAlignment:
-            isUserMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUserMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUserMessage) ...[
@@ -37,9 +37,7 @@ class MessageBubble extends ConsumerWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isUserMessage
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Container(
                   decoration: BoxDecoration(
@@ -63,9 +61,8 @@ class MessageBubble extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Column(
-                    crossAxisAlignment: isUserMessage
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
                       Text(
                         timeAgo,
@@ -74,14 +71,9 @@ class MessageBubble extends ConsumerWidget {
                           fontSize: 11,
                         ),
                       ),
-                      if (message.uploadStatus != UploadStatus.completed) ...[
+                      if (MessageStatusDisplay.shouldShowStatus(message)) ...[
                         const SizedBox(height: 2),
-                        _buildUploadStatusIndicator(context, ref),
-                      ] else if (message.role == MessageRole.user &&
-                          message.aiProcessingStatus !=
-                              AiProcessingStatus.completed) ...[
-                        const SizedBox(height: 2),
-                        _buildProcessingStatusIndicator(context),
+                        _buildStatusIndicator(context, ref),
                       ],
                     ],
                   ),
@@ -110,9 +102,7 @@ class MessageBubble extends ConsumerWidget {
       child: Icon(
         isUser ? Icons.person : Icons.smart_toy,
         size: 18,
-        color: isUser
-            ? theme.colorScheme.onPrimary
-            : theme.colorScheme.onSecondary,
+        color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
       ),
     );
   }
@@ -125,9 +115,8 @@ class MessageBubble extends ConsumerWidget {
         return Text(
           message.content ?? '',
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: isUserMessage
-                ? theme.colorScheme.onPrimaryContainer
-                : theme.colorScheme.onSurface,
+            color:
+                isUserMessage ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurface,
           ),
         );
 
@@ -252,43 +241,68 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildUploadStatusIndicator(BuildContext context, WidgetRef ref) {
-    if (message.uploadStatus == UploadStatus.completed) {
+  Widget _buildStatusIndicator(BuildContext context, WidgetRef ref) {
+    // Don't show status for terminal success states
+    if (!MessageStatusDisplay.shouldShowStatus(message)) {
       return const SizedBox.shrink();
     }
 
     final theme = Theme.of(context);
-    IconData icon;
-    Color color;
-    String tooltip;
-    bool showRetry = false;
+    final statusText = MessageStatusDisplay.getStatusText(message);
+    final errorText = MessageStatusDisplay.getErrorText(message);
+    final isRetryable = MessageStatusDisplay.isRetryable(message);
 
-    switch (message.uploadStatus) {
-      case UploadStatus.notStarted:
-        icon = Icons.cloud_upload_outlined;
-        color = theme.colorScheme.onSurfaceVariant;
-        tooltip = 'Waiting to upload';
-      case UploadStatus.uploading:
-        icon = Icons.cloud_upload;
-        color = Colors.blue;
-        tooltip = 'Uploading...';
-      case UploadStatus.completed:
-        return const SizedBox.shrink();
-      case UploadStatus.failed:
-        icon = Icons.error_outline;
-        color = theme.colorScheme.error;
-        tooltip = 'Upload failed';
-        showRetry = true;
-      case UploadStatus.retrying:
-        icon = Icons.refresh;
-        color = Colors.orange;
-        tooltip = 'Retrying upload...';
+    // Determine icon and color based on status
+    late IconData icon;
+    late Color color;
+    var showSpinner = false;
+
+    if (message.status == MessageStatus.failed) {
+      icon = Icons.error_outline;
+      color = theme.colorScheme.error;
+    } else {
+      // In-progress states
+      showSpinner = true;
+      color = theme.colorScheme.primary;
+      switch (message.status) {
+        case MessageStatus.uploadingMedia:
+          icon = Icons.cloud_upload;
+          color = Colors.blue;
+        case MessageStatus.processingAi:
+          icon = Icons.smart_toy;
+        // ignore: no_default_cases
+        default:
+          icon = Icons.sync;
+      }
+    }
+
+    // Show upload progress if available
+    if (message.status == MessageStatus.uploadingMedia && message.uploadProgress != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              value: message.uploadProgress,
+              strokeWidth: 2,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${(message.uploadProgress! * 100).toInt()}%',
+            style: TextStyle(fontSize: 10, color: color),
+          ),
+        ],
+      );
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (message.uploadStatus == UploadStatus.uploading)
+        if (showSpinner)
           SizedBox(
             width: 12,
             height: 12,
@@ -301,30 +315,23 @@ class MessageBubble extends ConsumerWidget {
           Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),
         Text(
-          tooltip,
-          style: TextStyle(
-            fontSize: 10,
-            color: color,
-          ),
+          errorText ?? statusText,
+          style: TextStyle(fontSize: 10, color: color),
         ),
-        if (showRetry) ...[
+        if (isRetryable) ...[
           const SizedBox(width: 8),
           InkWell(
             onTap: () {
-              final controller = ref.read(messageControllerProvider.notifier);
-              controller.retryUpload(message);
+              ref.read(messageControllerProvider.notifier).retryMessage(message.id);
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: theme.colorScheme.error,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Retry',
+                MessageStatusDisplay.getRetryButtonText(message),
                 style: TextStyle(
                   fontSize: 10,
                   color: theme.colorScheme.onError,
@@ -336,98 +343,6 @@ class MessageBubble extends ConsumerWidget {
         ],
       ],
     );
-  }
-
-  Widget _buildProcessingStatusIndicator(BuildContext context) {
-    if (message.role != MessageRole.user) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-
-    // Show AI processing status for user messages
-    switch (message.aiProcessingStatus) {
-      case AiProcessingStatus.pending:
-      case AiProcessingStatus.processing:
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'AI is thinking...',
-              style: TextStyle(
-                fontSize: 10,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
-        );
-
-      case AiProcessingStatus.failed:
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 12, color: theme.colorScheme.error),
-            const SizedBox(width: 4),
-            Text(
-              'AI response failed',
-              style: TextStyle(
-                fontSize: 10,
-                color: theme.colorScheme.error,
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: () async {
-                try {
-                  final callable = FirebaseFunctions.instance
-                      .httpsCallable('retryAiResponse');
-                  await callable
-                      .call<Map<String, dynamic>>({'messageId': message.id});
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Retrying AI response...')),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Retry failed: $e')),
-                    );
-                  }
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.error,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Retry',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.colorScheme.onError,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-
-      case AiProcessingStatus.completed:
-        return const SizedBox.shrink();
-    }
   }
 
   String _formatDuration(int seconds) {

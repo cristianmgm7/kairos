@@ -5,6 +5,7 @@ import {
   UpdateMessageInput,
   ConversationMessage,
 } from '../models/message';
+import { MessageStatus } from '../../config/constants';
 
 export class MessageRepository {
   private collection: admin.firestore.CollectionReference;
@@ -32,12 +33,11 @@ export class MessageRepository {
     const message: Message = {
       id: ref.id,
       ...input,
+      status: input.status ?? MessageStatus.REMOTE_CREATED, // Default to remoteCreated for backend-created messages
       createdAtMillis: now,
       updatedAtMillis: now,
       isDeleted: false,
       version: 1,
-      aiProcessingStatus: input.aiProcessingStatus ?? 0,
-      uploadStatus: input.uploadStatus ?? 2,
     };
 
     await ref.set(message);

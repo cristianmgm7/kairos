@@ -9,9 +9,9 @@ import 'package:kairos/features/journal/presentation/providers/journal_providers
 /// Input widget for composing and sending messages
 class MessageInput extends ConsumerStatefulWidget {
   const MessageInput({
-    super.key,
     required this.controller,
     required this.onSendMessage,
+    super.key,
     this.threadId,
   });
 
@@ -63,7 +63,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
         border: Border(
           top: BorderSide(
             color: theme.colorScheme.outlineVariant,
-            width: 1,
           ),
         ),
       ),
@@ -129,13 +128,9 @@ class _MessageInputState extends ConsumerState<MessageInput> {
             IconButton(
               icon: Icon(
                 _hasText ? Icons.send : Icons.mic,
-                color: _hasText
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+                color: _hasText ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
               ),
-              onPressed: _hasText
-                  ? _handleSend
-                  : () => _showRecordingDialog(context, ref),
+              onPressed: _hasText ? _handleSend : () => _showRecordingDialog(context, ref),
               tooltip: _hasText ? 'Send' : 'Voice message',
             ),
           ],
@@ -160,8 +155,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Photo from gallery'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller =
-                      ref.read(messageControllerProvider.notifier);
+                  final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromGallery();
 
                   // If image selected, show it in preview
@@ -177,8 +171,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 title: const Text('Take photo'),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final controller =
-                      ref.read(messageControllerProvider.notifier);
+                  final controller = ref.read(messageControllerProvider.notifier);
                   await controller.pickImageFromCamera();
 
                   if (controller.selectedImage != null) {
@@ -240,7 +233,6 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 await controller.createImageMessage(
                   userId: userId,
                   imageFile: image,
-                  thumbnailPath: '', // Will be generated in use case
                   threadId: widget.threadId,
                 );
                 controller.clearSelectedImage();
@@ -270,8 +262,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
 
 class _RecordingDialog extends ConsumerStatefulWidget {
   const _RecordingDialog({
-    this.threadId,
     required this.onSend,
+    this.threadId,
   });
 
   final String? threadId;
@@ -317,16 +309,20 @@ class _RecordingDialogState extends ConsumerState<_RecordingDialog> {
     final userId = ref.read(authStateProvider).valueOrNull?.id;
     if (userId == null) return;
 
-    final controller = ref.read(messageControllerProvider.notifier);
-    await controller.stopRecording(
-      userId: userId,
-      threadId: widget.threadId,
-    );
-
+    // Close dialog immediately so user can see the chat screen
     if (mounted) {
       Navigator.pop(context);
       widget.onSend();
     }
+
+    // Continue processing in background (don't await)
+    final controller = ref.read(messageControllerProvider.notifier);
+    unawaited(
+      controller.stopRecording(
+        userId: userId,
+        threadId: widget.threadId,
+      ),
+    );
   }
 
   Future<void> _cancel() async {

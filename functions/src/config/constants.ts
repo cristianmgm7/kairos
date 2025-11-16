@@ -17,7 +17,19 @@ export enum MessageType {
   AUDIO = 2,
 }
 
-// AI Processing Status
+// Message Status (unified status for messages)
+// Must match Flutter's MessageStatus enum exactly
+export enum MessageStatus {
+  LOCAL_CREATED = 0,
+  UPLOADING_MEDIA = 1,
+  MEDIA_UPLOADED = 2,
+  PROCESSING_AI = 3,
+  PROCESSED = 4,
+  REMOTE_CREATED = 5,
+  FAILED = 6,
+}
+
+// AI Processing Status (deprecated - use MessageStatus instead)
 export enum AiProcessingStatus {
   PENDING = 0,
   PROCESSING = 1,
@@ -25,7 +37,7 @@ export enum AiProcessingStatus {
   FAILED = 3,
 }
 
-// Upload Status
+// Upload Status (deprecated - use MessageStatus instead)
 export enum UploadStatus {
   PENDING = 0,
   UPLOADING = 1,
@@ -37,6 +49,7 @@ export enum UploadStatus {
 export enum InsightType {
   THREAD = 0,
   GLOBAL = 1,
+  DAILY_GLOBAL = 2,
 }
 
 // Emotion enum

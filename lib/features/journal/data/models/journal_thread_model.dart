@@ -1,4 +1,6 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
+import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:uuid/uuid.dart';
 
@@ -18,6 +20,9 @@ class JournalThreadModel {
     this.isDeleted = false,
     this.deletedAtMillis,
     this.version = 1,
+    this.latestInsightId,
+    this.latestInsightSummary,
+    this.latestInsightMood,
   });
 
   factory JournalThreadModel.create({
@@ -44,6 +49,9 @@ class JournalThreadModel {
       lastMessageAtMillis: entity.lastMessageAt?.millisecondsSinceEpoch,
       messageCount: entity.messageCount,
       isArchived: entity.isArchived,
+      latestInsightId: entity.latestInsightId,
+      latestInsightSummary: entity.latestInsightSummary,
+      latestInsightMood: entity.latestInsightMood?.name, // Convert enum to string
     );
   }
 
@@ -60,6 +68,9 @@ class JournalThreadModel {
       isDeleted: map['isDeleted'] as bool? ?? false,
       deletedAtMillis: map['deletedAtMillis'] as int?,
       version: map['version'] as int? ?? 1,
+      latestInsightId: map['latestInsightId'] as String?,
+      latestInsightSummary: map['latestInsightSummary'] as String?,
+      latestInsightMood: map['latestInsightMood'] as String?,
     );
   }
 
@@ -78,6 +89,9 @@ class JournalThreadModel {
   final bool isDeleted;
   final int? deletedAtMillis;
   final int version;
+  final String? latestInsightId;
+  final String? latestInsightSummary;
+  final String? latestInsightMood; // Store as string (emotion enum name)
 
   Id get isarId => fastHash(id);
 
@@ -94,6 +108,9 @@ class JournalThreadModel {
       'isDeleted': isDeleted,
       'deletedAtMillis': deletedAtMillis,
       'version': version,
+      'latestInsightId': latestInsightId,
+      'latestInsightSummary': latestInsightSummary,
+      'latestInsightMood': latestInsightMood,
     };
   }
 
@@ -102,16 +119,18 @@ class JournalThreadModel {
       id: id,
       userId: userId,
       title: title,
-      createdAt:
-          DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
-      updatedAt:
-          DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
       lastMessageAt: lastMessageAtMillis != null
-          ? DateTime.fromMillisecondsSinceEpoch(lastMessageAtMillis!,
-              isUtc: true)
+          ? DateTime.fromMillisecondsSinceEpoch(lastMessageAtMillis!, isUtc: true)
           : null,
       messageCount: messageCount,
       isArchived: isArchived,
+      latestInsightId: latestInsightId,
+      latestInsightSummary: latestInsightSummary,
+      latestInsightMood: latestInsightMood != null
+          ? EmotionType.values.firstWhere((e) => e.name == latestInsightMood)
+          : null,
     );
   }
 
@@ -127,6 +146,9 @@ class JournalThreadModel {
     bool? isDeleted,
     int? deletedAtMillis,
     int? version,
+    String? latestInsightId,
+    String? latestInsightSummary,
+    String? latestInsightMood,
   }) {
     return JournalThreadModel(
       id: id ?? this.id,
@@ -140,6 +162,9 @@ class JournalThreadModel {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAtMillis: deletedAtMillis ?? this.deletedAtMillis,
       version: version ?? this.version,
+      latestInsightId: latestInsightId ?? this.latestInsightId,
+      latestInsightSummary: latestInsightSummary ?? this.latestInsightSummary,
+      latestInsightMood: latestInsightMood ?? this.latestInsightMood,
     );
   }
 

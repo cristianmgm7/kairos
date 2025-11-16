@@ -105,5 +105,33 @@ export class InsightRepository {
 
     return snapshot.docs.map(doc => doc.data() as Insight);
   }
+
+  /**
+   * Get insight by ID
+   */
+  async getById(insightId: string): Promise<Insight | null> {
+    const doc = await this.collection.doc(insightId).get();
+    if (!doc.exists) return null;
+    return doc.data() as Insight;
+  }
+
+  /**
+   * Get all daily global insights in a time range
+   */
+  async getDailyInsightsInRange(
+    userId: string,
+    startMillis: number,
+    endMillis: number
+  ): Promise<Insight[]> {
+    const snapshot = await this.collection
+      .where('userId', '==', userId)
+      .where('type', '==', 2) // InsightType.DAILY_GLOBAL
+      .where('periodStartMillis', '>=', startMillis)
+      .where('periodStartMillis', '<=', endMillis)
+      .orderBy('periodStartMillis', 'asc')
+      .get();
+
+    return snapshot.docs.map(doc => doc.data() as Insight);
+  }
 }
 

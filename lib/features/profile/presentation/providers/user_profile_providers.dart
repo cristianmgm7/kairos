@@ -16,15 +16,13 @@ import 'package:kairos/features/profile/domain/usecases/get_user_profile_usecase
 final connectivityProvider = Provider<Connectivity>((ref) => Connectivity());
 
 /// Local data source provider
-final userProfileLocalDataSourceProvider =
-    Provider<UserProfileLocalDataSource>((ref) {
+final userProfileLocalDataSourceProvider = Provider<UserProfileLocalDataSource>((ref) {
   final isar = ref.watch(isarProvider);
   return UserProfileLocalDataSourceImpl(isar);
 });
 
 /// Remote data source provider
-final userProfileRemoteDataSourceProvider =
-    Provider<UserProfileRemoteDataSource>((ref) {
+final userProfileRemoteDataSourceProvider = Provider<UserProfileRemoteDataSource>((ref) {
   final firestore = ref.watch(firestoreProvider);
   return UserProfileRemoteDataSourceImpl(firestore);
 });
@@ -64,8 +62,7 @@ final hasCompletedProfileProvider = Provider<bool>((ref) {
 });
 
 /// Create user profile use case provider
-final createUserProfileUseCaseProvider =
-    Provider<CreateUserProfileUseCase>((ref) {
+final createUserProfileUseCaseProvider = Provider<CreateUserProfileUseCase>((ref) {
   final repository = ref.watch(userProfileRepositoryProvider);
   return CreateUserProfileUseCase(repository);
 });

@@ -11,9 +11,9 @@ import 'package:kairos/features/auth/presentation/providers/auth_providers.dart'
 import 'package:kairos/features/auth/presentation/screens/login_screen.dart';
 import 'package:kairos/features/auth/presentation/screens/register_screen.dart';
 import 'package:kairos/features/home/presentation/screens/home_screen.dart';
+import 'package:kairos/features/insights/presentation/screens/insights_screen.dart';
 import 'package:kairos/features/journal/presentation/screens/thread_detail_screen.dart';
 import 'package:kairos/features/journal/presentation/screens/thread_list_screen.dart';
-import 'package:kairos/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
@@ -105,9 +105,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
-            path: AppRoutes.notifications,
+            path: AppRoutes.insights,
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: NotificationsScreen(),
+              child: InsightsScreen(),
             ),
           ),
           GoRoute(

@@ -5,13 +5,14 @@ import 'package:kairos/core/config/firebase_options_dev.dart' as dev;
 import 'package:kairos/core/config/firebase_options_prod.dart' as prod;
 import 'package:kairos/core/config/firebase_options_staging.dart' as staging;
 import 'package:kairos/core/config/flavor_config.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 
 class FirebaseConfig {
   Future<void> initialize() async {
     try {
       final flavor = FlavorConfig.instance.flavor;
 
-      debugPrint('🔥 Initializing Firebase for flavor: $flavor');
+      logger.i('🔥 Initializing Firebase for flavor: $flavor');
 
       // Use native platform configuration files on mobile to avoid crashes
       // when Dart options are placeholders or not configured.
@@ -19,7 +20,7 @@ class FirebaseConfig {
           (defaultTargetPlatform == TargetPlatform.iOS ||
               defaultTargetPlatform == TargetPlatform.android)) {
         await Firebase.initializeApp();
-        debugPrint('✅ Firebase initialized successfully (plist/json)');
+        logger.i('✅ Firebase initialized successfully (plist/json)');
         return;
       }
 
@@ -38,13 +39,13 @@ class FirebaseConfig {
           );
       }
 
-      debugPrint('✅ Firebase initialized successfully');
+      logger.i('✅ Firebase initialized successfully');
     } on FirebaseException catch (e) {
-      debugPrint('❌ Firebase initialization failed: ${e.code} - ${e.message}');
+      logger.i('❌ Firebase initialization failed: ${e.code} - ${e.message}');
       rethrow;
     } catch (e, stackTrace) {
-      debugPrint('❌ Firebase initialization failed: $e');
-      debugPrint('Stack trace: $stackTrace');
+      logger.i('❌ Firebase initialization failed: $e');
+      logger.i('Stack trace: $stackTrace');
       rethrow;
     }
   }
