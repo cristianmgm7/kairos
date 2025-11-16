@@ -22,7 +22,8 @@ enum EmotionType {
 
 enum InsightType {
   thread(value: 0),
-  global(value: 1);
+  global(value: 1),
+  dailyGlobal(value: 2);
 
   const InsightType({required this.value});
 
@@ -34,4 +35,12 @@ enum InsightType {
       orElse: () => InsightType.thread,
     );
   }
+}
+
+enum InsightPeriod {
+  oneDay,    // Last 24 hours
+  threeDays, // Last 3 days
+  oneWeek,   // Last 7 days
+  oneMonth,  // Last 30 days
+  daily,     // Single day snapshot (for aggregation)
 }

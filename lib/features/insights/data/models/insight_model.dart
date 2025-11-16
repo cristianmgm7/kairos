@@ -21,6 +21,7 @@ class InsightModel {
     required this.createdAtMillis,
     required this.updatedAtMillis,
     this.threadId,
+    this.period,
     this.guidanceSuggestion,
     this.actionPrompt,
     this.isDeleted = false,
@@ -70,6 +71,7 @@ class InsightModel {
       userId: entity.userId,
       type: entity.type.value,
       threadId: entity.threadId,
+      period: entity.period?.name, // Convert enum to string
       periodStartMillis: entity.periodStart.millisecondsSinceEpoch,
       periodEndMillis: entity.periodEnd.millisecondsSinceEpoch,
       moodScore: entity.moodScore,
@@ -91,6 +93,7 @@ class InsightModel {
       userId: map['userId'] as String,
       type: map['type'] as int,
       threadId: map['threadId'] as String?,
+      period: map['period'] as String?,
       periodStartMillis: map['periodStartMillis'] as int,
       periodEndMillis: map['periodEndMillis'] as int,
       moodScore: (map['moodScore'] as num).toDouble(),
@@ -114,10 +117,12 @@ class InsightModel {
   @Index()
   final String userId;
 
-  final int type; // 0=thread, 1=global (InsightType.value)
+  final int type; // 0=thread, 1=global, 2=dailyGlobal (InsightType.value)
 
   @Index()
   final String? threadId; // null for global insights
+
+  final String? period; // Stored as string for Firestore/Isar compatibility
 
   final int periodStartMillis;
   final int periodEndMillis;
@@ -145,6 +150,7 @@ class InsightModel {
       'userId': userId,
       'type': type,
       'threadId': threadId,
+      'period': period,
       'periodStartMillis': periodStartMillis,
       'periodEndMillis': periodEndMillis,
       'moodScore': moodScore,
@@ -178,6 +184,9 @@ class InsightModel {
       createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
       threadId: threadId,
+      period: period != null
+          ? InsightPeriod.values.firstWhere((e) => e.name == period)
+          : null,
       guidanceSuggestion: guidanceSuggestion,
       actionPrompt: actionPrompt,
     );
@@ -188,6 +197,7 @@ class InsightModel {
     String? userId,
     int? type,
     String? threadId,
+    String? period,
     int? periodStartMillis,
     int? periodEndMillis,
     double? moodScore,
@@ -208,6 +218,7 @@ class InsightModel {
       userId: userId ?? this.userId,
       type: type ?? this.type,
       threadId: threadId ?? this.threadId,
+      period: period ?? this.period,
       periodStartMillis: periodStartMillis ?? this.periodStartMillis,
       periodEndMillis: periodEndMillis ?? this.periodEndMillis,
       moodScore: moodScore ?? this.moodScore,

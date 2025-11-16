@@ -6,7 +6,8 @@ import 'package:kairos/features/journal/domain/usecases/sync_threads_usecase.dar
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'sync_threads_usecase_test.mocks.dart';
+import 'delete_thread_usecase_test.mocks.dart';
+
 
 @GenerateMocks([JournalThreadRepository])
 void main() {
@@ -28,7 +29,7 @@ void main() {
 
     test('should return Success when repository sync succeeds', () async {
       // Arrange
-      when(mockRepository.syncThreadsIncremental(any))
+      when(mockRepository.syncThreadsIncremental(testUserId))
           .thenAnswer((_) async => const Success(null));
 
       // Act
@@ -42,7 +43,7 @@ void main() {
 
     test('should return NetworkFailure when repository returns network error', () async {
       // Arrange
-      when(mockRepository.syncThreadsIncremental(any)).thenAnswer(
+      when(mockRepository.syncThreadsIncremental(testUserId)).thenAnswer(
         (_) async => const Error(
           NetworkFailure(message: 'No internet connection'),
         ),
@@ -60,7 +61,7 @@ void main() {
 
     test('should return ServerFailure when repository returns server error', () async {
       // Arrange
-      when(mockRepository.syncThreadsIncremental(any)).thenAnswer(
+      when(mockRepository.syncThreadsIncremental(testUserId)).thenAnswer(
         (_) async => const Error(
           ServerFailure(message: 'Server error'),
         ),
