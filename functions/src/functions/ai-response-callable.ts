@@ -40,9 +40,9 @@ export const generateMessageResponse = onCall(
     console.log(`Generating AI response for message ${messageId} by user ${userId}`);
 
     // 3. Initialize services
-    const messageRepo = getMessageRepository(db);
-    const aiService = createAiService(geminiApiKey.value());
-    const conversationBuilder = createConversationBuilder(db);
+    const messageRepo = getMessageRepository(db);  // instance of MessageRepository
+    const aiService = createAiService(geminiApiKey.value());  // instance of AiService  
+    const conversationBuilder = createConversationBuilder(db);  // instance of ConversationBuilder
 
     try {
       // 4. Authorization check
