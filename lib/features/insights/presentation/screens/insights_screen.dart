@@ -126,7 +126,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 ...allInsights.map((insight) => Card(
                       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: ListTile(
-                        title: Text(insight.summary ?? 'No summary'),
+                        title: Text(insight.summary),
                         subtitle: Text(
                           'Period: ${insight.period?.name ?? "none"} | '
                           'Mood: ${insight.moodScore.toStringAsFixed(2)} | '
@@ -197,7 +197,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              insight.summary ?? 'No summary available',
+              insight.summary,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.md),
