@@ -3,6 +3,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { geminiApiKey } from '../config/genkit';
 import { getMessageRepository } from '../data/repositories';
 import { runKairos } from '../agents/kairos.agent';
+import { runMemoryIngestion } from '../agents/kairos.ingest';
 import { MessageRole, MessageType, MessageStatus } from '../config/constants';
 
 const db = admin.firestore();
@@ -127,7 +128,20 @@ export const generateMessageResponse = onCall(
 
       console.log(`[Agent] AI response created for message ${messageId}`);
 
-      // 10. Return success with metadata
+      // 10. ASYNC: Extract and index memories (don't await - fire and forget)
+      runMemoryIngestion({
+        userId,
+        threadId,
+        userMessage: userInput,
+        aiResponse: agentResponse.text,
+        messageId,
+        apiKey: geminiApiKey.value(),
+      }).catch(error => {
+        // Log but don't fail the response
+        console.error(`[Memory Ingest] Background ingestion failed:`, error);
+      });
+
+      // 11. Return success with metadata
       return {
         success: true,
         message: 'AI response generated successfully',
