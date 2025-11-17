@@ -46,7 +46,7 @@ export async function runKairos(config: AgentConfig, userInput: string): Promise
 
   // 3. Get AI instance and create tools
   const ai = getAI(apiKey);
-  const tools = createKairosTools(apiKey);
+  const tools = createKairosTools(apiKey, userId, threadId);
 
   // 4. Retrieve relevant memories
   const memoryService = new MemoryService();

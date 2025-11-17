@@ -3,11 +3,16 @@ import admin from 'firebase-admin';
 import { getAI } from '../config/genkit';
 
 /**
- * Create all Kairos tools for the agent
+ * Create all Kairos tools for the agent.
  *
- * Tools are defined using the Genkit instance's defineTool method
+ * Tools are defined using the Genkit instance's defineTool method.
+ *
+ * IMPORTANT:
+ * - Tools now use userId and threadId from the surrounding context (closure)
+ * - This allows the AI to call tools without needing to know these IDs
+ * - The IDs are bound when tools are created for each request
  */
-export function createKairosTools(apiKey: string) {
+export function createKairosTools(apiKey: string, userId: string, threadId: string) {
   const ai = getAI(apiKey);
 
   // Tool 1: Get current date/time
@@ -41,9 +46,7 @@ export function createKairosTools(apiKey: string) {
   {
     name: 'getUserProfile',
     description: 'Returns user profile information including name, demographics, goals, and interests. Use this when you need to personalize responses or when the user asks about their profile.',
-    inputSchema: z.object({
-      userId: z.string().describe('The Firebase Auth UID of the user'),
-    }),
+    inputSchema: z.object({}),
     outputSchema: z.object({
       name: z.string().nullable(),
       age: z.number().nullable(),
@@ -55,7 +58,7 @@ export function createKairosTools(apiKey: string) {
       experienceLevel: z.string().nullable(),
     }),
   },
-  async ({ userId }: { userId: string }) => {
+  async () => {
     const db = admin.firestore();
 
     // Query userProfiles collection
@@ -110,8 +113,6 @@ export function createKairosTools(apiKey: string) {
     name: 'getRecentInsights',
     description: 'Returns recent insights for the user, including both thread-specific and global insights. Use this to understand patterns, themes, and emotional trends.',
     inputSchema: z.object({
-      userId: z.string().describe('The Firebase Auth UID of the user'),
-      threadId: z.string().optional().describe('Optional thread ID to get thread-specific insights'),
       limit: z.number().default(5).describe('Number of insights to return'),
     }),
     outputSchema: z.object({
@@ -133,7 +134,7 @@ export function createKairosTools(apiKey: string) {
       })),
     }),
   },
-  async ({ userId, threadId, limit }: { userId: string; threadId?: string; limit: number }) => {
+  async ({ limit = 5 }: { limit?: number }) => {
     const db = admin.firestore();
 
     // Emotion enum mapping
@@ -204,8 +205,6 @@ export function createKairosTools(apiKey: string) {
     name: 'getConversationTopicSummary',
     description: 'Returns a brief summary of recent conversation topics in the current thread. Use this to understand what the user has been discussing recently.',
     inputSchema: z.object({
-      userId: z.string().describe('The Firebase Auth UID of the user'),
-      threadId: z.string().describe('The thread ID to summarize'),
       messageCount: z.number().default(10).describe('Number of recent messages to analyze'),
     }),
     outputSchema: z.object({
@@ -214,7 +213,7 @@ export function createKairosTools(apiKey: string) {
       topics: z.array(z.string()),
     }),
   },
-  async ({ userId, threadId, messageCount }: { userId: string; threadId: string; messageCount: number }) => {
+  async ({ messageCount = 10 }: { messageCount?: number }) => {
     const db = admin.firestore();
 
     // Get recent messages
@@ -260,16 +259,14 @@ export function createKairosTools(apiKey: string) {
   {
     name: 'getUserConfig',
     description: 'Returns user app configuration and preferences. Use this to understand how the user prefers to interact with the app.',
-    inputSchema: z.object({
-      userId: z.string().describe('The Firebase Auth UID of the user'),
-    }),
+    inputSchema: z.object({}),
     outputSchema: z.object({
       preferredTone: z.string(),
       language: z.string(),
       notificationsEnabled: z.boolean(),
     }),
   },
-  async ({ userId }: { userId: string }) => {
+  async () => {
     // Placeholder - return defaults for now
     // TODO: Integrate with actual user settings when available
     return {
@@ -280,7 +277,7 @@ export function createKairosTools(apiKey: string) {
   }
   );
 
-  // Return all tools as array
+  // Return all tools
   return [
     getDateTool,
     getUserProfileTool,
