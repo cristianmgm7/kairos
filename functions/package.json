@@ -12,8 +12,7 @@
     "logs": "firebase functions:log",
     "genkit:start": "genkit start",
     "test": "mocha --require ts-node/register 'src/test/**/*.test.ts' --timeout 10000",
-    "test:watch": "npm test -- --watch",
-    "populate-memory": "ts-node src/scripts/populate-memory-from-insights.ts"
+    "test:watch": "npm test -- --watch"
   },
   "dependencies": {
     "firebase-functions": "^5.0.0",
