@@ -155,99 +155,7 @@ export function createKairosTools(apiKey: string, userId: string, threadId: stri
   }
   );
 
-  // Tool 3: Get recent insights
-  const getRecentInsightsTool = ai.defineTool(
-  {
-    name: 'getRecentInsights',
-    description: 'Returns recent insights for the user, including both thread-specific and global insights. Use this to understand patterns, themes, and emotional trends.',
-    inputSchema: z.object({
-      limit: z.number().default(5).describe('Number of insights to return'),
-    }),
-    outputSchema: z.object({
-      threadInsights: z.array(z.object({
-        summary: z.string(),
-        moodScore: z.number(),
-        dominantEmotion: z.string(),
-        keywords: z.array(z.string()),
-        themes: z.array(z.string()),
-        period: z.string(),
-      })),
-      globalInsights: z.array(z.object({
-        summary: z.string(),
-        moodScore: z.number(),
-        dominantEmotion: z.string(),
-        keywords: z.array(z.string()),
-        themes: z.array(z.string()),
-        period: z.string(),
-      })),
-    }),
-  },
-  async ({ limit = 5 }: { limit?: number }) => {
-    const db = admin.firestore();
-
-    // Emotion enum mapping
-    const emotionMap = ['joy', 'calm', 'neutral', 'sadness', 'stress', 'anger', 'fear', 'excitement'];
-
-    // Get thread insights if threadId provided
-    let threadInsights: Array<{
-      summary: string;
-      moodScore: number;
-      dominantEmotion: string;
-      keywords: string[];
-      themes: string[];
-      period: string;
-    }> = [];
-    if (threadId) {
-      const threadSnapshot = await db.collection('insights')
-        .where('userId', '==', userId)
-        .where('threadId', '==', threadId)
-        .where('isDeleted', '==', false)
-        .orderBy('periodEndMillis', 'desc')
-        .limit(limit)
-        .get();
-
-      threadInsights = threadSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          summary: data.summary || '',
-          moodScore: data.moodScore || 0,
-          dominantEmotion: emotionMap[data.dominantEmotion] || 'neutral',
-          keywords: data.keywords || [],
-          themes: data.aiThemes || [],
-          period: data.period || 'unknown',
-        };
-      });
-    }
-
-    // Get global insights
-    const globalSnapshot = await db.collection('insights')
-      .where('userId', '==', userId)
-      .where('threadId', '==', null)
-      .where('isDeleted', '==', false)
-      .orderBy('periodEndMillis', 'desc')
-      .limit(limit)
-      .get();
-
-    const globalInsights = globalSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        summary: data.summary || '',
-        moodScore: data.moodScore || 0,
-        dominantEmotion: emotionMap[data.dominantEmotion] || 'neutral',
-        keywords: data.keywords || [],
-        themes: data.aiThemes || [],
-        period: data.period || 'unknown',
-      };
-    });
-
-    return {
-      threadInsights,
-      globalInsights,
-    };
-  }
-  );
-
-  // Tool 4: Get conversation topic summary
+  // Tool 3: Get conversation topic summary
   const getConversationTopicSummaryTool = ai.defineTool(
   {
     name: 'getConversationTopicSummary',
@@ -302,7 +210,7 @@ export function createKairosTools(apiKey: string, userId: string, threadId: stri
   }
   );
 
-  // Tool 5: Get user config (placeholder for future app settings)
+  // Tool 4: Get user config (placeholder for future app settings)
   const getUserConfigTool = ai.defineTool(
   {
     name: 'getUserConfig',
@@ -329,7 +237,6 @@ export function createKairosTools(apiKey: string, userId: string, threadId: stri
   const tools = [
     getDateTool,
     getUserProfileTool,
-    getRecentInsightsTool,
     getConversationTopicSummaryTool,
     getUserConfigTool,
   ];
