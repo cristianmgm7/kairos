@@ -93,6 +93,28 @@
       ]
     },
     {
+      "collectionGroup": "journalMessages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isDeleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "threadId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAtMillis",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "insights",
       "queryScope": "COLLECTION",
       "fields": [

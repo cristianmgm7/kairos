@@ -3,6 +3,47 @@ import admin from 'firebase-admin';
 import { getAI } from '../config/genkit';
 
 /**
+ * Simple LRU cache for tools to avoid re-registering them in Genkit registry
+ * Key format: "userId:threadId"
+ * Max size: 100 entries (will remove least recently used)
+ */
+const toolsCache = new Map<string, any[]>();
+const MAX_CACHE_SIZE = 100;
+const cacheAccessOrder: string[] = [];
+
+function getCachedTools(userId: string, threadId: string): any[] | null {
+  const key = `${userId}:${threadId}`;
+  
+  if (toolsCache.has(key)) {
+    // Update access order
+    const index = cacheAccessOrder.indexOf(key);
+    if (index > -1) {
+      cacheAccessOrder.splice(index, 1);
+    }
+    cacheAccessOrder.push(key);
+    
+    return toolsCache.get(key)!;
+  }
+  
+  return null;
+}
+
+function setCachedTools(userId: string, threadId: string, tools: any[]): void {
+  const key = `${userId}:${threadId}`;
+  
+  // If cache is full, remove least recently used
+  if (toolsCache.size >= MAX_CACHE_SIZE && !toolsCache.has(key)) {
+    const lruKey = cacheAccessOrder.shift();
+    if (lruKey) {
+      toolsCache.delete(lruKey);
+    }
+  }
+  
+  toolsCache.set(key, tools);
+  cacheAccessOrder.push(key);
+}
+
+/**
  * Create all Kairos tools for the agent.
  *
  * Tools are defined using the Genkit instance's defineTool method.
@@ -11,8 +52,15 @@ import { getAI } from '../config/genkit';
  * - Tools now use userId and threadId from the surrounding context (closure)
  * - This allows the AI to call tools without needing to know these IDs
  * - The IDs are bound when tools are created for each request
+ * - Tools are cached per user/thread to avoid re-registering in Genkit
  */
 export function createKairosTools(apiKey: string, userId: string, threadId: string) {
+  // Check cache first
+  const cached = getCachedTools(userId, threadId);
+  if (cached) {
+    return cached;
+  }
+
   const ai = getAI(apiKey);
 
   // Tool 1: Get current date/time
@@ -277,12 +325,16 @@ export function createKairosTools(apiKey: string, userId: string, threadId: stri
   }
   );
 
-  // Return all tools
-  return [
+  // Cache and return all tools
+  const tools = [
     getDateTool,
     getUserProfileTool,
     getRecentInsightsTool,
     getConversationTopicSummaryTool,
     getUserConfigTool,
   ];
+  
+  setCachedTools(userId, threadId, tools);
+  
+  return tools;
 }
