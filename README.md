@@ -285,6 +285,75 @@ GitHub Actions workflow in `.github/workflows/ci.yml`:
 4. Push to the branch: `git push origin feature/my-feature`
 5. Open a pull request
 
+## iOS Deployment & TestFlight
+
+### 🚀 Quick Start: Upload to TestFlight
+
+Ready to distribute your app for testing? We've created comprehensive guides:
+
+1. **Quick Start Guide** - `TESTFLIGHT_QUICK_START.md`
+   - Fastest way to get your app on TestFlight
+   - Two methods: Automated script or Xcode
+   - Essential setup checklist
+
+2. **Detailed Upload Guide** - `TESTFLIGHT_UPLOAD_GUIDE.md`
+   - Complete step-by-step instructions
+   - Apple Developer Portal setup
+   - App Store Connect configuration
+   - Troubleshooting tips
+
+3. **Upload Checklist** - `TESTFLIGHT_CHECKLIST.md`
+   - Checkbox-based workflow
+   - Nothing to miss
+   - Quick command reference
+
+### Automated Build Script
+
+Use the build script for the easiest experience:
+
+```bash
+# Run from project root
+./scripts/build_for_testflight.sh
+```
+
+The script handles:
+- ✅ Cleaning and dependencies
+- ✅ Build number increment
+- ✅ Production build
+- ✅ IPA generation
+- ✅ Ready for Transporter upload
+
+### Manual Build Commands
+
+```bash
+# Build IPA for App Store upload
+flutter build ipa --release --flavor production
+
+# Or open in Xcode for Archive
+open ios/Runner.xcworkspace
+# Then: Product → Archive
+```
+
+### Your App Configuration
+
+- **App Name**: Kairos
+- **Bundle IDs**:
+  - Production: `com.kairos-app.prod`
+  - Staging: `com.kairos-app.staging`
+  - Development: `com.kairos-app.dev`
+- **Team ID**: 46GH5N7V96
+- **Min iOS**: 13.0
+
+### Required Apple Developer Setup
+
+Before first upload:
+1. Create App ID in Apple Developer Portal
+2. Create Distribution Certificate
+3. Create App Store Provisioning Profile
+4. Create app in App Store Connect
+
+📚 **See detailed instructions in `TESTFLIGHT_UPLOAD_GUIDE.md`**
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -295,6 +364,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Flutter Team
 - Very Good Ventures (for very_good_analysis)
 - Community packages: GetIt, Injectable, GoRouter, Dio
+- Firebase for backend services
+- Apple Developer Program
 
 ---
 
