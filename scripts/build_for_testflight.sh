@@ -13,9 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-FLAVOR="production"
-ENV_FILE=".env.prod"
-BUNDLE_ID="com.kairos-app.prod"
+FLAVOR="staging"
+ENV_FILE=".env.staging"
+BUNDLE_ID="com.kairos-app.staging"
 TEAM_ID="46GH5N7V96"
 
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
@@ -117,8 +117,8 @@ if [[ $BUILD_METHOD == "1" ]]; then
     echo -e "${BLUE}Building IPA file...${NC}"
     flutter build ipa \
         --release \
-        --flavor $FLAVOR \
-        --dart-define-from-file=$ENV_FILE
+        --flavor="$FLAVOR" \
+        --dart-define-from-file="$ENV_FILE"
     
     if [ $? -eq 0 ]; then
         echo ""
@@ -166,8 +166,8 @@ elif [[ $BUILD_METHOD == "2" ]]; then
     echo -e "${BLUE}Building iOS app...${NC}"
     flutter build ios \
         --release \
-        --flavor $FLAVOR \
-        --dart-define-from-file=$ENV_FILE
+        --flavor="$FLAVOR" \
+        --dart-define-from-file="$ENV_FILE"
     
     if [ $? -eq 0 ]; then
         echo ""
@@ -227,5 +227,7 @@ echo ""
 
 echo -e "${GREEN}Build script complete! 🎉${NC}"
 echo ""
+
+
 
 
