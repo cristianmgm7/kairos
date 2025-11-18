@@ -27,7 +27,7 @@ export const generateMessageResponse = onCall(
     memory: '512MiB',
     timeoutSeconds: 60,
   },
-  async (request) => {
+  async function (request) {
     // 1. Authentication
     const userId = request.auth?.uid;
     if (!userId) {
@@ -135,7 +135,6 @@ export const generateMessageResponse = onCall(
         userMessage: userInput,
         aiResponse: agentResponse.text,
         messageId,
-        apiKey: geminiApiKey.value(),
       }).catch(error => {
         // Log but don't fail the response
         console.error(`[Memory Ingest] Background ingestion failed:`, error);
@@ -158,8 +157,7 @@ export const generateMessageResponse = onCall(
         throw error;
       }
 
-      const message =
-        error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       throw new HttpsError('internal', `AI response generation failed: ${message}`);
     }
   }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { googleAI } from '@genkit-ai/google-genai';
-import { getAI } from '../config/genkit';
+import { getAI, geminiApiKey } from '../config/genkit';
 import { indexMemory } from './kairos.rag';
 
 /**
@@ -12,7 +12,6 @@ const IngestInputSchema = z.object({
   userMessage: z.string().describe('User message content'),
   aiResponse: z.string().describe('AI response content'),
   messageId: z.string().describe('Message ID for tracking'),
-  apiKey: z.string().describe('Gemini API key'),
 });
 
 /**
@@ -68,96 +67,97 @@ AI: {aiResponse}
  * 2. Extracts 3-5 durable facts
  * 3. Generates embeddings for each fact
  * 4. Stores in Firestore with vector field
+ *
+ * NOTE: Flow is defined once at module initialization to prevent
+ * "already has an entry in the registry" warnings.
  */
-export const ingestMemoryFlow = (apiKey: string) => {
-  const ai = getAI(apiKey);
+const ai = getAI(geminiApiKey.value());
 
-  return ai.defineFlow(
-    {
-      name: 'ingestMemory',
-      inputSchema: IngestInputSchema,
-      outputSchema: IngestOutputSchema,
-    },
-    async ({ userId, threadId, userMessage, aiResponse, messageId, apiKey: inputApiKey }) => {
-      console.log(`[Memory Ingest] Starting extraction for message ${messageId}`);
+export const ingestMemoryFlow = ai.defineFlow(
+  {
+    name: 'ingestMemory',
+    inputSchema: IngestInputSchema,
+    outputSchema: IngestOutputSchema,
+  },
+  async ({ userId, threadId, userMessage, aiResponse, messageId }) => {
+    console.log(`[Memory Ingest] Starting extraction for message ${messageId}`);
 
-      try {
-        // 1. Extract facts using LLM (low-cost model)
-        const prompt = EXTRACTION_PROMPT
-          .replace('{userMessage}', userMessage)
-          .replace('{aiResponse}', aiResponse);
+    try {
+      // 1. Extract facts using LLM (low-cost model)
+      const prompt = EXTRACTION_PROMPT
+        .replace('{userMessage}', userMessage)
+        .replace('{aiResponse}', aiResponse);
 
-        const extractionResponse = await ai.generate({
-          model: googleAI.model('gemini-2.0-flash'), // Fast, cheap model
-          prompt,
-          config: {
-            temperature: 0.3, // Lower temperature for consistent extraction
-            maxOutputTokens: 300,
-          },
-        });
+      const extractionResponse = await ai.generate({
+        model: googleAI.model('gemini-2.0-flash'), // Fast, cheap model
+        prompt,
+        config: {
+          temperature: 0.3, // Lower temperature for consistent extraction
+          maxOutputTokens: 300,
+        },
+      });
 
-        const extractedText = extractionResponse.text || '';
-        console.log(`[Memory Ingest] Raw extraction: ${extractedText}`);
+      const extractedText = extractionResponse.text || '';
+      console.log(`[Memory Ingest] Raw extraction: ${extractedText}`);
 
-        // 2. Parse extracted facts (one per line, numbered)
-        const facts = extractedText
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .map(line => {
-            // Remove numbering (e.g., "1. " or "- ")
-            return line.replace(/^\d+\.\s*/, '').replace(/^-\s*/, '');
-          })
-          .filter(fact => fact.length > 10); // Minimum fact length
+      // 2. Parse extracted facts (one per line, numbered)
+      const facts = extractedText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => {
+          // Remove numbering (e.g., "1. " or "- ")
+          return line.replace(/^\d+\.\s*/, '').replace(/^-\s*/, '');
+        })
+        .filter(fact => fact.length > 10); // Minimum fact length
 
-        console.log(`[Memory Ingest] Extracted ${facts.length} facts`);
+      console.log(`[Memory Ingest] Extracted ${facts.length} facts`);
 
-        if (facts.length === 0) {
-          console.log(`[Memory Ingest] No significant facts extracted, skipping indexing`);
-          return {
-            success: true,
-            factsExtracted: 0,
-            memoryIds: [],
-          };
-        }
-
-        // 3. Index each fact as a separate memory
-        const memoryIds: string[] = [];
-        for (const fact of facts) {
-          try {
-            const memoryId = await indexMemory(userId, fact, {
-              source: 'auto_extracted',
-              threadId,
-              messageId,
-              extractedAt: Date.now(),
-            });
-            memoryIds.push(memoryId);
-            console.log(`[Memory Ingest] Indexed fact: "${fact.substring(0, 50)}..."`);
-          } catch (error) {
-            console.error(`[Memory Ingest] Failed to index fact: ${error}`);
-            // Continue with other facts
-          }
-        }
-
-        console.log(`[Memory Ingest] Successfully indexed ${memoryIds.length}/${facts.length} facts`);
-
+      if (facts.length === 0) {
+        console.log(`[Memory Ingest] No significant facts extracted, skipping indexing`);
         return {
           success: true,
-          factsExtracted: facts.length,
-          memoryIds,
-        };
-      } catch (error) {
-        console.error(`[Memory Ingest] Extraction failed:`, error);
-        return {
-          success: false,
           factsExtracted: 0,
           memoryIds: [],
-          error: error instanceof Error ? error.message : String(error),
         };
       }
+
+      // 3. Index each fact as a separate memory
+      const memoryIds: string[] = [];
+      for (const fact of facts) {
+        try {
+          const memoryId = await indexMemory(userId, fact, {
+            source: 'auto_extracted',
+            threadId,
+            messageId,
+            extractedAt: Date.now(),
+          });
+          memoryIds.push(memoryId);
+          console.log(`[Memory Ingest] Indexed fact: "${fact.substring(0, 50)}..."`);
+        } catch (error) {
+          console.error(`[Memory Ingest] Failed to index fact: ${error}`);
+          // Continue with other facts
+        }
+      }
+
+      console.log(`[Memory Ingest] Successfully indexed ${memoryIds.length}/${facts.length} facts`);
+
+      return {
+        success: true,
+        factsExtracted: facts.length,
+        memoryIds,
+      };
+    } catch (error) {
+      console.error(`[Memory Ingest] Extraction failed:`, error);
+      return {
+        success: false,
+        factsExtracted: 0,
+        memoryIds: [],
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
-  );
-};
+  }
+);
 
 /**
  * Helper: Run memory ingestion (for easier invocation)
@@ -168,8 +168,6 @@ export async function runMemoryIngestion(config: {
   userMessage: string;
   aiResponse: string;
   messageId: string;
-  apiKey: string;
 }): Promise<z.infer<typeof IngestOutputSchema>> {
-  const flow = ingestMemoryFlow(config.apiKey);
-  return await flow(config);
+  return await ingestMemoryFlow(config);
 }

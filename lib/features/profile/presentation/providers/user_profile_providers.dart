@@ -1,5 +1,4 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kairos/core/providers/core_providers.dart';
@@ -43,7 +42,7 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
 /// Current user profile stream provider (single source of truth)
 final currentUserProfileProvider = StreamProvider<UserProfileEntity?>((ref) {
   final repository = ref.watch(userProfileRepositoryProvider);
-  final userId = FirebaseAuth.instance.currentUser?.uid;
+  final userId = ref.watch(firebaseAuthProvider).currentUser?.uid;
 
   if (userId == null) {
     return Stream.value(null);

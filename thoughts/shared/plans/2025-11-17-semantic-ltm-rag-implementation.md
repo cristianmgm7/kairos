@@ -391,18 +391,18 @@ cd functions && npm install @genkit-ai/firebase
 #### Automated Verification:
 - [x] TypeScript compilation succeeds: `cd functions && npm run build`
 - [x] No import errors for `defineFirestoreRetriever`
-- [ ] `kairosEmbedder` can be called: `await kairosEmbedder.embed('test')`
-- [ ] `indexMemory()` successfully stores a test document
-- [ ] `retrieveMemories()` returns results (after vector index is created)
+- [x] `kairosEmbedder` can be called: `await kairosEmbedder.embed('test')`
+- [x] `indexMemory()` successfully stores a test document
+- [x] `retrieveMemories()` returns results (after vector index is created)
 
 #### Manual Verification:
-- [ ] Create vector index via gcloud CLI (or wait for auto-creation)
-- [ ] Verify index exists in Firebase Console → Firestore → Indexes
-- [ ] Index status shows "Enabled" (not "Building")
-- [ ] Test indexing: Call `indexMemory()` with sample data
-- [ ] Check Firestore: Document has `embedding` field with 768 numbers
-- [ ] Test retrieval: Call `retrieveMemories()` with a query
-- [ ] Verify: Returns semantically relevant documents (not just recent)
+- [x] Create vector index via gcloud CLI (or wait for auto-creation)
+- [x] Verify index exists in Firebase Console → Firestore → Indexes
+- [x] Index status shows "Enabled" (not "Building")
+- [x] Test indexing: Call `indexMemory()` with sample data
+- [x] Check Firestore: Document has `embedding` field with 768 numbers
+- [x] Test retrieval: Call `retrieveMemories()` with a query
+- [x] Verify: Returns semantically relevant documents (not just recent)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation that the vector index is active and retrieval works before proceeding to the next phase.
 
@@ -637,10 +637,10 @@ import { runKairosAgent } from '../agents/kairos.agent'; // Changed from runKair
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compilation succeeds: `cd functions && npm run build`
-- [ ] Flow definition succeeds (no runtime errors on import)
-- [ ] All tool references resolve correctly
-- [ ] No references to `getRecentInsights` remain in codebase
+- [x] TypeScript compilation succeeds: `cd functions && npm run build`
+- [x] Flow definition succeeds (no runtime errors on import)
+- [x] All tool references resolve correctly
+- [x] No references to `getRecentInsights` remain in codebase
 
 #### Manual Verification:
 - [ ] Send test message from app → Agent responds correctly
@@ -903,10 +903,10 @@ Update the flow after saving the AI response (after line 126):
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compilation succeeds: `cd functions && npm run build`
-- [ ] Ingestion flow definition succeeds
-- [ ] Can call `runMemoryIngestion()` directly in test
-- [ ] Test extraction: Mock conversation → parses facts correctly
+- [x] TypeScript compilation succeeds: `cd functions && npm run build`
+- [x] Ingestion flow definition succeeds
+- [x] Can call `runMemoryIngestion()` directly in test
+- [x] Test extraction: Mock conversation → parses facts correctly
 
 #### Manual Verification:
 - [ ] Send message: "My name is Alex and I'm building a journal app"
@@ -1056,10 +1056,10 @@ rm src/scripts/cleanup-old-memories.ts
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] TypeScript compilation succeeds: `cd functions && npm run build`
-- [ ] No import errors (all deleted files removed from imports)
-- [ ] Grep returns no results for `MemoryService` (except in plan docs)
-- [ ] Grep returns no results for `populate-memory-from-insights`
+- [x] TypeScript compilation succeeds: `cd functions && npm run build`
+- [x] No import errors (all deleted files removed from imports)
+- [x] Grep returns no results for `MemoryService` (except in plan docs)
+- [x] Grep returns no results for `populate-memory-from-insights`
 
 #### Manual Verification:
 - [ ] Verify deleted files no longer exist in `src/`
