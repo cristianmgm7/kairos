@@ -1,6 +1,8 @@
 {
   "projects": {
-    "develop": "kairos-develop"
+    "develop": "kairos-develop",
+    "staging": "kairos-staging-dbd31",
+    "production": "kairos-prod-19461"
   },
   "targets": {},
   "etags": {}
