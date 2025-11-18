@@ -55,19 +55,21 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'PLACEHOLDER_API_KEY',
-    appId: 'PLACEHOLDER_APP_ID',
-    messagingSenderId: 'PLACEHOLDER_SENDER_ID',
-    projectId: 'PLACEHOLDER_PROJECT_ID',
-    storageBucket: 'PLACEHOLDER_STORAGE_BUCKET',
+    apiKey: 'AIzaSyCeWPuaG9KPOaEg6wmo6YVEHAS07mKReQM',
+    appId: '1:1002168272777:android:feb0ba990474104de74358',
+    messagingSenderId: '1002168272777',
+    projectId: 'kairos-staging-dbd31',
+    storageBucket: 'kairos-staging-dbd31.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'PLACEHOLDER_API_KEY',
-    appId: 'PLACEHOLDER_APP_ID',
-    messagingSenderId: 'PLACEHOLDER_SENDER_ID',
-    projectId: 'PLACEHOLDER_PROJECT_ID',
-    storageBucket: 'PLACEHOLDER_STORAGE_BUCKET',
-    iosBundleId: 'com.blueprint.app.staging',
+    apiKey: 'AIzaSyB4BRQAq5nn5kCpk2bOXWl8B2bfAdSccUY',
+    appId: '1:1002168272777:ios:2f0c9bfe044951d0e74358',
+    messagingSenderId: '1002168272777',
+    projectId: 'kairos-staging-dbd31',
+    storageBucket: 'kairos-staging-dbd31.firebasestorage.app',
+    iosClientId: '1002168272777-3mj1sr9dnajdp5gl75ldbk50dudh5dk4.apps.googleusercontent.com',
+    iosBundleId: 'com.kairos-app.staging',
   );
+
 }

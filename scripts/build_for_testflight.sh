@@ -12,15 +12,47 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
-FLAVOR="staging"
-ENV_FILE=".env.staging"
-BUNDLE_ID="com.kairos-app.staging"
-TEAM_ID="46GH5N7V96"
-
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}   Kairos iOS TestFlight Build Script${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+echo ""
+
+# Ask user to select flavor
+echo -e "${YELLOW}Select build flavor:${NC}"
+echo "  1) Development (dev)"
+echo "  2) Staging"
+echo "  3) Production"
+read -p "Choose (1, 2, or 3): " -n 1 -r FLAVOR_CHOICE
+echo ""
+echo ""
+
+# Configure based on selection
+case $FLAVOR_CHOICE in
+    1)
+        FLAVOR="dev"
+        ENV_FILE=".env.dev"
+        BUNDLE_ID="com.kairos-app.dev"
+        echo -e "${GREEN}✓${NC} Selected: Development"
+        ;;
+    2)
+        FLAVOR="staging"
+        ENV_FILE=".env.staging"
+        BUNDLE_ID="com.kairos-app.staging"
+        echo -e "${GREEN}✓${NC} Selected: Staging"
+        ;;
+    3)
+        FLAVOR="production"
+        ENV_FILE=".env.prod"
+        BUNDLE_ID="com.kairos-app.prod"
+        echo -e "${GREEN}✓${NC} Selected: Production"
+        ;;
+    *)
+        echo -e "${RED}✗ Invalid selection${NC}"
+        exit 1
+        ;;
+esac
+
+TEAM_ID="46GH5N7V96"
 echo ""
 
 # Get project directory (script is in scripts/ subdirectory)
