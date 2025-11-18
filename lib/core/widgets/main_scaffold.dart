@@ -49,9 +49,9 @@ class _MainBottomNavigationBar extends StatelessWidget {
           selectedIcon: const Icon(Icons.book),
           label: l10n.journal,
         ),
-        NavigationDestination(
-          icon: const Icon(Icons.insights_outlined),
-          selectedIcon: const Icon(Icons.insights),
+        const NavigationDestination(
+          icon: Icon(Icons.insights_outlined),
+          selectedIcon: Icon(Icons.insights),
           label: 'Insights',
         ),
         NavigationDestination(

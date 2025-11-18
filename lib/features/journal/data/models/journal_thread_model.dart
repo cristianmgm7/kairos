@@ -1,5 +1,4 @@
 import 'package:isar/isar.dart';
-import 'package:kairos/features/insights/domain/entities/insight_entity.dart';
 import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:uuid/uuid.dart';
