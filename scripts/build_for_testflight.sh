@@ -41,7 +41,7 @@ case $FLAVOR_CHOICE in
         echo -e "${GREEN}✓${NC} Selected: Staging"
         ;;
     3)
-        FLAVOR="production"
+        FLAVOR="prod"
         ENV_FILE=".env.prod"
         BUNDLE_ID="com.kairos-app.prod"
         echo -e "${GREEN}✓${NC} Selected: Production"
