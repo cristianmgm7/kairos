@@ -7,8 +7,11 @@ String? authRedirectLogic({
   required bool hasProfile,
   required String currentLocation,
 }) {
+  if (!isAuthenticated && currentLocation == AppRoutes.splash) return AppRoutes.login;
+
   // Public routes (no auth required)
   final publicRoutes = [
+    AppRoutes.splash,
     AppRoutes.login,
     AppRoutes.register,
   ];

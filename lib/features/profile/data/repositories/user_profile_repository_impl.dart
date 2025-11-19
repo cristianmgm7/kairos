@@ -56,24 +56,8 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   @override
   Future<Result<UserProfileEntity?>> getProfileByUserId(String userId) async {
     try {
-      // 1. Try to fetch from remote if online
-      if (await _isOnline) {
-        try {
-          final remoteProfile = await remoteDataSource.getProfileByUserId(userId);
-          if (remoteProfile != null) {
-            // Save to local cache
-            await localDataSource.saveProfile(remoteProfile);
-            return Success(remoteProfile.toEntity());
-          }
-        } catch (remoteError) {
-          logger.i(
-            'Failed to fetch from remote, falling back to local: $remoteError',
-          );
-        }
-      }
-
-      // 2. Fallback to local
       final localProfile = await localDataSource.getProfileByUserId(userId);
+
       return Success(localProfile?.toEntity());
     } catch (e) {
       return Error(UnknownFailure(message: 'Failed to get profile: $e'));
