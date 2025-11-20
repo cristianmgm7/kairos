@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ignore: unused_import
+import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 
 import 'package:kairos/core/config/firebase_config.dart';
 import 'package:kairos/core/providers/core_providers.dart';

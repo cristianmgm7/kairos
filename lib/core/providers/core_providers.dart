@@ -33,7 +33,20 @@ final loggerProvider = Provider<Logger>((ref) {
   );
 });
 
-final logger = ProviderContainer().read(loggerProvider);
+/// Global logger instance - initialized lazily after FlavorConfig
+Logger? _logger;
+Logger get logger {
+  _logger ??= Logger(
+      printer: PrettyPrinter(
+        methodCount: 0,
+        errorMethodCount: 5,
+        lineLength: 50,
+        colors: false,
+      ),
+      level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
+    );
+  return _logger!;
+}
 
 /// Connectivity provider - network connectivity monitoring
 final connectivityProvider = Provider<Connectivity>((ref) {
