@@ -32,6 +32,10 @@
   "interests": "Intereses",
   "editProfile": "Editar perfil",
   "editProfileComingSoon": "Editar perfil - Próximamente",
-  "notSet": "No establecido"
+  "notSet": "No establecido",
+
+  "deleteThreadTitle": "Eliminar hilo",
+  "deleteThreadContent": "¿Estás seguro de que quieres eliminar este hilo? Esto también eliminará todos los mensajes y archivos multimedia. Esta acción no se puede deshacer.",
+  "delete": "Eliminar"
 }
 

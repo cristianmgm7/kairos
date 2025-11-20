@@ -85,4 +85,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notSet => 'Not set';
+
+  @override
+  String get deleteThreadTitle => 'Delete Thread';
+
+  @override
+  String get deleteThreadContent =>
+      'Are you sure you want to delete this thread? This will also delete all messages and media files. This action cannot be undone.';
+
+  @override
+  String get delete => 'Delete';
 }
