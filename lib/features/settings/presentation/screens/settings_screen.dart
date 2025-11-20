@@ -8,7 +8,10 @@ import 'package:kairos/features/auth/presentation/providers/auth_controller.dart
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
+import 'package:kairos/features/settings/presentation/components/settings_section.dart';
 import 'package:kairos/features/settings/presentation/providers/settings_providers.dart';
+import 'package:kairos/features/settings/presentation/widgets/settings_element.dart';
+import 'package:kairos/features/user_profile/presentation/widgets/user_profile_card.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
 /// Settings screen - allows user to change language and theme.
@@ -103,58 +106,13 @@ class SettingsScreen extends ConsumerWidget {
                           final email = user?.email ?? '';
                           final avatarUrl = profile?.avatarUrl ?? user?.photoUrl;
 
-                          return InkWell(
+                          return UserProfileCard(
+                            name: name,
+                            email: email,
+                            avatarUrl: avatarUrl,
                             onTap: () {
                               // Navigate to profile edit screen (if exists)
                             },
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage: avatarUrl != null
-                                      ? NetworkImage(avatarUrl)
-                                      : null,
-                                  child: avatarUrl == null
-                                      ? const Icon(Icons.person, size: 40)
-                                      : null,
-                                ),
-                                const SizedBox(width: AppSpacing.lg),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      if (email.isNotEmpty)
-                                        Text(
-                                          email,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.color,
-                                              ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.5),
-                                ),
-                              ],
-                            ),
                           );
                         },
                         loading: () => const SizedBox(
@@ -174,10 +132,10 @@ class SettingsScreen extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.xl),
 
                           // App Settings Section
-                          _SettingsSection(
+                          SettingsSection(
                             title: 'App Settings',
                             children: [
-                              _SettingsTile(
+                              SettingsElement(
                                 icon: Icons.contrast,
                                 title: l10n.theme,
                                 subtitle: _getThemeDisplayName(settings.themeMode, l10n),
@@ -185,7 +143,7 @@ class SettingsScreen extends ConsumerWidget {
                                   context.push(AppRoutes.themeSettings);
                                 },
                               ),
-                              _SettingsTile(
+                              SettingsElement(
                                 icon: Icons.language,
                                 title: l10n.language,
                                 subtitle: settings.language.getName(
@@ -201,10 +159,10 @@ class SettingsScreen extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.xl),
 
                           // Data & Privacy Section
-                          _SettingsSection(
+                          SettingsSection(
                             title: 'Data & Privacy',
                             children: [
-                              _SettingsTile(
+                              SettingsElement(
                                 icon: Icons.privacy_tip,
                                 title: 'Manage Your Data',
                                 onTap: () {
@@ -217,10 +175,10 @@ class SettingsScreen extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.xl),
 
                           // Notifications Section
-                          _SettingsSection(
+                          SettingsSection(
                             title: 'Notifications',
                             children: [
-                              _SettingsTile(
+                              SettingsElement(
                                 icon: Icons.notifications,
                                 title: 'Push Notifications',
                                 onTap: () {
@@ -257,144 +215,5 @@ class SettingsScreen extends ConsumerWidget {
       case AppThemeMode.system:
         return l10n.themeSystem;
     }
-  }
-}
-
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: AppSpacing.sm,
-          ),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-              width: 0.5,
-            ),
-          ),
-          child: Column(
-            children: _buildChildrenWithDividers(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildChildrenWithDividers() {
-    if (children.isEmpty) return [];
-    if (children.length == 1) return children;
-
-    final result = <Widget>[];
-    for (int i = 0; i < children.length; i++) {
-      result.add(children[i]);
-      if (i < children.length - 1) {
-        result.add(
-          Divider(
-            height: 1,
-            thickness: 0.5,
-            indent: 56, // Icon width + padding
-          ),
-        );
-      }
-    }
-    return result;
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.color
-                                ?.withOpacity(0.7),
-                          ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
