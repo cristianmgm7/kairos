@@ -11,7 +11,8 @@ import 'package:kairos/features/journal/domain/entities/journal_message_entity.d
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
-import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
+import 'package:kairos/core/sync/sync_controller.dart';
+import 'package:kairos/core/sync/sync_coordinator.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/ai_typing_indicator.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_bubble.dart';
@@ -34,10 +35,6 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? _currentThreadId;
-
-  // For debounced auto-sync on connectivity changes
-  Timer? _connectivitySyncTimer;
-  bool _wasOffline = false;
 
   @override
   void initState() {
@@ -102,7 +99,6 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _connectivitySyncTimer?.cancel();
     super.dispose();
   }
 
@@ -122,28 +118,16 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for connectivity changes (auto-sync on reconnect)
+    // Listen for auto-sync trigger
     ref
-      ..listen<AsyncValue<bool>>(
-        connectivityStreamProvider,
+      ..listen<AsyncValue<void>>(
+        syncTriggerProvider,
         (previous, next) {
-          next.whenData((isOnline) {
-            // Detect transition from offline to online
-            if (_wasOffline && isOnline && _currentThreadId != null) {
-              logger.i('🌐 Device reconnected - scheduling incremental sync');
-
-              // Cancel any pending sync timer
-              _connectivitySyncTimer?.cancel();
-
-              // Debounce sync by 2 seconds after reconnection
-              _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
-                logger.i('🔄 Triggering auto-sync for thread: $_currentThreadId');
-                ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
-              });
+          next.whenData((_) {
+            if (_currentThreadId != null) {
+              logger.i('🔄 Auto-sync triggered (Coordinator) - syncing thread: $_currentThreadId');
+              ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!);
             }
-
-            // Update offline tracking state
-            _wasOffline = !isOnline;
           });
         },
       )

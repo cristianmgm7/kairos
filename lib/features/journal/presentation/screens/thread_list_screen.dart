@@ -11,7 +11,8 @@ import 'package:kairos/core/widgets/empty_state.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/presentation/components/thread_item.dart';
-import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
+import 'package:kairos/core/sync/sync_controller.dart';
+import 'package:kairos/core/sync/sync_coordinator.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/l10n/app_localizations.dart';
@@ -26,10 +27,6 @@ class ThreadListScreen extends ConsumerStatefulWidget {
 }
 
 class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
-  // For debounced auto-sync on connectivity changes
-  Timer? _connectivitySyncTimer;
-  bool _wasOffline = false;
-
   @override
   void initState() {
     super.initState();
@@ -41,12 +38,6 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
         () => ref.read(syncControllerProvider.notifier).syncThreads(currentUser.id),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _connectivitySyncTimer?.cancel();
-    super.dispose();
   }
 
   Future<void> _handleRefresh() async {
@@ -86,29 +77,16 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
         ? ref.watch(threadsStreamProvider(currentUser.id))
         : const AsyncValue<List<JournalThreadEntity>>.data([]);
 
-    // Listen for connectivity changes (auto-sync on reconnect)
-    ref.listen<AsyncValue<bool>>(
-      connectivityStreamProvider,
+    // Listen for auto-sync trigger
+    ref.listen<AsyncValue<void>>(
+      syncTriggerProvider,
       (previous, next) {
-        next.whenData((isOnline) {
+        next.whenData((_) {
           final user = ref.read(currentUserProvider);
-
-          // Detect transition from offline to online
-          if (_wasOffline && isOnline && user != null) {
-            logger.i('🌐 Device reconnected - scheduling thread list sync');
-
-            // Cancel any pending sync timer
-            _connectivitySyncTimer?.cancel();
-
-            // Debounce sync by 2 seconds after reconnection
-            _connectivitySyncTimer = Timer(const Duration(seconds: 2), () {
-              logger.i('🔄 Triggering auto-sync for thread list');
-              ref.read(syncControllerProvider.notifier).syncThreads(user.id);
-            });
+          if (user != null) {
+            logger.i('🔄 Auto-sync triggered (Coordinator) - syncing threads');
+            ref.read(syncControllerProvider.notifier).syncThreads(user.id);
           }
-
-          // Update offline tracking state
-          _wasOffline = !isOnline;
         });
       },
     );
