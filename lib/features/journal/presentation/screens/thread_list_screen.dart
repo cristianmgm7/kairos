@@ -5,13 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
+import 'package:kairos/core/widgets/app_dialog.dart';
+import 'package:kairos/core/widgets/app_error_view.dart';
 import 'package:kairos/core/widgets/empty_state.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
-import 'package:kairos/features/journal/presentation/widgets/thread_list_tile.dart';
+import 'package:kairos/features/journal/presentation/components/thread_item.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
 /// Thread List Screen - Shows all journal conversation threads
@@ -183,7 +185,11 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
                       separatorBuilder: (context, index) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final thread = threads[index];
-                        return _buildThreadItem(context, ref, thread);
+                        return ThreadItem(
+                          thread: thread,
+                          onTap: () => _openThread(context, thread.id),
+                          onShowDeleteConfirmation: _showDeleteConfirmationDialog,
+                        );
                       },
                     ),
                   );
@@ -191,31 +197,15 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
                 loading: () => const Center(
                   child: CircularProgressIndicator(),
                 ),
-                error: (Object error, StackTrace stack) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.pagePadding),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          'Error loading threads',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          error.toString(),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                error: (Object error, StackTrace stack) => AppErrorView.fromError(
+                  error: error,
+                  title: 'Error loading threads',
+                  onRetry: () {
+                    final currentUser = ref.read(currentUserProvider);
+                    if (currentUser != null) {
+                      ref.read(syncControllerProvider.notifier).syncThreads(currentUser.id);
+                    }
+                  },
                 ),
               ),
               Positioned(
@@ -233,51 +223,15 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
     );
   }
 
-  Widget _buildThreadItem(BuildContext context, WidgetRef ref, JournalThreadEntity thread) {
-    return Dismissible(
-      key: Key(thread.id),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return _showDeleteConfirmationDialog(context);
-      },
-      onDismissed: (direction) {
-        ref.read(threadControllerProvider.notifier).deleteThread(thread.id);
-      },
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      child: ThreadListTile(
-        thread: thread,
-        onTap: () => _openThread(context, thread.id),
-      ),
-    );
-  }
-
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
-    return await showDialog<bool>(
+    return await showAppConfirmationDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete Thread'),
-            content: const Text(
-              'Are you sure you want to delete this thread? '
+          title: 'Delete Thread',
+          content: 'Are you sure you want to delete this thread? '
               'This will also delete all messages and media files. '
               'This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
+          confirmText: 'Delete',
+          isDestructive: true,
         ) ??
         false;
   }
