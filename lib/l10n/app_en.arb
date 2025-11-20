@@ -129,6 +129,21 @@
   "notSet": "Not set",
   "@notSet": {
     "description": "Placeholder when a field is not set"
+  },
+
+  "deleteThreadTitle": "Delete Thread",
+  "@deleteThreadTitle": {
+    "description": "Title for delete thread confirmation dialog"
+  },
+
+  "deleteThreadContent": "Are you sure you want to delete this thread? This will also delete all messages and media files. This action cannot be undone.",
+  "@deleteThreadContent": {
+    "description": "Content message for delete thread confirmation dialog"
+  },
+
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete button label"
   }
 }
 

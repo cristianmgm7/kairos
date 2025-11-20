@@ -10,10 +10,10 @@ import 'package:kairos/core/widgets/app_error_view.dart';
 import 'package:kairos/core/widgets/empty_state.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
+import 'package:kairos/features/journal/presentation/components/thread_item.dart';
 import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
-import 'package:kairos/features/journal/presentation/components/thread_item.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
 /// Thread List Screen - Shows all journal conversation threads
@@ -182,7 +182,9 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
                         bottom: 80, // Space for FAB
                       ),
                       itemCount: threads.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      separatorBuilder: (context, index) {
+                        return const Divider(height: 1);
+                      },
                       itemBuilder: (context, index) {
                         final thread = threads[index];
                         return ThreadItem(
@@ -224,13 +226,12 @@ class _ThreadListScreenState extends ConsumerState<ThreadListScreen> {
   }
 
   Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     return await showAppConfirmationDialog(
           context: context,
-          title: 'Delete Thread',
-          content: 'Are you sure you want to delete this thread? '
-              'This will also delete all messages and media files. '
-              'This action cannot be undone.',
-          confirmText: 'Delete',
+          title: l10n.deleteThreadTitle,
+          content: l10n.deleteThreadContent,
+          confirmText: l10n.delete,
           isDestructive: true,
         ) ??
         false;

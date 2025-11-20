@@ -85,4 +85,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notSet => 'No establecido';
+
+  @override
+  String get deleteThreadTitle => 'Eliminar hilo';
+
+  @override
+  String get deleteThreadContent =>
+      '¿Estás seguro de que quieres eliminar este hilo? Esto también eliminará todos los mensajes y archivos multimedia. Esta acción no se puede deshacer.';
+
+  @override
+  String get delete => 'Eliminar';
 }

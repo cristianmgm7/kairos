@@ -248,6 +248,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not set'**
   String get notSet;
+
+  /// Title for delete thread confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Thread'**
+  String get deleteThreadTitle;
+
+  /// Content message for delete thread confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this thread? This will also delete all messages and media files. This action cannot be undone.'**
+  String get deleteThreadContent;
+
+  /// Delete button label
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
