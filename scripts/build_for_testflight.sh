@@ -32,18 +32,21 @@ case $FLAVOR_CHOICE in
         FLAVOR="dev"
         ENV_FILE=".env.dev"
         BUNDLE_ID="com.kairos-app.dev"
+        DART_ENTRYPOINT="lib/main_dev.dart"
         echo -e "${GREEN}✓${NC} Selected: Development"
         ;;
     2)
         FLAVOR="staging"
         ENV_FILE=".env.staging"
         BUNDLE_ID="com.kairos-app.staging"
+        DART_ENTRYPOINT="lib/main_staging.dart"
         echo -e "${GREEN}✓${NC} Selected: Staging"
         ;;
     3)
         FLAVOR="prod"
         ENV_FILE=".env.prod"
         BUNDLE_ID="com.kairos-app.prod"
+        DART_ENTRYPOINT="lib/main_prod.dart"
         echo -e "${GREEN}✓${NC} Selected: Production"
         ;;
     *)
@@ -150,6 +153,7 @@ if [[ $BUILD_METHOD == "1" ]]; then
     flutter build ipa \
         --release \
         --flavor="$FLAVOR" \
+        -t "$DART_ENTRYPOINT" \
         --dart-define-from-file="$ENV_FILE"
     
     if [ $? -eq 0 ]; then
@@ -199,6 +203,7 @@ elif [[ $BUILD_METHOD == "2" ]]; then
     flutter build ios \
         --release \
         --flavor="$FLAVOR" \
+        -t "$DART_ENTRYPOINT" \
         --dart-define-from-file="$ENV_FILE"
     
     if [ $? -eq 0 ]; then
