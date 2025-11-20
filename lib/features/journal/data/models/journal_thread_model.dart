@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:uuid/uuid.dart';
@@ -55,6 +56,16 @@ class JournalThreadModel {
   }
 
   factory JournalThreadModel.fromMap(Map<String, dynamic> map) {
+    // Helper to safely convert dynamic value to String?
+    // Handles cases where Firestore might store int values that should be strings
+    String? toStringOrNull(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      if (value is int) return value.toString();
+      if (value is num) return value.toString();
+      return value.toString();
+    }
+
     return JournalThreadModel(
       id: map['id'] as String,
       userId: map['userId'] as String,
@@ -67,9 +78,9 @@ class JournalThreadModel {
       isDeleted: map['isDeleted'] as bool? ?? false,
       deletedAtMillis: map['deletedAtMillis'] as int?,
       version: map['version'] as int? ?? 1,
-      latestInsightId: map['latestInsightId'] as String?,
-      latestInsightSummary: map['latestInsightSummary'] as String?,
-      latestInsightMood: map['latestInsightMood'] as String?,
+      latestInsightId: toStringOrNull(map['latestInsightId']),
+      latestInsightSummary: toStringOrNull(map['latestInsightSummary']),
+      latestInsightMood: toStringOrNull(map['latestInsightMood']),
     );
   }
 
@@ -114,6 +125,21 @@ class JournalThreadModel {
   }
 
   JournalThreadEntity toEntity() {
+    // Safely convert latestInsightMood string to EmotionType enum
+    EmotionType? mood;
+    if (latestInsightMood != null) {
+      try {
+        mood = EmotionType.values.firstWhere(
+          (e) => e.name == latestInsightMood,
+          orElse: () => EmotionType.values.first, // Fallback to first enum value
+        );
+      } catch (e) {
+        // If conversion fails, log and set to null
+        logger.w('Failed to convert latestInsightMood "$latestInsightMood" to EmotionType: $e');
+        mood = null;
+      }
+    }
+
     return JournalThreadEntity(
       id: id,
       userId: userId,
@@ -127,9 +153,7 @@ class JournalThreadModel {
       isArchived: isArchived,
       latestInsightId: latestInsightId,
       latestInsightSummary: latestInsightSummary,
-      latestInsightMood: latestInsightMood != null
-          ? EmotionType.values.firstWhere((e) => e.name == latestInsightMood)
-          : null,
+      latestInsightMood: mood,
     );
   }
 

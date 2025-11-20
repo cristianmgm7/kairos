@@ -54,9 +54,28 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
 
   @override
   Stream<List<JournalThreadEntity>> watchThreadsByUserId(String userId) {
-    return localDataSource
-        .watchThreadsByUserId(userId)
-        .map((models) => models.map((m) => m.toEntity()).toList());
+    return localDataSource.watchThreadsByUserId(userId).map((models) {
+      final entities = <JournalThreadEntity>[];
+      for (final model in models) {
+        try {
+          entities.add(model.toEntity());
+        } catch (e, stackTrace) {
+          // Log error but continue processing other threads
+          logger.e(
+            'Failed to convert thread model ${model.id} to entity: $e',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+      return entities;
+    }).handleError((Object error, StackTrace stackTrace) {
+      logger.e(
+        'Error in watchThreadsByUserId stream: $error',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    });
   }
 
   @override
