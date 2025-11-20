@@ -42,6 +42,13 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       config.build_settings['SWIFT_VERSION'] ||= '5.0'
+      
+      # Fix for Isar symbol stripping in release builds with static linkage
+      if target.name == 'isar_flutter_libs'
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-force_load'
+        config.build_settings['OTHER_LDFLAGS'] << '$(PODS_CONFIGURATION_BUILD_DIR)/isar_flutter_libs/isar_flutter_libs.framework/isar_flutter_libs'
+      end
     end
   end
 end

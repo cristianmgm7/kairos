@@ -6,7 +6,7 @@ import 'package:kairos/features/settings/presentation/providers/settings_provide
 import 'package:kairos/l10n/app_localizations.dart';
 
 class ThemeSelector extends ConsumerWidget {
-  const ThemeSelector({super.key, required this.currentThemeMode});
+  const ThemeSelector({required this.currentThemeMode, super.key});
 
   final AppThemeMode currentThemeMode;
 
@@ -43,8 +43,3 @@ class ThemeSelector extends ConsumerWidget {
     );
   }
 }
-
-
-
-
-
