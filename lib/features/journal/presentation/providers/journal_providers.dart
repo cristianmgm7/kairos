@@ -21,7 +21,7 @@ import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_u
 import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/sync_threads_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
-import 'package:kairos/features/journal/presentation/controllers/sync_controller.dart';
+import 'package:kairos/core/sync/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
 // Data sources
