@@ -15,7 +15,11 @@ import 'package:kairos/features/insights/presentation/screens/insights_screen.da
 import 'package:kairos/features/journal/presentation/screens/thread_detail_screen.dart';
 import 'package:kairos/features/journal/presentation/screens/thread_list_screen.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
+import 'package:kairos/features/settings/presentation/screens/language_settings_screen.dart';
+import 'package:kairos/features/settings/presentation/screens/manage_data_screen.dart';
+import 'package:kairos/features/settings/presentation/screens/push_notifications_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
+import 'package:kairos/features/settings/presentation/screens/theme_settings_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -75,6 +79,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/journal/thread',
         builder: (context, state) => const ThreadDetailScreen(),
+      ),
+
+      // Settings sub-routes (authenticated but outside shell)
+      GoRoute(
+        path: AppRoutes.themeSettings,
+        builder: (context, state) => const ThemeSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.languageSettings,
+        builder: (context, state) => const LanguageSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.manageData,
+        builder: (context, state) => const ManageDataScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pushNotifications,
+        builder: (context, state) => const PushNotificationsScreen(),
       ),
 
       // Shell route (persistent bottom navigation for all main app routes)

@@ -16,6 +16,12 @@ class AppRoutes {
   static const String insights = '/insights';
   static const String settings = '/settings';
 
+  // Settings sub-routes
+  static const String themeSettings = '/settings/theme';
+  static const String languageSettings = '/settings/language';
+  static const String manageData = '/settings/manage-data';
+  static const String pushNotifications = '/settings/push-notifications';
+
   // Error
   static const String error = '/error';
 }
