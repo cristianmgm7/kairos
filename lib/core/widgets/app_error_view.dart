@@ -11,6 +11,15 @@ class AppErrorView extends StatelessWidget {
     super.key,
   });
 
+  /// Convenience constructor that accepts an error object directly
+  AppErrorView.fromError({
+    required Object error,
+    this.title,
+    this.onRetry,
+    this.icon = Icons.error_outline,
+    super.key,
+  }) : message = error.toString();
+
   final String message;
   final String? title;
   final VoidCallback? onRetry;
