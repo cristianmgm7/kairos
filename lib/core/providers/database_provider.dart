@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
+// ignore: unused_import
+import 'package:isar_flutter_libs/isar_flutter_libs.dart';
 import 'package:kairos/features/insights/data/models/insight_model.dart';
 import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';

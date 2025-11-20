@@ -28,7 +28,8 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks! :linkage => :static
+  # Use dynamic frameworks - required for isar_flutter_libs
+  use_frameworks! :linkage => :dynamic
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -43,11 +44,11 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       config.build_settings['SWIFT_VERSION'] ||= '5.0'
       
-      # Fix for Isar symbol stripping in release builds with static linkage
+      # Ensure isar_flutter_libs symbols are not stripped
       if target.name == 'isar_flutter_libs'
-        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
-        config.build_settings['OTHER_LDFLAGS'] << '-force_load'
-        config.build_settings['OTHER_LDFLAGS'] << '$(PODS_CONFIGURATION_BUILD_DIR)/isar_flutter_libs/isar_flutter_libs.framework/isar_flutter_libs'
+        config.build_settings['STRIP_STYLE'] = 'non-global'
+        config.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
+        config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'
       end
     end
   end
