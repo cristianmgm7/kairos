@@ -266,6 +266,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get delete;
+
+  /// Back button tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// Header title for profile and settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Profile and Settings'**
+  String get profileAndSettings;
+
+  /// Tooltip for more options button
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
+  /// Fallback name when user name is not available
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get user;
+
+  /// Title for app settings section
+  ///
+  /// In en, this message translates to:
+  /// **'App Settings'**
+  String get appSettings;
+
+  /// Title for data and privacy settings section
+  ///
+  /// In en, this message translates to:
+  /// **'Data & Privacy'**
+  String get dataAndPrivacy;
+
+  /// Label for manage your data settings option
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Your Data'**
+  String get manageYourData;
+
+  /// Label for push notifications settings option
+  ///
+  /// In en, this message translates to:
+  /// **'Push Notifications'**
+  String get pushNotifications;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

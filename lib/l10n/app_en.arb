@@ -144,6 +144,46 @@
   "delete": "Delete",
   "@delete": {
     "description": "Delete button label"
+  },
+
+  "back": "Back",
+  "@back": {
+    "description": "Back button tooltip"
+  },
+
+  "profileAndSettings": "Profile and Settings",
+  "@profileAndSettings": {
+    "description": "Header title for profile and settings screen"
+  },
+
+  "moreOptions": "More options",
+  "@moreOptions": {
+    "description": "Tooltip for more options button"
+  },
+
+  "user": "User",
+  "@user": {
+    "description": "Fallback name when user name is not available"
+  },
+
+  "appSettings": "App Settings",
+  "@appSettings": {
+    "description": "Title for app settings section"
+  },
+
+  "dataAndPrivacy": "Data & Privacy",
+  "@dataAndPrivacy": {
+    "description": "Title for data and privacy settings section"
+  },
+
+  "manageYourData": "Manage Your Data",
+  "@manageYourData": {
+    "description": "Label for manage your data settings option"
+  },
+
+  "pushNotifications": "Push Notifications",
+  "@pushNotifications": {
+    "description": "Label for push notifications settings option"
   }
 }
 

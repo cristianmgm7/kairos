@@ -47,11 +47,11 @@ class SettingsScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.go(AppRoutes.home),
-                  tooltip: 'Back',
+                  tooltip: l10n.back,
                 ),
                 Expanded(
                   child: Text(
-                    'Profile and Settings',
+                    l10n.profileAndSettings,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -74,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  tooltip: 'More options',
+                  tooltip: l10n.moreOptions,
                 ),
               ],
             ),
@@ -102,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
                       child: profileAsync.when(
                         data: (profile) {
                           final user = userAsync.valueOrNull;
-                          final name = profile?.name ?? user?.displayName ?? 'User';
+                          final name = profile?.name ?? user?.displayName ?? l10n.user;
                           final email = user?.email ?? '';
                           final avatarUrl = profile?.avatarUrl ?? user?.photoUrl;
 
@@ -133,7 +133,7 @@ class SettingsScreen extends ConsumerWidget {
 
                           // App Settings Section
                           SettingsSection(
-                            title: 'App Settings',
+                            title: l10n.appSettings,
                             children: [
                               SettingsElement(
                                 icon: Icons.contrast,
@@ -160,11 +160,11 @@ class SettingsScreen extends ConsumerWidget {
 
                           // Data & Privacy Section
                           SettingsSection(
-                            title: 'Data & Privacy',
+                            title: l10n.dataAndPrivacy,
                             children: [
                               SettingsElement(
                                 icon: Icons.privacy_tip,
-                                title: 'Manage Your Data',
+                                title: l10n.manageYourData,
                                 onTap: () {
                                   context.push(AppRoutes.manageData);
                                 },
@@ -176,11 +176,11 @@ class SettingsScreen extends ConsumerWidget {
 
                           // Notifications Section
                           SettingsSection(
-                            title: 'Notifications',
+                            title: l10n.notifications,
                             children: [
                               SettingsElement(
                                 icon: Icons.notifications,
-                                title: 'Push Notifications',
+                                title: l10n.pushNotifications,
                                 onTap: () {
                                   context.push(AppRoutes.pushNotifications);
                                 },

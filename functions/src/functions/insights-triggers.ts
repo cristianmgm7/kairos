@@ -19,7 +19,7 @@ export const generateInsight = onDocumentCreated(
     memory: '512MiB',
     timeoutSeconds: 60,
   },
-  async event => {
+  async function (event) {
     const messageData = event.data?.data();
     if (!messageData) return;
 

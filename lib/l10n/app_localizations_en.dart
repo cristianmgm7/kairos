@@ -95,4 +95,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete => 'Delete';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get profileAndSettings => 'Profile and Settings';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
+  String get user => 'User';
+
+  @override
+  String get appSettings => 'App Settings';
+
+  @override
+  String get dataAndPrivacy => 'Data & Privacy';
+
+  @override
+  String get manageYourData => 'Manage Your Data';
+
+  @override
+  String get pushNotifications => 'Push Notifications';
 }

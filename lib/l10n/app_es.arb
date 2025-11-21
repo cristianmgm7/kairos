@@ -36,6 +36,15 @@
 
   "deleteThreadTitle": "Eliminar hilo",
   "deleteThreadContent": "¿Estás seguro de que quieres eliminar este hilo? Esto también eliminará todos los mensajes y archivos multimedia. Esta acción no se puede deshacer.",
-  "delete": "Eliminar"
+  "delete": "Eliminar",
+
+  "back": "Atrás",
+  "profileAndSettings": "Perfil y Ajustes",
+  "moreOptions": "Más opciones",
+  "user": "Usuario",
+  "appSettings": "Ajustes de la aplicación",
+  "dataAndPrivacy": "Datos y Privacidad",
+  "manageYourData": "Gestionar tus datos",
+  "pushNotifications": "Notificaciones push"
 }
 
