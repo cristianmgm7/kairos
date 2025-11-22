@@ -841,11 +841,11 @@ Add index for category queries (after existing indexes):
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Type checking passes: `cd functions && npm run typecheck`
-- [ ] Linting passes: `cd functions && npm run lint`
-- [ ] Build succeeds: `cd functions && npm run build`
-- [ ] Deploy functions: `npm run deploy:functions` (or your deploy command)
-- [ ] Firestore indexes created: Check Firebase Console
+- [x] Type checking passes: `cd functions && npm run typecheck`
+- [x] Linting passes: `cd functions && npm run lint`
+- [x] Build succeeds: `cd functions && npm run build`
+- [x] Deploy functions: `npm run deploy:functions` (or your deploy command)
+- [x] Firestore indexes created: Check Firebase Console
 
 #### Manual Verification:
 - [ ] Create memories with categories (from Phase 1)
@@ -977,18 +977,18 @@ Remove any test cases related to old insights system.
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] No import errors: `cd functions && npm run typecheck`
-- [ ] No linting errors: `cd functions && npm run lint`
-- [ ] Build succeeds: `cd functions && npm run build`
-- [ ] No references to old files: `cd functions && grep -r "insight-generator" src/`
-- [ ] No references to old files: `cd functions && grep -r "InsightType" src/`
-- [ ] No references to old files: `cd functions && grep -r "generateInsight" src/`
+- [x] No import errors: `cd functions && npm run typecheck`
+- [x] No linting errors: `cd functions && npm run lint`
+- [x] Build succeeds: `cd functions && npm run build`
+- [x] No references to old files: `cd functions && grep -r "insight-generator" src/`
+- [x] No references to old files: `cd functions && grep -r "InsightType" src/`
+- [x] No references to old files: `cd functions && grep -r "generateInsight" src/`
 
 #### Manual Verification:
-- [ ] Deploy functions successfully: `npm run deploy:functions`
-- [ ] Verify old functions are removed from Firebase Console (Functions section)
-- [ ] Check that `generateInsight`, `generatePeriodInsight`, `generateDailyInsights` are gone
-- [ ] Verify new function exists: `generateCategoryInsight` (only one function needed)
+- [x] Deploy functions successfully: `npm run deploy:functions`
+- [x] Verify old functions are removed from Firebase Console (Functions section)
+- [x] Check that `generateInsight`, `generatePeriodInsight`, `generateDailyInsights` are gone
+- [x] Verify new function exists: `generateCategoryInsight` (only one function needed)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
 
@@ -1063,9 +1063,9 @@ flutter pub get
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] No import errors: `flutter analyze`
-- [ ] No linting errors: Verify no errors in IDE
-- [ ] Build succeeds: `flutter build ios --release --no-codesign` (or Android)
+- [x] No import errors: `flutter analyze`
+- [x] No linting errors: Verify no errors in IDE
+- [x] Build succeeds: `flutter build ios --release --no-codesign` (or Android)
 
 #### Manual Verification:
 - [ ] App launches without errors

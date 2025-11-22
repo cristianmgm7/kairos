@@ -55,13 +55,6 @@ export enum UploadStatus {
   FAILED = 3,
 }
 
-// Insight Type
-export enum InsightType {
-  THREAD = 0,
-  GLOBAL = 1,
-  DAILY_GLOBAL = 2,
-}
-
 // Emotion enum
 export enum Emotion {
   JOY = 0,
@@ -79,16 +72,6 @@ export const AI_CONFIG = {
   temperature: 0.7,
   maxOutputTokens: 500,
   conversationHistoryLimit: 20,
-};
-
-// Insights Config
-export const INSIGHTS_CONFIG = {
-  threeDaysMs: 3 * 24 * 60 * 60 * 1000,
-  oneDayMs: 24 * 60 * 60 * 1000,
-  oneHourMs: 60 * 60 * 1000,
-  analysisTemperature: 0.3,
-  maxAnalysisTokens: 500,
-  conversationHistoryLimit: 10,
 };
 
 // Insight Categories
