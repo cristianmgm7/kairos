@@ -47,6 +47,22 @@ service cloud.firestore {
         && request.resource.data.id == userId;
       allow update: if isOwner(userId);
       allow delete: if false; // Prevent accidental deletion
+      
+      // Category insights subcollection - users can access their own insights
+      match /kairos_insights/{insightId} {
+        // Allow reading insights in user's own subcollection
+        allow read: if isOwner(userId);
+        
+        // Allow queries in user's own subcollection
+        allow list: if isOwner(userId);
+        
+        // Insights are created/updated by Cloud Functions, but allow client-side access if needed
+        allow create: if isOwner(userId);
+        
+        allow update: if isOwner(userId);
+        
+        allow delete: if isOwner(userId);
+      }
     }
     
     // Journal threads - users can only access their own threads

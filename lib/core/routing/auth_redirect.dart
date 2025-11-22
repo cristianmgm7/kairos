@@ -24,6 +24,7 @@ String? authRedirectLogic({
   final protectedRoutes = [
     AppRoutes.home,
     AppRoutes.journal,
+    AppRoutes.insights,
     AppRoutes.settings,
   ];
   final isProtectedRoute = protectedRoutes.any(
