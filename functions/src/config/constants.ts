@@ -91,3 +91,32 @@ export const INSIGHTS_CONFIG = {
   conversationHistoryLimit: 10,
 };
 
+// Insight Categories
+export enum InsightCategory {
+  MINDSET_WELLBEING = 'mindset_wellbeing',
+  PRODUCTIVITY_FOCUS = 'productivity_focus',
+  RELATIONSHIPS_CONNECTION = 'relationships_connection',
+  CAREER_GROWTH = 'career_growth',
+  HEALTH_LIFESTYLE = 'health_lifestyle',
+  PURPOSE_VALUES = 'purpose_values',
+}
+
+export const INSIGHT_CATEGORY_DESCRIPTIONS = {
+  [InsightCategory.MINDSET_WELLBEING]: 'Thought patterns, emotional regulation, stress, resilience, and happiness',
+  [InsightCategory.PRODUCTIVITY_FOCUS]: 'Time management, procrastination, concentration, and task completion',
+  [InsightCategory.RELATIONSHIPS_CONNECTION]: 'Interpersonal dynamics, communication, empathy, and social connections',
+  [InsightCategory.CAREER_GROWTH]: 'Professional development, learning new skills, ambition, and work challenges',
+  [InsightCategory.HEALTH_LIFESTYLE]: 'Physical well-being, habits (sleep, exercise, nutrition), and self-care',
+  [InsightCategory.PURPOSE_VALUES]: 'Life meaning, personal values, long-term vision, and existential reflections',
+};
+
+// Category Insights Config
+export const CATEGORY_INSIGHTS_CONFIG = {
+  maxMemoriesPerInsight: 50, // Limit memories used for insight generation
+  refreshRateLimitMs: 60 * 60 * 1000, // 1 hour
+  classificationTemperature: 0.2, // Low temperature for consistent classification
+  generationTemperature: 0.7, // Higher for creative insights
+  maxClassificationTokens: 100,
+  maxInsightTokens: 800,
+};
+

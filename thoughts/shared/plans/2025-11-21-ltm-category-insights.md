@@ -64,12 +64,10 @@ Complete rewrite of the insights feature to generate insights from Long Term Mem
      }
      ```
 
-3. **Background Regeneration**
-   - When a new memory is created with categories, trigger insight regeneration for those categories
-   - Firestore trigger on `kairos_memories` collection
-   - Regenerates affected category insights asynchronously
-
-4. **Manual Refresh**
+3. **Manual Generation & Refresh (No Automatic Triggers)**
+   - First time: User clicks "Generate Insights" button for a category
+   - After generation: User can click "Refresh" to regenerate
+   - No automatic background processing - all user-initiated
    - User can manually refresh any category insight
    - Rate limit: 1 refresh per category per hour
    - Frontend checks `lastRefreshedAt` to enable/disable button
@@ -344,9 +342,9 @@ import { classifyMemoryFacts } from '../domain/insights/category-classifier';
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] Type checking passes: `cd functions && npm run typecheck`
-- [ ] Linting passes: `cd functions && npm run lint`
-- [ ] Build succeeds: `cd functions && npm run build`
+- [x] Type checking passes: `cd functions && npm run typecheck`
+- [x] Linting passes: `cd functions && npm run lint`
+- [x] Build succeeds: `cd functions && npm run build`
 
 #### Manual Verification:
 - [ ] Create a test conversation in the app
@@ -735,67 +733,7 @@ export function createCategoryInsightGenerator(
 }
 ```
 
-#### 4. Create Firestore Trigger for Background Regeneration
-
-**File**: `functions/src/functions/category-insights-triggers.ts` (NEW)
-
-```typescript
-import * as admin from 'firebase-admin';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import { geminiApiKey } from '../config/genkit';
-import { createCategoryInsightGenerator } from '../domain/insights/category-insight-generator';
-import { InsightCategory } from '../config/constants';
-
-const db = admin.firestore();
-
-/**
- * Firestore trigger: When a new memory is created,
- * regenerate insights for its categories
- */
-export const regenerateCategoryInsights = onDocumentCreated(
-  {
-    document: 'kairos_memories/{memoryId}',
-    secrets: [geminiApiKey],
-    region: 'us-central1',
-    memory: '512MiB',
-    timeoutSeconds: 120,
-  },
-  async function (event) {
-    const memoryData = event.data?.data();
-    if (!memoryData) return;
-
-    const userId = memoryData.userId as string;
-    const categories = (memoryData.metadata?.categories || []) as string[];
-
-    if (categories.length === 0) {
-      console.log('Memory has no categories, skipping insight regeneration');
-      return;
-    }
-
-    console.log(`[Category Insights Trigger] Regenerating insights for categories: [${categories.join(', ')}]`);
-
-    const generator = createCategoryInsightGenerator(db);
-
-    // Regenerate insights for each category (respects rate limits)
-    for (const category of categories) {
-      if (!Object.values(InsightCategory).includes(category as InsightCategory)) {
-        console.warn(`[Category Insights Trigger] Invalid category: ${category}`);
-        continue;
-      }
-
-      try {
-        await generator.generate(userId, category as InsightCategory, false);
-        console.log(`[Category Insights Trigger] Regenerated ${category} insight`);
-      } catch (error) {
-        console.error(`[Category Insights Trigger] Failed to regenerate ${category}:`, error);
-        // Continue with other categories
-      }
-    }
-  }
-);
-```
-
-#### 5. Create Callable Function for Manual Refresh
+#### 4. Create Callable Function for Manual Generation/Refresh
 
 **File**: `functions/src/functions/category-insights-callable.ts` (NEW)
 
@@ -809,9 +747,12 @@ import { InsightCategory } from '../config/constants';
 const db = admin.firestore();
 
 /**
- * Callable function: Manually refresh insight for a specific category
+ * Callable function: Generate or refresh insight for a specific category
+ * 
+ * This is the ONLY way insights are generated - user-initiated only.
+ * No automatic background processing.
  */
-export const refreshCategoryInsight = onCall(
+export const generateCategoryInsight = onCall(
   {
     secrets: [geminiApiKey],
     region: 'us-central1',
@@ -832,7 +773,7 @@ export const refreshCategoryInsight = onCall(
       throw new HttpsError('invalid-argument', `Invalid category: ${category}`);
     }
 
-    console.log(`[Refresh Category Insight] ${userId} - ${category} (force: ${forceRefresh})`);
+    console.log(`[Generate Category Insight] ${userId} - ${category} (force: ${forceRefresh})`);
 
     const generator = createCategoryInsightGenerator(db);
 
@@ -852,63 +793,25 @@ export const refreshCategoryInsight = onCall(
         },
       };
     } catch (error) {
-      console.error(`[Refresh Category Insight] Error:`, error);
+      console.error(`[Generate Category Insight] Error:`, error);
       throw new HttpsError('internal', 'Failed to generate insight');
-    }
-  }
-);
-
-/**
- * Callable function: Get all category insights for user
- */
-export const getCategoryInsights = onCall(
-  {
-    region: 'us-central1',
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'User must be authenticated');
-    }
-
-    const userId = request.auth.uid;
-
-    try {
-      const generator = createCategoryInsightGenerator(db);
-      const insights = await generator.generateAll(userId);
-
-      return {
-        success: true,
-        insights: insights.map(insight => ({
-          category: insight.category,
-          summary: insight.summary,
-          keyPatterns: insight.keyPatterns,
-          strengths: insight.strengths,
-          opportunities: insight.opportunities,
-          lastRefreshedAt: insight.lastRefreshedAt,
-          memoryCount: insight.memoryCount,
-        })),
-      };
-    } catch (error) {
-      console.error(`[Get Category Insights] Error:`, error);
-      throw new HttpsError('internal', 'Failed to fetch insights');
     }
   }
 );
 ```
 
-#### 6. Export New Functions
+#### 5. Export New Functions
 
 **File**: `functions/src/index.ts`
 
 Add after existing exports (around line 30):
 
 ```typescript
-// Category Insights (NEW)
-export { regenerateCategoryInsights } from './functions/category-insights-triggers';
-export { refreshCategoryInsight, getCategoryInsights } from './functions/category-insights-callable';
+// Category Insights (NEW - Manual generation only)
+export { generateCategoryInsight } from './functions/category-insights-callable';
 ```
 
-#### 7. Update Firestore Indexes
+#### 6. Update Firestore Indexes
 
 **File**: `firestore.indexes.json`
 
@@ -946,12 +849,13 @@ Add index for category queries (after existing indexes):
 
 #### Manual Verification:
 - [ ] Create memories with categories (from Phase 1)
-- [ ] Verify `regenerateCategoryInsights` trigger fires in Cloud Functions logs
-- [ ] Check Firestore `users/{userId}/kairos_insights/` collection for insight documents
-- [ ] Call `refreshCategoryInsight` function manually via Firebase Console or app
+- [ ] Call `generateCategoryInsight` function manually via Firebase Console
+- [ ] Pass: `{category: 'mindset_wellbeing', forceRefresh: true}`
+- [ ] Check Firestore `users/{userId}/kairos_insights/` collection for insight document
 - [ ] Verify insight contains: summary, keyPatterns, strengths, opportunities
-- [ ] Test rate limiting: Try refreshing same category twice within 1 hour
-- [ ] Verify rate limit prevents second refresh
+- [ ] Test rate limiting: Call again with `forceRefresh: false`
+- [ ] Verify rate limit prevents second generation (returns existing insight)
+- [ ] Verify no automatic triggers fire when new memories are created
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
 
@@ -977,7 +881,9 @@ cd functions/src/domain/insights
 rm -f insight-generator.ts insight-aggregator.ts ai-analyzer.ts keyword-extractor.ts
 ```
 
-Keep `category-classifier.ts` and `category-insight-generator.ts` (new files from Phase 2).
+Keep only:
+- `category-classifier.ts` (new from Phase 1)
+- `category-insight-generator.ts` (new from Phase 2)
 
 #### 2. Delete Old Insights Data Layer
 
@@ -1082,7 +988,7 @@ Remove any test cases related to old insights system.
 - [ ] Deploy functions successfully: `npm run deploy:functions`
 - [ ] Verify old functions are removed from Firebase Console (Functions section)
 - [ ] Check that `generateInsight`, `generatePeriodInsight`, `generateDailyInsights` are gone
-- [ ] Verify new functions exist: `regenerateCategoryInsights`, `refreshCategoryInsight`, `getCategoryInsights`
+- [ ] Verify new function exists: `generateCategoryInsight` (only one function needed)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
 
@@ -1347,7 +1253,7 @@ import 'package:kairos/features/category_insights/data/models/category_insight_m
 
 abstract class CategoryInsightRemoteDataSource {
   Stream<List<CategoryInsightModel>> watchAllInsights(String userId);
-  Future<void> refreshInsight(String category);
+  Future<void> generateInsight(String category, {bool forceRefresh});
 }
 
 class CategoryInsightRemoteDataSourceImpl implements CategoryInsightRemoteDataSource {
@@ -1371,9 +1277,12 @@ class CategoryInsightRemoteDataSourceImpl implements CategoryInsightRemoteDataSo
   }
 
   @override
-  Future<void> refreshInsight(String category) async {
-    final callable = _functions.httpsCallable('refreshCategoryInsight');
-    await callable.call({'category': category, 'forceRefresh': true});
+  Future<void> generateInsight(String category, {bool forceRefresh = true}) async {
+    final callable = _functions.httpsCallable('generateCategoryInsight');
+    await callable.call({
+      'category': category,
+      'forceRefresh': forceRefresh,
+    });
   }
 }
 ```
@@ -1400,8 +1309,8 @@ class CategoryInsightRepositoryImpl implements CategoryInsightRepository {
   }
 
   @override
-  Future<void> refreshInsight(String category) async {
-    await remoteDataSource.refreshInsight(category);
+  Future<void> generateInsight(String category, {bool forceRefresh = true}) async {
+    await remoteDataSource.generateInsight(category, forceRefresh: forceRefresh);
   }
 }
 ```
@@ -1415,7 +1324,7 @@ import 'package:kairos/features/category_insights/domain/entities/category_insig
 
 abstract class CategoryInsightRepository {
   Stream<List<CategoryInsightEntity>> watchAllInsights(String userId);
-  Future<void> refreshInsight(String category);
+  Future<void> generateInsight(String category, {bool forceRefresh});
 }
 ```
 
@@ -1701,22 +1610,25 @@ class _CategoryInsightDetailScreenState
     extends ConsumerState<CategoryInsightDetailScreen> {
   bool _isRefreshing = false;
 
-  Future<void> _refreshInsight() async {
+  Future<void> _generateOrRefreshInsight({bool forceRefresh = true}) async {
     setState(() => _isRefreshing = true);
 
     try {
       final repository = ref.read(categoryInsightRepositoryProvider);
-      await repository.refreshInsight(widget.category.value);
+      await repository.generateInsight(
+        widget.category.value,
+        forceRefresh: forceRefresh,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insight refreshed successfully')),
+          const SnackBar(content: Text('Insight generated successfully')),
         );
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to refresh: $error')),
+          SnackBar(content: Text('Failed to generate insight: $error')),
         );
       }
     } finally {
@@ -1741,11 +1653,8 @@ class _CategoryInsightDetailScreenState
           child: Text('Error: $error'),
         ),
         data: (insight) {
-          if (insight == null || insight.isEmpty) {
-            return _buildEmptyState(theme);
-          }
-
-          final canRefresh = insight.canRefresh(const Duration(hours: 1));
+          final isEmpty = insight == null || insight.isEmpty;
+          final canRefresh = isEmpty ? true : insight.canRefresh(const Duration(hours: 1));
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -1770,12 +1679,13 @@ class _CategoryInsightDetailScreenState
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            '${insight.memoryCount} memories',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                          if (!isEmpty)
+                            Text(
+                              '${insight.memoryCount} memories',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -1783,35 +1693,73 @@ class _CategoryInsightDetailScreenState
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
-                // Refresh button
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _isRefreshing || !canRefresh
-                        ? null
-                        : _refreshInsight,
-                    icon: _isRefreshing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(Icons.refresh),
-                    label: Text(_isRefreshing
-                        ? 'Refreshing...'
-                        : canRefresh
-                            ? 'Refresh Insight'
-                            : 'Available in ${_getTimeUntilRefresh(insight)}'),
+                // Generate/Refresh button
+                if (isEmpty)
+                  // First time: Show "Generate Insights" button
+                  Column(
+                    children: [
+                      Text(
+                        _getCategoryDescription(widget.category),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _isRefreshing
+                              ? null
+                              : () => _generateOrRefreshInsight(forceRefresh: true),
+                          icon: _isRefreshing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.auto_awesome),
+                          label: Text(_isRefreshing
+                              ? 'Generating...'
+                              : 'Generate Insights'),
+                        ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  // After first generation: Show "Refresh" button
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _isRefreshing || !canRefresh
+                          ? null
+                          : () => _generateOrRefreshInsight(forceRefresh: true),
+                      icon: _isRefreshing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.refresh),
+                      label: Text(_isRefreshing
+                          ? 'Refreshing...'
+                          : canRefresh
+                              ? 'Refresh Insight'
+                              : 'Available in ${_getTimeUntilRefresh(insight!)}'),
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xl),
 
-                // Summary
-                _buildSection(
+                  // Summary
+                  _buildSection(
                   theme,
                   'Summary',
                   Icons.insights,
@@ -1820,10 +1768,10 @@ class _CategoryInsightDetailScreenState
                     style: theme.textTheme.bodyLarge,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xl),
 
-                // Key Patterns
-                if (insight.keyPatterns.isNotEmpty) ...[
+                  // Key Patterns
+                  if (insight!.keyPatterns.isNotEmpty) ...[
                   _buildSection(
                     theme,
                     'Key Patterns',
@@ -1854,15 +1802,15 @@ class _CategoryInsightDetailScreenState
                   const SizedBox(height: AppSpacing.xl),
                 ],
 
-                // Strengths
-                if (insight.strengths.isNotEmpty) ...[
-                  _buildSection(
-                    theme,
-                    'Strengths',
-                    Icons.star,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: insight.strengths
+                  // Strengths
+                  if (insight!.strengths.isNotEmpty) ...[
+                    _buildSection(
+                      theme,
+                      'Strengths',
+                      Icons.star,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: insight.strengths
                           .map((strength) => Padding(
                                 padding: const EdgeInsets.only(
                                     bottom: AppSpacing.sm),
@@ -1889,15 +1837,15 @@ class _CategoryInsightDetailScreenState
                   const SizedBox(height: AppSpacing.xl),
                 ],
 
-                // Opportunities
-                if (insight.opportunities.isNotEmpty) ...[
-                  _buildSection(
-                    theme,
-                    'Opportunities for Growth',
-                    Icons.trending_up,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: insight.opportunities
+                  // Opportunities
+                  if (insight!.opportunities.isNotEmpty) ...[
+                    _buildSection(
+                      theme,
+                      'Opportunities for Growth',
+                      Icons.trending_up,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: insight.opportunities
                           .map((opportunity) => Padding(
                                 padding: const EdgeInsets.only(
                                     bottom: AppSpacing.sm),
@@ -1920,16 +1868,17 @@ class _CategoryInsightDetailScreenState
                   ),
                 ],
 
-                // Last updated
-                const SizedBox(height: AppSpacing.xl),
-                Center(
-                  child: Text(
-                    'Last updated: ${_formatDate(insight.lastRefreshedAt)}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  // Last updated
+                  const SizedBox(height: AppSpacing.xl),
+                  Center(
+                    child: Text(
+                      'Last updated: ${_formatDate(insight!.lastRefreshedAt)}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           );
@@ -1962,37 +1911,6 @@ class _CategoryInsightDetailScreenState
         const SizedBox(height: AppSpacing.md),
         content,
       ],
-    );
-  }
-
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              widget.category.icon,
-              style: const TextStyle(fontSize: 64),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'No insights yet in this domain',
-              style: theme.textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              _getCategoryDescription(widget.category),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -2053,15 +1971,17 @@ class _CategoryInsightDetailScreenState
 - [ ] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
 
 #### Manual Verification:
-- [ ] Tap a category card from main screen
-- [ ] Detail screen shows full insight content
+- [ ] Tap a category card from main screen (without insights)
+- [ ] Detail screen shows category description and "Generate Insights" button
+- [ ] Click "Generate Insights" → function is called and insight is created
+- [ ] After generation completes, screen shows full insight content
 - [ ] Summary, key patterns, strengths, and opportunities are displayed
-- [ ] Refresh button is visible and enabled
+- [ ] Button now shows "Refresh Insight" instead of "Generate"
 - [ ] Click refresh button → insight regenerates
 - [ ] After refresh, button is disabled for 1 hour (shows countdown)
-- [ ] Empty state shows proper description for category with no insights
 - [ ] Last updated timestamp displays correctly
 - [ ] Navigation back to main screen works
+- [ ] Card on main screen now shows insight preview
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to deployment.
 
@@ -2084,14 +2004,14 @@ class _CategoryInsightDetailScreenState
 
 **Backend**:
 1. Full memory ingestion → classification → indexing flow
-2. Background trigger fires when memory created
-3. Manual refresh callable function
-4. Rate limiting enforcement
+2. Manual generation callable function (no automatic triggers)
+3. Rate limiting enforcement in generation logic
 
 **Frontend**:
-1. Stream provider updates when insights change
-2. Refresh button triggers backend call
+1. Stream provider updates when insights are generated
+2. Generate/Refresh button triggers backend call
 3. Navigation between screens
+4. Button state changes based on insight existence (Generate vs Refresh)
 
 ### Manual Testing Steps
 
@@ -2106,16 +2026,18 @@ class _CategoryInsightDetailScreenState
    - Test with 0 memories (empty state), 5 memories, 50+ memories
 
 3. **Test UI flow**:
-   - Open insights screen → see 6 cards
-   - Tap card → see full details
+   - Open insights screen → see 6 cards (all show "No insights yet")
+   - Tap card without insight → see "Generate Insights" button
+   - Click "Generate Insights" → verify generation
+   - After generation, button changes to "Refresh"
    - Click refresh → verify regeneration
-   - Try refreshing again immediately → verify rate limit
+   - Try refreshing again immediately → verify rate limit (button disabled)
 
 4. **Test edge cases**:
-   - User with no memories (all empty states)
-   - User with memories in only 1 category (5 empty, 1 populated)
-   - Memory with 0 categories (shouldn't trigger insights)
-   - Memory with 2 categories (should trigger 2 insights)
+   - User with no memories → can't generate insights (memoryCount = 0)
+   - User with memories in only 1 category → only that category can generate insights
+   - Memory with 0 categories → no impact on insights (requires manual generation)
+   - Memory with 2 categories → both categories have memories available for generation
 
 ## Performance Considerations
 

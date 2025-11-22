@@ -77,6 +77,7 @@ export async function indexMemory(
     messageId?: string;
     extractedAt: number;
     tags?: string[];
+    categories?: string[];
   }
 ): Promise<string> {
   // Generate embedding
@@ -87,7 +88,10 @@ export async function indexMemory(
     userId,
     content,
     embedding: FieldValue.vector(embedding), // CRITICAL: Use FieldValue.vector()
-    metadata,
+    metadata: {
+      ...metadata,
+      categories: metadata.categories || [], // Ensure categories field exists
+    },
     createdAt: FieldValue.serverTimestamp(),
   });
 
