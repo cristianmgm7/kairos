@@ -186,4 +186,19 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       return Error(UnknownFailure(message: 'Failed to sync profile: $e'));
     }
   }
+
+  @override
+  Future<Result<void>> fetchProfile(String profileId) async {
+    try {
+      final profile = await remoteDataSource.getProfileByUserId(profileId);
+
+      if (profile != null) {
+        await localDataSource.updateProfile(profile);
+      }
+
+      return const Success(null);
+    } catch (e) {
+      return const Error(UnknownFailure(message: 'Failed to fetch profile'));
+    }
+  }
 }
