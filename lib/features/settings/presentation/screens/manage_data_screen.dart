@@ -93,8 +93,8 @@ class _DataActionTile extends StatelessWidget {
   const _DataActionTile({
     required this.icon,
     required this.title,
-    this.subtitle,
     required this.onTap,
+    this.subtitle,
     this.isDestructive = false,
   });
 
@@ -106,9 +106,8 @@ class _DataActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive
-        ? Theme.of(context).colorScheme.error
-        : Theme.of(context).colorScheme.primary;
+    final color =
+        isDestructive ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary;
 
     return ListTile(
       leading: Icon(icon, color: color),
@@ -119,4 +118,3 @@ class _DataActionTile extends StatelessWidget {
     );
   }
 }
-

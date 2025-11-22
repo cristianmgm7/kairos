@@ -64,7 +64,7 @@ class GenerateGlobalInsightUseCase {
       final callable = functions.httpsCallable(
         'generatePeriodInsight',
         options: HttpsCallableOptions(
-          timeout: const Duration(seconds: 60),
+          
         ),
       );
 

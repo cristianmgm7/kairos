@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/sync/sync_controller.dart';
+import 'package:kairos/core/sync/sync_coordinator.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
@@ -11,8 +13,6 @@ import 'package:kairos/features/journal/domain/entities/journal_message_entity.d
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:kairos/features/journal/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
-import 'package:kairos/core/sync/sync_controller.dart';
-import 'package:kairos/core/sync/sync_coordinator.dart';
 import 'package:kairos/features/journal/presentation/providers/journal_providers.dart';
 import 'package:kairos/features/journal/presentation/widgets/ai_typing_indicator.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_bubble.dart';

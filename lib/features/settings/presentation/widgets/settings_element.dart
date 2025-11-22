@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 
 /// Settings Element Widget
-/// 
+///
 /// A reusable widget that displays a single settings tile with an icon,
 /// title, optional subtitle, and a tap action.
 class SettingsElement extends StatelessWidget {
   const SettingsElement({
-    super.key,
     required this.icon,
     required this.title,
     required this.onTap,
+    super.key,
     this.subtitle,
   });
 
@@ -78,4 +78,3 @@ class SettingsElement extends StatelessWidget {
     );
   }
 }
-

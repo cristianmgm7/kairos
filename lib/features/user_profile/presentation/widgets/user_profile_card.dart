@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 
 /// User Profile Card Widget
-/// 
+///
 /// A reusable widget that displays user profile information including
 /// avatar, name, and email with a tap action.
 class UserProfileCard extends StatelessWidget {
   const UserProfileCard({
-    super.key,
     required this.name,
     required this.email,
+    super.key,
     this.avatarUrl,
     this.onTap,
   });
@@ -34,12 +34,8 @@ class UserProfileCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundImage: avatarUrl != null
-                ? NetworkImage(avatarUrl!)
-                : null,
-            child: avatarUrl == null
-                ? const Icon(Icons.person, size: 40)
-                : null,
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+            child: avatarUrl == null ? const Icon(Icons.person, size: 40) : null,
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
@@ -48,24 +44,15 @@ class UserProfileCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 if (email.isNotEmpty)
                   Text(
                     email,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
                   ),
               ],
@@ -81,4 +68,3 @@ class UserProfileCard extends StatelessWidget {
     );
   }
 }
-

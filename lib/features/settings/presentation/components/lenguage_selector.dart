@@ -6,7 +6,7 @@ import 'package:kairos/features/settings/presentation/providers/settings_provide
 import 'package:kairos/l10n/app_localizations.dart';
 
 class LanguageSelector extends ConsumerWidget {
-  const LanguageSelector({super.key, required this.currentLanguage});
+  const LanguageSelector({required this.currentLanguage, super.key});
 
   final AppLanguage currentLanguage;
 
@@ -37,11 +37,3 @@ class LanguageSelector extends ConsumerWidget {
     );
   }
 }
-
-
-
-
-
-
-
-

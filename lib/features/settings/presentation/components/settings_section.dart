@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 
 /// Settings Section Widget
-/// 
+///
 /// A reusable widget that displays a section of settings with a title
 /// and a container that groups related settings tiles.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
-    super.key,
     required this.title,
     required this.children,
+    super.key,
   });
 
   final String title;
@@ -68,4 +68,3 @@ class SettingsSection extends StatelessWidget {
     return result;
   }
 }
-

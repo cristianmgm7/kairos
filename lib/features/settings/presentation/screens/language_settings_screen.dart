@@ -30,9 +30,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
                 value: AppLanguage.english,
                 currentValue: settings.language,
                 onChanged: (value) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateLanguage(value);
+                  ref.read(settingsControllerProvider.notifier).updateLanguage(value);
                 },
               ),
               const Divider(),
@@ -41,9 +39,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
                 value: AppLanguage.spanish,
                 currentValue: settings.language,
                 onChanged: (value) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateLanguage(value);
+                  ref.read(settingsControllerProvider.notifier).updateLanguage(value);
                 },
               ),
             ],

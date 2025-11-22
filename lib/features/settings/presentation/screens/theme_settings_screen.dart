@@ -30,9 +30,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                 value: AppThemeMode.light,
                 currentValue: settings.themeMode,
                 onChanged: (value) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateThemeMode(value);
+                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
                 },
               ),
               const Divider(),
@@ -41,9 +39,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                 value: AppThemeMode.dark,
                 currentValue: settings.themeMode,
                 onChanged: (value) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateThemeMode(value);
+                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
                 },
               ),
               const Divider(),
@@ -52,9 +48,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                 value: AppThemeMode.system,
                 currentValue: settings.themeMode,
                 onChanged: (value) {
-                  ref
-                      .read(settingsControllerProvider.notifier)
-                      .updateThemeMode(value);
+                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
                 },
               ),
             ],

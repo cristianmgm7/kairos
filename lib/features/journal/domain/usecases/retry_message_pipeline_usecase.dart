@@ -220,7 +220,6 @@ class RetryMessagePipelineUseCase {
   Future<Result<void>> _processAiStep(JournalMessageEntity message) async {
     message = message.copyWith(
       status: MessageStatus.processingAi,
-      aiError: null, // Clear previous error
     );
     await messageRepository.updateMessage(message);
 
@@ -341,7 +340,6 @@ class RetryMessagePipelineUseCase {
 
     message = message.copyWith(
       status: MessageStatus.processingAi,
-      aiError: null,
     );
     await messageRepository.updateMessage(message);
 

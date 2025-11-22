@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/providers/database_provider.dart';
+import 'package:kairos/core/sync/sync_controller.dart';
 import 'package:kairos/features/journal/data/datasources/journal_message_local_datasource.dart';
 import 'package:kairos/features/journal/data/datasources/journal_message_remote_datasource.dart';
 import 'package:kairos/features/journal/data/datasources/journal_thread_local_datasource.dart';
@@ -21,7 +22,6 @@ import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_u
 import 'package:kairos/features/journal/domain/usecases/sync_thread_messages_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/sync_threads_usecase.dart';
 import 'package:kairos/features/journal/presentation/controllers/message_controller.dart';
-import 'package:kairos/core/sync/sync_controller.dart';
 import 'package:kairos/features/journal/presentation/controllers/thread_controller.dart';
 
 // Data sources
