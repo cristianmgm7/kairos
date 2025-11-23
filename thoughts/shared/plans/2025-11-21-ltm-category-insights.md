@@ -1559,9 +1559,9 @@ class _CategoryCard extends StatelessWidget {
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] No import errors: `flutter analyze`
-- [ ] No linting errors in IDE
-- [ ] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
+- [x] No import errors: `flutter analyze`
+- [x] No linting errors in IDE
+- [x] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
 
 #### Manual Verification:
 - [ ] App launches and displays insights screen
@@ -1966,9 +1966,9 @@ class _CategoryInsightDetailScreenState
 ### Success Criteria
 
 #### Automated Verification:
-- [ ] No import errors: `flutter analyze`
-- [ ] No linting errors in IDE
-- [ ] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
+- [x] No import errors: `flutter analyze`
+- [x] No linting errors in IDE
+- [x] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
 
 #### Manual Verification:
 - [ ] Tap a category card from main screen (without insights)

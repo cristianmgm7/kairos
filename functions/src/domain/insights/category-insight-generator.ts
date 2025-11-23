@@ -1,5 +1,4 @@
 import * as admin from 'firebase-admin';
-import { googleAI } from '@genkit-ai/google-genai';
 import { getAI, geminiApiKey } from '../../config/genkit';
 import { CategoryInsightDocument, createEmptyCategoryInsight } from '../../data/models/category-insight';
 import { getCategoryInsightRepository } from '../../data/repositories/category-insight-repository';
@@ -158,16 +157,24 @@ export class CategoryInsightGenerator {
       .replace('{memories}', memoriesText);
 
     const response = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash'),
       prompt,
       config: {
         temperature: CATEGORY_INSIGHTS_CONFIG.generationTemperature,
         maxOutputTokens: CATEGORY_INSIGHTS_CONFIG.maxInsightTokens,
-        responseFormat: 'json', // Request JSON output
       },
     });
 
-    const rawText = response.text || '{}';
+    let rawText = response.text || '{}';
+
+    // Strip markdown code fences if present (e.g., ```json ... ```)
+    rawText = rawText.trim();
+    if (rawText.startsWith('```')) {
+      // Remove opening fence (```json or ```)
+      rawText = rawText.replace(/^```(?:json)?\s*\n?/, '');
+      // Remove closing fence
+      rawText = rawText.replace(/\n?```\s*$/, '');
+      rawText = rawText.trim();
+    }
 
     try {
       const parsed = JSON.parse(rawText);
@@ -179,6 +186,7 @@ export class CategoryInsightGenerator {
       };
     } catch (error) {
       console.error(`[Category Insight Generator] Failed to parse JSON response:`, error);
+      console.error(`Raw text was:`, rawText);
       return {
         summary: 'Failed to generate insight.',
         keyPatterns: [],
