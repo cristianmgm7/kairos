@@ -21,37 +21,34 @@ class ThemeSettingsScreen extends ConsumerWidget {
       ),
       body: settingsAsync.when(
         data: (settings) {
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.pagePadding),
-            children: [
-              const SizedBox(height: AppSpacing.lg),
-              _ThemeOptionTile(
-                title: l10n.themeLight,
-                value: AppThemeMode.light,
-                currentValue: settings.themeMode,
-                onChanged: (value) {
-                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
-                },
-              ),
-              const Divider(),
-              _ThemeOptionTile(
-                title: l10n.themeDark,
-                value: AppThemeMode.dark,
-                currentValue: settings.themeMode,
-                onChanged: (value) {
-                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
-                },
-              ),
-              const Divider(),
-              _ThemeOptionTile(
-                title: l10n.themeSystem,
-                value: AppThemeMode.system,
-                currentValue: settings.themeMode,
-                onChanged: (value) {
-                  ref.read(settingsControllerProvider.notifier).updateThemeMode(value);
-                },
-              ),
-            ],
+          return RadioGroup(
+            groupValue: settings.themeMode,
+            onChanged: (value) {
+              ref.read(settingsControllerProvider.notifier).updateThemeMode(value!);
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.pagePadding),
+              children: [
+                const SizedBox(height: AppSpacing.lg),
+                _ThemeOptionTile(
+                  title: l10n.themeLight,
+                  value: AppThemeMode.light,
+                  currentValue: settings.themeMode,
+                ),
+                const Divider(),
+                _ThemeOptionTile(
+                  title: l10n.themeDark,
+                  value: AppThemeMode.dark,
+                  currentValue: settings.themeMode,
+                ),
+                const Divider(),
+                _ThemeOptionTile(
+                  title: l10n.themeSystem,
+                  value: AppThemeMode.system,
+                  currentValue: settings.themeMode,
+                ),
+              ],
+            ),
           );
         },
         loading: () => Center(child: Text(l10n.loading)),
@@ -68,13 +65,11 @@ class _ThemeOptionTile extends StatelessWidget {
     required this.title,
     required this.value,
     required this.currentValue,
-    required this.onChanged,
   });
 
   final String title;
   final AppThemeMode value;
   final AppThemeMode currentValue;
-  final ValueChanged<AppThemeMode> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -83,12 +78,6 @@ class _ThemeOptionTile extends StatelessWidget {
     return RadioListTile<AppThemeMode>(
       title: Text(title),
       value: value,
-      groupValue: currentValue,
-      onChanged: (newValue) {
-        if (newValue != null) {
-          onChanged(newValue);
-        }
-      },
       secondary: isSelected
           ? Icon(
               Icons.check,

@@ -17,6 +17,7 @@ import 'package:kairos/features/journal/presentation/providers/journal_providers
 import 'package:kairos/features/journal/presentation/widgets/ai_typing_indicator.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_bubble.dart';
 import 'package:kairos/features/journal/presentation/widgets/message_input.dart';
+import 'package:uuid/uuid.dart';
 
 /// Thread Detail Screen - Displays a chat-like conversation thread
 class ThreadDetailScreen extends ConsumerStatefulWidget {
@@ -159,23 +160,6 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
         // Reset controller state
         ref.read(messageControllerProvider.notifier).reset();
-
-        // If this was a new thread, get thread ID from the messages stream
-        if (_currentThreadId == null) {
-          // Wait a frame for the stream to update, then grab the thread ID
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final userId = ref.read(currentUserProvider)?.id;
-            if (userId != null) {
-              ref.read(threadsStreamProvider(userId)).whenData((threads) {
-                if (threads.isNotEmpty && _currentThreadId == null) {
-                  setState(() {
-                    _currentThreadId = threads.first.id;
-                  });
-                }
-              });
-            }
-          });
-        }
       } else if (next is MessageError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -393,6 +377,12 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     if (content.trim().isEmpty) {
       return;
+    }
+
+    if (_currentThreadId == null) {
+      setState(() {
+        _currentThreadId = const Uuid().v4();
+      });
     }
 
     ref.read(messageControllerProvider.notifier).createTextMessage(

@@ -50,6 +50,7 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   void _handleSend() {
     if (_hasText) {
       widget.onSendMessage(widget.controller.text);
+      widget.controller.clear();
     }
   }
 

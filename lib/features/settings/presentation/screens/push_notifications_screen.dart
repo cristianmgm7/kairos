@@ -71,7 +71,9 @@ class PushNotificationsScreen extends ConsumerWidget {
 class _NotificationSwitchTile extends StatelessWidget {
   const _NotificationSwitchTile({
     required this.title,
-    required this.value, required this.onChanged, this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
   });
 
   final String title;
