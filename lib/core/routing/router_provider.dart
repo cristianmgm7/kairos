@@ -25,10 +25,10 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final data = ref.watch(userStatusProvider);
+  final currentStatus = ref.watch(userStatusProvider);
 
-  final authState = data.authStatus;
-  final hasProfile = data.hasProfile;
+  final authState = currentStatus.authStatus;
+  final hasProfile = currentStatus.hasProfile;
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
