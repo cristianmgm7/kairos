@@ -4,5 +4,3 @@ abstract class CategoryInsightRepository {
   Stream<List<CategoryInsightEntity>> watchAllInsights(String userId);
   Future<void> generateInsight(String category, {bool forceRefresh});
 }
-
-

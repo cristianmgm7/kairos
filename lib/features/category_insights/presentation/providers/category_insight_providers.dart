@@ -8,8 +8,7 @@ import 'package:kairos/features/category_insights/domain/entities/category_insig
 import 'package:kairos/features/category_insights/domain/repositories/category_insight_repository.dart';
 
 // Data source provider
-final categoryInsightRemoteDataSourceProvider =
-    Provider<CategoryInsightRemoteDataSource>((ref) {
+final categoryInsightRemoteDataSourceProvider = Provider<CategoryInsightRemoteDataSource>((ref) {
   return CategoryInsightRemoteDataSourceImpl(
     FirebaseFirestore.instance,
     FirebaseFunctions.instance,
@@ -17,15 +16,13 @@ final categoryInsightRemoteDataSourceProvider =
 });
 
 // Repository provider
-final categoryInsightRepositoryProvider =
-    Provider<CategoryInsightRepository>((ref) {
+final categoryInsightRepositoryProvider = Provider<CategoryInsightRepository>((ref) {
   final remoteDataSource = ref.watch(categoryInsightRemoteDataSourceProvider);
   return CategoryInsightRepositoryImpl(remoteDataSource: remoteDataSource);
 });
 
 // Stream provider for all category insights
-final allCategoryInsightsProvider =
-    StreamProvider<List<CategoryInsightEntity>>((ref) {
+final allCategoryInsightsProvider = StreamProvider<List<CategoryInsightEntity>>((ref) {
   final user = ref.watch(currentUserProvider);
   final userId = user?.id;
 
@@ -38,9 +35,8 @@ final allCategoryInsightsProvider =
 });
 
 // Provider for a specific category insight
-final categoryInsightProvider = StreamProvider.family<
-    CategoryInsightEntity?,
-    InsightCategory>((ref, category) {
+final categoryInsightProvider =
+    StreamProvider.family<CategoryInsightEntity?, InsightCategory>((ref, category) {
   final allInsightsAsync = ref.watch(allCategoryInsightsProvider);
 
   return allInsightsAsync.when(
@@ -56,5 +52,3 @@ final categoryInsightProvider = StreamProvider.family<
     error: (_, __) => Stream.value(null),
   );
 });
-
-

@@ -69,5 +69,3 @@ class CategoryInsightEntity extends Equatable {
         memoryCount,
       ];
 }
-
-

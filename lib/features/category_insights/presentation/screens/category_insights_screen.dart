@@ -52,9 +52,7 @@ class CategoryInsightsScreen extends ConsumerWidget {
                 itemCount: InsightCategory.values.length,
                 itemBuilder: (context, index) {
                   final category = InsightCategory.values[index];
-                  final insight = insights
-                      .where((i) => i.category == category)
-                      .firstOrNull;
+                  final insight = insights.where((i) => i.category == category).firstOrNull;
 
                   return _CategoryCard(
                     category: category,
@@ -158,4 +156,3 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 }
-

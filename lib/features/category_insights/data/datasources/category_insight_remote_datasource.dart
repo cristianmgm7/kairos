@@ -21,9 +21,7 @@ class CategoryInsightRemoteDataSourceImpl implements CategoryInsightRemoteDataSo
         .collection('kairos_insights')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => CategoryInsightModel.fromFirestore(doc))
-          .toList();
+      return snapshot.docs.map(CategoryInsightModel.fromFirestore).toList();
     });
   }
 
@@ -36,4 +34,3 @@ class CategoryInsightRemoteDataSourceImpl implements CategoryInsightRemoteDataSo
     });
   }
 }
-

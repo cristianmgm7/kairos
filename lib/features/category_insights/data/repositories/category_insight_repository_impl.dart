@@ -19,5 +19,3 @@ class CategoryInsightRepositoryImpl implements CategoryInsightRepository {
     await remoteDataSource.generateInsight(category, forceRefresh: forceRefresh);
   }
 }
-
-

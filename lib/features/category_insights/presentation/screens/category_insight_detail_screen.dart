@@ -6,18 +6,17 @@ import 'package:kairos/features/category_insights/presentation/providers/categor
 
 class CategoryInsightDetailScreen extends ConsumerStatefulWidget {
   const CategoryInsightDetailScreen({
-    required this.category, super.key,
+    required this.category,
+    super.key,
   });
 
   final InsightCategory category;
 
   @override
-  ConsumerState<CategoryInsightDetailScreen> createState() =>
-      _CategoryInsightDetailScreenState();
+  ConsumerState<CategoryInsightDetailScreen> createState() => _CategoryInsightDetailScreenState();
 }
 
-class _CategoryInsightDetailScreenState
-    extends ConsumerState<CategoryInsightDetailScreen> {
+class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDetailScreen> {
   bool _isRefreshing = false;
 
   Future<void> _generateOrRefreshInsight({bool forceRefresh = true}) async {
@@ -124,9 +123,7 @@ class _CategoryInsightDetailScreenState
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: _isRefreshing
-                              ? null
-                              : () => _generateOrRefreshInsight(forceRefresh: true),
+                          onPressed: _isRefreshing ? null : _generateOrRefreshInsight,
                           icon: _isRefreshing
                               ? const SizedBox(
                                   width: 16,
@@ -134,13 +131,14 @@ class _CategoryInsightDetailScreenState
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : const Icon(Icons.auto_awesome),
-                          label: Text(_isRefreshing
-                              ? 'Generating...'
-                              : 'Generate Insights'),
+                          label: Text(
+                            _isRefreshing ? 'Generating...' : 'Generate Insights',
+                          ),
                         ),
                       ),
                     ],
@@ -150,25 +148,24 @@ class _CategoryInsightDetailScreenState
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _isRefreshing || !canRefresh
-                          ? null
-                          : () => _generateOrRefreshInsight(forceRefresh: true),
+                      onPressed: _isRefreshing || !canRefresh ? null : _generateOrRefreshInsight,
                       icon: _isRefreshing
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const Icon(Icons.refresh),
-                      label: Text(_isRefreshing
-                          ? 'Refreshing...'
-                          : canRefresh
-                              ? 'Refresh Insight'
-                              : 'Available in ${_getTimeUntilRefresh(insight)}'),
+                      label: Text(
+                        _isRefreshing
+                            ? 'Refreshing...'
+                            : canRefresh
+                                ? 'Refresh Insight'
+                                : 'Available in ${_getTimeUntilRefresh(insight)}',
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -194,23 +191,28 @@ class _CategoryInsightDetailScreenState
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: insight.keyPatterns
-                            .map((pattern) => Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: AppSpacing.sm),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('• ',
-                                          style: theme.textTheme.bodyMedium),
-                                      Expanded(
-                                        child: Text(
-                                          pattern,
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
+                            .map(
+                              (pattern) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '• ',
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        pattern,
+                                        style: theme.textTheme.bodyMedium,
                                       ),
-                                    ],
-                                  ),
-                                ))
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
                             .toList(),
                       ),
                     ),
@@ -226,26 +228,30 @@ class _CategoryInsightDetailScreenState
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: insight.strengths
-                            .map((strength) => Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: AppSpacing.sm),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('✓ ',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: theme.colorScheme.primary,
-                                          )),
-                                      Expanded(
-                                        child: Text(
-                                          strength,
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
+                            .map(
+                              (strength) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '✓ ',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.primary,
                                       ),
-                                    ],
-                                  ),
-                                ))
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        strength,
+                                        style: theme.textTheme.bodyMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
                             .toList(),
                       ),
                     ),
@@ -261,23 +267,28 @@ class _CategoryInsightDetailScreenState
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: insight.opportunities
-                            .map((opportunity) => Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: AppSpacing.sm),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('→ ',
-                                          style: theme.textTheme.bodyMedium),
-                                      Expanded(
-                                        child: Text(
-                                          opportunity,
-                                          style: theme.textTheme.bodyMedium,
-                                        ),
+                            .map(
+                              (opportunity) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '→ ',
+                                      style: theme.textTheme.bodyMedium,
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        opportunity,
+                                        style: theme.textTheme.bodyMedium,
                                       ),
-                                    ],
-                                  ),
-                                ))
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
                             .toList(),
                       ),
                     ),
@@ -348,8 +359,7 @@ class _CategoryInsightDetailScreenState
 
   String _getTimeUntilRefresh(CategoryInsightEntity insight) {
     final now = DateTime.now();
-    final nextRefreshTime =
-        insight.lastRefreshedAt.add(const Duration(hours: 1));
+    final nextRefreshTime = insight.lastRefreshedAt.add(const Duration(hours: 1));
     final difference = nextRefreshTime.difference(now);
 
     if (difference.inMinutes < 1) {
@@ -376,4 +386,3 @@ class _CategoryInsightDetailScreenState
     }
   }
 }
-
