@@ -48,6 +48,8 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
         () => ref.read(syncControllerProvider.notifier).syncThread(_currentThreadId!),
       );
     }
+
+    _currentThreadId ??= const Uuid().v4();
   }
 
   bool get hasAiPending {
@@ -377,12 +379,6 @@ class _ThreadDetailScreenState extends ConsumerState<ThreadDetailScreen> {
 
     if (content.trim().isEmpty) {
       return;
-    }
-
-    if (_currentThreadId == null) {
-      setState(() {
-        _currentThreadId = const Uuid().v4();
-      });
     }
 
     ref.read(messageControllerProvider.notifier).createTextMessage(
