@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
-import 'package:kairos/core/utils/emotion_gradient_helper.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -21,15 +20,6 @@ class ThreadListTile extends StatelessWidget {
     final lastMessageTime = thread.lastMessageAt ?? thread.createdAt;
     final timeAgo = timeago.format(lastMessageTime, locale: 'en_short');
 
-    // Determine gradient based on cached insight mood
-    final hasInsight = thread.latestInsightMood != null;
-    final gradient = hasInsight
-        ? EmotionGradientHelper.getGradientForEmotion(thread.latestInsightMood!)
-        : null;
-    final iconColor = hasInsight
-        ? EmotionGradientHelper.getTextColorForEmotion(thread.latestInsightMood!)
-        : theme.colorScheme.onPrimaryContainer;
-
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -40,18 +30,17 @@ class ThreadListTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thread icon with gradient background
+            // Thread icon with background
             Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: gradient,
-                color: gradient == null ? theme.colorScheme.primaryContainer : null,
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.chat_bubble_outline,
-                color: iconColor,
+                color: theme.colorScheme.onPrimaryContainer,
                 size: 24,
               ),
             ),

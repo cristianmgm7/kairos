@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 
 class JournalThreadEntity extends Equatable {
   const JournalThreadEntity({
@@ -14,7 +13,6 @@ class JournalThreadEntity extends Equatable {
     this.isArchived = false,
     this.latestInsightId,
     this.latestInsightSummary,
-    this.latestInsightMood,
   });
 
   final String id;
@@ -28,7 +26,6 @@ class JournalThreadEntity extends Equatable {
   final bool isArchived;
   final String? latestInsightId;
   final String? latestInsightSummary;
-  final EmotionType? latestInsightMood;
 
   @override
   List<Object?> get props => [
@@ -43,7 +40,6 @@ class JournalThreadEntity extends Equatable {
         isArchived,
         latestInsightId,
         latestInsightSummary,
-        latestInsightMood,
       ];
 
   JournalThreadEntity copyWith({
@@ -58,7 +54,6 @@ class JournalThreadEntity extends Equatable {
     bool? isArchived,
     String? latestInsightId,
     String? latestInsightSummary,
-    EmotionType? latestInsightMood,
   }) {
     return JournalThreadEntity(
       id: id ?? this.id,
@@ -72,7 +67,6 @@ class JournalThreadEntity extends Equatable {
       isArchived: isArchived ?? this.isArchived,
       latestInsightId: latestInsightId ?? this.latestInsightId,
       latestInsightSummary: latestInsightSummary ?? this.latestInsightSummary,
-      latestInsightMood: latestInsightMood ?? this.latestInsightMood,
     );
   }
 }

@@ -4,7 +4,7 @@ import {
   transcribeAudioMessage,
   analyzeImageMessage,
   generateMessageResponse,
-  generateInsight,
+  generateCategoryInsight,
   onThreadDeleted,
 } from '../index.js';
 
@@ -27,13 +27,13 @@ describe('Cloud Functions', () => {
     it('should export generateMessageResponse', () => {
       expect(generateMessageResponse).to.exist;
     });
+
+    it('should export generateCategoryInsight', () => {
+      expect(generateCategoryInsight).to.exist;
+    });
   });
 
   describe('Other Functions', () => {
-    it('should export generateInsight', () => {
-      expect(generateInsight).to.exist;
-    });
-
     it('should export onThreadDeleted', () => {
       expect(onThreadDeleted).to.exist;
     });

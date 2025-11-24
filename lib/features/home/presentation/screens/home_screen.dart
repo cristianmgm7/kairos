@@ -3,9 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
-import 'package:kairos/features/insights/presentation/providers/insight_providers.dart';
-import 'package:kairos/features/insights/presentation/widgets/emotion_distribution_widget.dart';
-import 'package:kairos/features/insights/presentation/widgets/mood_chart_widget.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
@@ -19,7 +16,6 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider);
     final profileAsync = ref.watch(currentUserProfileProvider);
-    final insightsAsync = ref.watch(currentUserGlobalInsightsProvider);
 
     return Column(
       children: [
@@ -73,60 +69,6 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  ),
-                  const Divider(),
-                  // Insights dashboard
-                  insightsAsync.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    error: (error, stack) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text('Failed to load insights: $error'),
-                      ),
-                    ),
-                    data: (insights) {
-                      if (insights.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.insights_outlined,
-                                  size: 64,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No insights yet',
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Start journaling to see your mood patterns',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          MoodChartWidget(insights: insights),
-                          const Divider(),
-                          EmotionDistributionWidget(insights: insights),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    },
                   ),
                 ],
               ),

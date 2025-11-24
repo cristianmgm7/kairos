@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { googleAI } from '@genkit-ai/google-genai';
 import { getAI, geminiApiKey } from '../config/genkit';
 import { indexMemory } from './kairos.rag';
+import { classifyMemoryFacts } from '../domain/insights/category-classifier';
 
 /**
  * Input schema for memory ingestion
@@ -119,18 +120,28 @@ export async function ingestMemoryFlow(input: z.infer<typeof IngestInputSchema>)
       };
     }
 
-    // 3. Index each fact as a separate memory
+    // 2.5. Classify all facts into categories
+    console.log(`[Memory Ingest] Classifying ${facts.length} facts into categories...`);
+    const factsCategories = await classifyMemoryFacts(facts);
+
+    // 3. Index each fact as a separate memory with categories
     const memoryIds: string[] = [];
-    for (const fact of facts) {
+    for (let i = 0; i < facts.length; i++) {
+      const fact = facts[i];
+      const categories = factsCategories[i] || [];
+
       try {
         const memoryId = await indexMemory(userId, fact, {
           source: 'auto_extracted',
           threadId,
           messageId,
           extractedAt: Date.now(),
+          categories,
         });
         memoryIds.push(memoryId);
-        console.log(`[Memory Ingest] Indexed fact: "${fact.substring(0, 50)}..."`);
+        console.log(
+          `[Memory Ingest] Indexed fact with categories [${categories.join(', ')}]: "${fact.substring(0, 50)}..."`
+        );
       } catch (error) {
         console.error(`[Memory Ingest] Failed to index fact: ${error}`);
         // Continue with other facts

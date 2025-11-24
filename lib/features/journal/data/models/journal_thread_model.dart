@@ -1,6 +1,4 @@
 import 'package:isar/isar.dart';
-import 'package:kairos/core/providers/core_providers.dart';
-import 'package:kairos/features/insights/domain/value_objects/value_objects.dart';
 import 'package:kairos/features/journal/domain/entities/journal_thread_entity.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,7 +20,6 @@ class JournalThreadModel {
     this.version = 1,
     this.latestInsightId,
     this.latestInsightSummary,
-    this.latestInsightMood,
   });
 
   factory JournalThreadModel.create({
@@ -51,7 +48,6 @@ class JournalThreadModel {
       isArchived: entity.isArchived,
       latestInsightId: entity.latestInsightId,
       latestInsightSummary: entity.latestInsightSummary,
-      latestInsightMood: entity.latestInsightMood?.name, // Convert enum to string
     );
   }
 
@@ -80,7 +76,6 @@ class JournalThreadModel {
       version: map['version'] as int? ?? 1,
       latestInsightId: toStringOrNull(map['latestInsightId']),
       latestInsightSummary: toStringOrNull(map['latestInsightSummary']),
-      latestInsightMood: toStringOrNull(map['latestInsightMood']),
     );
   }
 
@@ -101,7 +96,6 @@ class JournalThreadModel {
   final int version;
   final String? latestInsightId;
   final String? latestInsightSummary;
-  final String? latestInsightMood; // Store as string (emotion enum name)
 
   Id get isarId => fastHash(id);
 
@@ -120,26 +114,10 @@ class JournalThreadModel {
       'version': version,
       'latestInsightId': latestInsightId,
       'latestInsightSummary': latestInsightSummary,
-      'latestInsightMood': latestInsightMood,
     };
   }
 
   JournalThreadEntity toEntity() {
-    // Safely convert latestInsightMood string to EmotionType enum
-    EmotionType? mood;
-    if (latestInsightMood != null) {
-      try {
-        mood = EmotionType.values.firstWhere(
-          (e) => e.name == latestInsightMood,
-          orElse: () => EmotionType.values.first, // Fallback to first enum value
-        );
-      } catch (e) {
-        // If conversion fails, log and set to null
-        logger.w('Failed to convert latestInsightMood "$latestInsightMood" to EmotionType: $e');
-        mood = null;
-      }
-    }
-
     return JournalThreadEntity(
       id: id,
       userId: userId,
@@ -153,7 +131,6 @@ class JournalThreadModel {
       isArchived: isArchived,
       latestInsightId: latestInsightId,
       latestInsightSummary: latestInsightSummary,
-      latestInsightMood: mood,
     );
   }
 
@@ -171,7 +148,6 @@ class JournalThreadModel {
     int? version,
     String? latestInsightId,
     String? latestInsightSummary,
-    String? latestInsightMood,
   }) {
     return JournalThreadModel(
       id: id ?? this.id,
@@ -187,7 +163,6 @@ class JournalThreadModel {
       version: version ?? this.version,
       latestInsightId: latestInsightId ?? this.latestInsightId,
       latestInsightSummary: latestInsightSummary ?? this.latestInsightSummary,
-      latestInsightMood: latestInsightMood ?? this.latestInsightMood,
     );
   }
 
