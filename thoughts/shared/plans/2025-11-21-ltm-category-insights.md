@@ -1971,17 +1971,17 @@ class _CategoryInsightDetailScreenState
 - [x] Build succeeds: `flutter build ios --no-codesign` or `flutter build apk`
 
 #### Manual Verification:
-- [ ] Tap a category card from main screen (without insights)
-- [ ] Detail screen shows category description and "Generate Insights" button
-- [ ] Click "Generate Insights" → function is called and insight is created
-- [ ] After generation completes, screen shows full insight content
-- [ ] Summary, key patterns, strengths, and opportunities are displayed
-- [ ] Button now shows "Refresh Insight" instead of "Generate"
-- [ ] Click refresh button → insight regenerates
-- [ ] After refresh, button is disabled for 1 hour (shows countdown)
-- [ ] Last updated timestamp displays correctly
-- [ ] Navigation back to main screen works
-- [ ] Card on main screen now shows insight preview
+- [x] Tap a category card from main screen (without insights)
+- [x] Detail screen shows category description and "Generate Insights" button
+- [x] Click "Generate Insights" → function is called and insight is created
+- [x] After generation completes, screen shows full insight content
+- [x] Summary, key patterns, strengths, and opportunities are displayed
+- [x] Button now shows "Refresh Insight" instead of "Generate"
+- [x] Click refresh button → insight regenerates
+- [x] After refresh, button is disabled for 1 hour (shows countdown)
+- [x] Last updated timestamp displays correctly
+- [x] Navigation back to main screen works
+- [x] Card on main screen now shows insight preview
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to deployment.
 
@@ -2075,5 +2075,200 @@ Users will start with empty insights that populate as they journal going forward
 - Flutter entities: `lib/features/category_insights/domain/entities/category_insight_entity.dart` (Phase 5)
 - Main UI: `lib/features/category_insights/presentation/screens/category_insights_screen.dart` (Phase 5)
 - Detail screen: `lib/features/category_insights/presentation/screens/category_insight_detail_screen.dart` (Phase 6)
+
+---
+
+## Future Enhancements (Nice to Have)
+
+### Priority 1: Security & Navigation (Should Do Next)
+
+#### 1. Firestore Security Rules
+**Status**: Missing - Current implementation has no security rules for the new collection.
+
+**Required Changes**:
+
+**File**: `firestore.rules`
+
+Add security rules for category insights:
+
+```javascript
+match /users/{userId}/kairos_insights/{category} {
+  allow read: if request.auth.uid == userId;
+  allow write: if false; // Only Cloud Functions should write
+}
+```
+
+**Why**: Without these rules, any authenticated user could potentially read other users' insights.
+
+#### 2. Navigation Integration
+**Status**: Feature works but may not be accessible from main app navigation.
+
+**Considerations**:
+- Add route to insights screen from home/main navigation
+- Consider bottom nav bar item (if applicable)
+- Add menu link or floating action button
+- Decide if insights should be prominently featured or tucked in settings
+
+**Files to check**:
+- Main navigation router
+- Home screen navigation items
+- Bottom navigation bar (if exists)
+
+### Priority 2: User Experience Polish
+
+#### 3. Initial User Experience
+**Status**: No onboarding or first-time user flow.
+
+**Ideas**:
+- Show welcome dialog first time user opens insights screen
+- Explain what insights are and how they're generated
+- Show empty state with "Start journaling to generate insights" if no memories exist
+- Add tooltips or help icons explaining rate limits
+
+#### 4. Better Error Handling
+**Status**: Basic error handling exists, could be improved.
+
+**Enhancements**:
+- Retry mechanism for failed generations
+- Show specific error messages (no memories, API error, rate limit)
+- Offline detection and appropriate messaging
+- Graceful degradation if LLM service is unavailable
+
+#### 5. Loading & Empty State Improvements
+**Status**: Basic loading indicators exist.
+
+**Ideas**:
+- Add illustrations or animations to empty states
+- Show progress during generation ("Analyzing memories...", "Generating insights...")
+- Skeleton loaders for card previews
+- Fun messages while waiting ("Thinking deeply...", "Finding patterns...")
+
+### Priority 3: Localization & Accessibility
+
+#### 6. Internationalization (i18n)
+**Status**: All strings are hardcoded in English.
+
+**Needs Translation**:
+- Category names and descriptions
+- Button labels ("Generate Insights", "Refresh")
+- Error messages
+- Empty state messages
+- Time formatting ("X minutes ago")
+- Section titles (Summary, Key Patterns, etc.)
+
+**Files to update**:
+- `lib/l10n/app_en.arb` (English)
+- `lib/l10n/app_es.arb` (Spanish)
+- All UI components with hardcoded strings
+
+#### 7. Accessibility
+**Status**: Not explicitly addressed.
+
+**Consider**:
+- Semantic labels for screen readers
+- Sufficient color contrast
+- Touch target sizes (buttons, cards)
+- Focus management for keyboard navigation
+- Alternative text for icons
+
+### Priority 4: Analytics & Monitoring
+
+#### 8. User Analytics
+**Status**: No tracking implemented.
+
+**Events to track**:
+- Insight generation requested (by category)
+- Insight generation succeeded/failed
+- Category card tapped (engagement)
+- Refresh button clicked
+- Time spent viewing insights
+- Rate limit hits
+
+**Why**: Understanding user engagement helps prioritize future improvements.
+
+#### 9. Backend Monitoring
+**Status**: Basic console.log exists.
+
+**Enhancements**:
+- Track generation latency per category
+- Monitor LLM token usage and costs
+- Alert on classification failures
+- Track memory count distribution by category
+- Monitor rate limit enforcement
+
+### Priority 5: Advanced Features
+
+#### 10. Offline Support
+**Status**: Not implemented.
+
+**Considerations**:
+- Cache insights locally for offline viewing
+- Show cached data with "Last synced" indicator
+- Disable generate/refresh buttons when offline
+- Queue generation requests for when online
+
+#### 11. Insight History
+**Status**: Only current insight is stored.
+
+**Ideas**:
+- Keep history of past insights (archived by date)
+- Show "Your progress over time" view
+- Compare current vs past insights
+- Export insights as PDF or markdown
+
+#### 12. Customization Options
+**Status**: Fixed 6 categories, no customization.
+
+**Ideas**:
+- Let users hide categories they don't use
+- Customize category icons or colors
+- Adjust refresh rate limit (for premium users?)
+- Choose insight detail level (brief vs detailed)
+
+#### 13. Smart Notifications
+**Status**: No notifications.
+
+**Ideas**:
+- Notify when enough new memories exist to regenerate
+- Weekly insight summary notifications
+- "You haven't journaled in a while" reminders
+- Celebrate milestones ("You have 50 memories in Career!")
+
+#### 14. Memory Linking
+**Status**: Insights reference memories but no navigation.
+
+**Ideas**:
+- Tap key pattern → see related memories
+- "View memories" button in detail screen
+- Memory timeline filtered by category
+- Highlight which memories contributed to insight
+
+#### 15. AI-Powered Suggestions
+**Status**: Insights are descriptive, not prescriptive.
+
+**Ideas**:
+- Suggest journal prompts based on insights
+- Recommend specific actions for opportunities
+- Connect patterns across categories
+- Weekly focus area suggestions
+
+---
+
+## Implementation Status Summary
+
+✅ **Complete & Verified**:
+- Phase 1: Category classification in memory ingestion
+- Phase 2: Category insights generation system
+- Phase 3: Old insights system deleted (backend)
+- Phase 4: Old insights system deleted (frontend)
+- Phase 5: New category insights UI (main screen)
+- Phase 6: Detail screen with refresh functionality
+
+⚠️ **Should Address Soon**:
+- Firestore security rules (security vulnerability)
+- Navigation integration (accessibility)
+
+💡 **Nice to Have Later**:
+- Everything else in Future Enhancements section above
 
 

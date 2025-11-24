@@ -34,4 +34,4 @@ Future<void> main() async {
     // Still run the app but with an error screen
     runApp(AppError(e));
   }
-}
+} 
