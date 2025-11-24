@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kairos/core/widgets/eager_providers.dart';
 import 'package:kairos/core/widgets/keyboard_dismisser.dart';
 import 'package:nested/nested.dart';
 
@@ -16,7 +15,6 @@ class Globals extends StatelessWidget {
     return Nested(
       children: const [
         KeyboardDismisser(),
-        EagerProviders(),
       ],
       child: child,
     );
