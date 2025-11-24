@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/category_insights/domain/entities/category_insight_entity.dart';
+import 'package:kairos/features/category_insights/presentation/controllers/category_insight_controller.dart';
 import 'package:kairos/features/category_insights/presentation/providers/category_insight_providers.dart';
 
 class CategoryInsightDetailScreen extends ConsumerStatefulWidget {
@@ -17,40 +18,35 @@ class CategoryInsightDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDetailScreen> {
-  bool _isRefreshing = false;
-
-  Future<void> _generateOrRefreshInsight({bool forceRefresh = true}) async {
-    setState(() => _isRefreshing = true);
-
-    try {
-      final repository = ref.read(categoryInsightRepositoryProvider);
-      await repository.generateInsight(
-        widget.category.value,
-        forceRefresh: forceRefresh,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insight generated successfully')),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate insight: $error')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final insightAsync = ref.watch(categoryInsightProvider(widget.category));
+    final controllerState = ref.watch(categoryInsightControllerProvider);
+
+    // Listen for controller state changes for side effects
+    ref.listen<CategoryInsightState>(categoryInsightControllerProvider, (previous, next) {
+      if (next is CategoryInsightGenerateSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Insight generated successfully')),
+          );
+        }
+        // Reset controller state
+        ref.read(categoryInsightControllerProvider.notifier).reset();
+      } else if (next is CategoryInsightGenerateError) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to generate insight: ${next.message}'),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        }
+        // Reset controller state
+        ref.read(categoryInsightControllerProvider.notifier).reset();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -69,6 +65,9 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
           } else {
             canRefresh = insight.canRefresh(const Duration(hours: 1));
           }
+
+          // Check if currently generating
+          final isGenerating = controllerState is CategoryInsightGenerating;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -123,8 +122,8 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: _isRefreshing ? null : _generateOrRefreshInsight,
-                          icon: _isRefreshing
+                          onPressed: isGenerating ? null : _handleGenerateInsight,
+                          icon: isGenerating
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -137,7 +136,7 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
                                 )
                               : const Icon(Icons.auto_awesome),
                           label: Text(
-                            _isRefreshing ? 'Generating...' : 'Generate Insights',
+                            isGenerating ? 'Generating...' : 'Generate Insights',
                           ),
                         ),
                       ),
@@ -148,8 +147,8 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _isRefreshing || !canRefresh ? null : _generateOrRefreshInsight,
-                      icon: _isRefreshing
+                      onPressed: isGenerating || !canRefresh ? null : _handleGenerateInsight,
+                      icon: isGenerating
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -160,7 +159,7 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
                             )
                           : const Icon(Icons.refresh),
                       label: Text(
-                        _isRefreshing
+                        isGenerating
                             ? 'Refreshing...'
                             : canRefresh
                                 ? 'Refresh Insight'
@@ -311,6 +310,13 @@ class _CategoryInsightDetailScreenState extends ConsumerState<CategoryInsightDet
         },
       ),
     );
+  }
+
+  /// Handle generate/refresh insight button press
+  void _handleGenerateInsight() {
+    ref.read(categoryInsightControllerProvider.notifier).generateInsight(
+          widget.category.value,
+        );
   }
 
   Widget _buildSection(

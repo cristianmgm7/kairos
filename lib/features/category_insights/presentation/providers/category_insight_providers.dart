@@ -6,6 +6,7 @@ import 'package:kairos/features/category_insights/data/datasources/category_insi
 import 'package:kairos/features/category_insights/data/repositories/category_insight_repository_impl.dart';
 import 'package:kairos/features/category_insights/domain/entities/category_insight_entity.dart';
 import 'package:kairos/features/category_insights/domain/repositories/category_insight_repository.dart';
+import 'package:kairos/features/category_insights/domain/usecases/generate_category_insight_usecase.dart';
 
 // Data source provider
 final categoryInsightRemoteDataSourceProvider = Provider<CategoryInsightRemoteDataSource>((ref) {
@@ -19,6 +20,12 @@ final categoryInsightRemoteDataSourceProvider = Provider<CategoryInsightRemoteDa
 final categoryInsightRepositoryProvider = Provider<CategoryInsightRepository>((ref) {
   final remoteDataSource = ref.watch(categoryInsightRemoteDataSourceProvider);
   return CategoryInsightRepositoryImpl(remoteDataSource: remoteDataSource);
+});
+
+// Use case provider
+final generateCategoryInsightUseCaseProvider = Provider<GenerateCategoryInsightUseCase>((ref) {
+  final repository = ref.watch(categoryInsightRepositoryProvider);
+  return GenerateCategoryInsightUseCase(repository: repository);
 });
 
 // Stream provider for all category insights
