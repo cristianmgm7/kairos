@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
@@ -49,6 +51,8 @@ class CreateTextMessageUseCase {
   ///
   /// Returns success once pipeline is initiated (AI response will arrive via repository stream).
   Future<Result<void>> call(CreateTextMessageParams params) async {
+    JournalThreadEntity? newThread;
+
     try {
       // Validate content
       if (params.content.trim().isEmpty) {
@@ -57,13 +61,14 @@ class CreateTextMessageUseCase {
 
       // Determine thread ID (create thread if needed)
       final threadId = params.threadId ?? _uuid.v4();
+      final thread = await threadRepository.getThreadById(threadId);
 
-      if (params.threadId == null) {
+      if (thread.dataOrNull == null) {
         // Create new thread
         final threadTitle =
             params.content.length > 50 ? '${params.content.substring(0, 50)}...' : params.content;
 
-        final thread = JournalThreadEntity(
+        newThread = JournalThreadEntity(
           id: threadId,
           userId: params.userId,
           title: threadTitle,
@@ -71,11 +76,6 @@ class CreateTextMessageUseCase {
           updatedAt: DateTime.now().toUtc(),
           lastMessageAt: DateTime.now().toUtc(),
         );
-
-        final threadResult = await threadRepository.createThread(thread);
-        if (threadResult.isError) {
-          return Error(threadResult.failureOrNull!);
-        }
       }
 
       // STEP 1: Create message locally
@@ -96,9 +96,13 @@ class CreateTextMessageUseCase {
 
       logger.i('Creating text message locally: $messageId');
 
-      final createResult = await messageRepository.createMessage(message);
-      if (createResult.isError) {
-        return Error(createResult.failureOrNull!);
+      final createResultList = await Future.wait<Result<dynamic>>([
+        if (newThread != null) threadRepository.createThread(newThread),
+        messageRepository.createMessage(message),
+      ]);
+
+      if (createResultList.any((result) => result.isError)) {
+        return Error(createResultList.firstWhere((result) => result.isError).failureOrNull!);
       }
 
       // UI updates automatically via repository stream
