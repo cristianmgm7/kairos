@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final settingsAsync = ref.watch(settingsStreamProvider);
+    final settingsAsync = ref.watch(settingsControllerProvider);
     final profileAsync = ref.watch(currentUserProfileProvider);
     final userAsync = ref.watch(authStateProvider);
 

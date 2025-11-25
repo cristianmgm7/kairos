@@ -27,10 +27,9 @@ final settingsStreamProvider = StreamProvider<SettingsEntity>((ref) {
 });
 
 /// Settings controller provider
-final settingsControllerProvider = StateNotifierProvider<SettingsController, SettingsState>((ref) {
-  final repository = ref.watch(settingsRepositoryProvider);
-  return SettingsController(repository);
-});
+final settingsControllerProvider = StreamNotifierProvider<SettingsController, SettingsEntity>(
+  SettingsController.new,
+);
 
 /// Current locale provider (derived from settings)
 final currentLocaleProvider = Provider<Locale>((ref) {

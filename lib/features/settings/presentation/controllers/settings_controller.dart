@@ -1,86 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kairos/core/providers/core_providers.dart';
 
 import 'package:kairos/features/settings/domain/entities/settings_entity.dart';
 import 'package:kairos/features/settings/domain/repositories/settings_repository.dart';
-
-/// Settings controller state
-class SettingsState {
-  const SettingsState({
-    this.isLoading = false,
-    this.error,
-  });
-
-  final bool isLoading;
-  final String? error;
-
-  SettingsState copyWith({
-    bool? isLoading,
-    String? error,
-  }) {
-    return SettingsState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-}
+import 'package:kairos/features/settings/presentation/providers/settings_providers.dart';
 
 /// Settings controller
-class SettingsController extends StateNotifier<SettingsState> {
-  SettingsController(this._repository) : super(const SettingsState()) {
-    _loadSettings();
+class SettingsController extends StreamNotifier<SettingsEntity> {
+  SettingsRepository get _repository => ref.read(settingsRepositoryProvider);
+
+  @override
+  Stream<SettingsEntity> build() {
+    return ref.watch(settingsRepositoryProvider).watchSettings();
   }
 
-  final SettingsRepository _repository;
-  SettingsEntity? _currentSettings;
-
-  Future<void> _loadSettings() async {
-    try {
-      _currentSettings = await _repository.getSettings();
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-    }
-  }
-
-  /// Update language
   Future<void> updateLanguage(AppLanguage language) async {
-    if (_currentSettings == null) return;
-
-    state = state.copyWith(isLoading: true);
-
     try {
-      final newSettings = _currentSettings!.copyWith(language: language);
-      await _repository.updateSettings(newSettings);
-      _currentSettings = newSettings;
-      state = state.copyWith(isLoading: false);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      await _repository.updateSettings(state.requireValue.copyWith(language: language));
+    } catch (e, s) {
+      logger.e('Error updating language', error: e, stackTrace: s);
+
+      state = AsyncError(e, s);
     }
   }
 
-  /// Update theme mode
   Future<void> updateThemeMode(AppThemeMode themeMode) async {
-    if (_currentSettings == null) return;
-
-    state = state.copyWith(isLoading: true);
-
     try {
-      final newSettings = _currentSettings!.copyWith(themeMode: themeMode);
-      await _repository.updateSettings(newSettings);
-      _currentSettings = newSettings;
-      state = state.copyWith(isLoading: false);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
-  }
+      await _repository.updateSettings(state.requireValue.copyWith(themeMode: themeMode));
+    } catch (e, s) {
+      logger.e('Error updating theme mode', error: e, stackTrace: s);
 
-  /// Clear error
-  void clearError() {
-    state = state.copyWith();
+      state = AsyncError(e, s);
+    }
   }
 }
