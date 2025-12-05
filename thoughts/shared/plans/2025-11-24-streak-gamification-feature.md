@@ -90,6 +90,7 @@ lib/features/streak/
 │   │   └── streak_repository.dart
 │   └── usecases/
 │       ├── calculate_streak_usecase.dart
+│       ├── calculate_and_update_streak_usecase.dart
 │       ├── get_streak_data_usecase.dart
 │       └── check_achievements_usecase.dart
 ├── data/
@@ -431,10 +432,6 @@ abstract class StreakRepository {
   /// Get current streak data (one-time fetch)
   Future<Result<StreakEntity?>> getStreak(String userId);
 
-  /// Calculate and update streak based on journal activity
-  /// Should be called after user creates a journal entry
-  Future<Result<StreakEntity>> calculateAndUpdateStreak(String userId);
-
   /// Get daily activity data for a date range
   Future<Result<List<DailyActivityEntity>>> getDailyActivity(
     String userId,
@@ -447,6 +444,12 @@ abstract class StreakRepository {
 
   /// Watch achievements (reactive stream)
   Stream<List<AchievementEntity>> watchAchievements(String userId);
+
+  /// Save streak data (internal use by use cases)
+  Future<void> saveStreak(StreakModel model);
+
+  /// Save achievement (internal use by use cases)
+  Future<void> saveAchievement(AchievementModel model);
 
   /// Sync local streak data to remote
   Future<Result<void>> syncStreak(String userId);
@@ -1187,6 +1190,119 @@ class CalculateStreakUseCase {
 
 ---
 
+### 2.1.2: Calculate and Update Streak Use Case
+
+**File**: `lib/features/streak/domain/usecases/calculate_and_update_streak_usecase.dart`
+
+**Changes**: Create orchestrating use case that handles complete streak calculation and update workflow
+
+```dart
+import 'package:kairos/core/errors/exceptions.dart';
+import 'package:kairos/core/errors/failures.dart';
+import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:kairos/features/streak/data/models/achievement_model.dart';
+import 'package:kairos/features/streak/data/models/streak_model.dart';
+import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
+import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
+import 'package:kairos/features/streak/domain/repositories/streak_repository.dart';
+import 'package:kairos/features/streak/domain/usecases/calculate_streak_usecase.dart';
+
+/// Use case for calculating and updating user streak with complete orchestration.
+/// Handles calculation, persistence, achievements, and sync in a single operation.
+///
+/// Should be called after user creates a journal entry or during data sync.
+class CalculateAndUpdateStreakUseCase {
+  CalculateAndUpdateStreakUseCase({
+    required this.streakRepository,
+    required this.journalRepository,
+    this.onAchievementUnlocked,
+  });
+
+  final StreakRepository streakRepository;
+  final JournalThreadRepository journalRepository;
+  final void Function(AchievementEntity)? onAchievementUnlocked;
+
+  Future<Result<StreakEntity>> call(String userId) async {
+    try {
+      // Calculate new streak using pure calculation use case
+      final calculateUseCase = CalculateStreakUseCase(
+        streakRepository: streakRepository,
+        journalRepository: journalRepository,
+      );
+      final updatedStreak = await calculateUseCase(userId);
+
+      // Save to local first
+      final model = StreakModel.fromEntity(updatedStreak);
+      await streakRepository.saveStreak(model);
+
+      // Check for new achievements
+      await _checkAndAwardAchievements(updatedStreak);
+
+      // Try to sync to remote (best effort)
+      try {
+        await streakRepository.syncStreak(userId);
+      } on NetworkException catch (e) {
+        logger.i('Network error syncing streak (will sync later): ${e.message}');
+      } on ServerException catch (e) {
+        logger.i('Server error syncing streak (will sync later): ${e.message}');
+      }
+
+      return Success(updatedStreak);
+    } catch (e) {
+      return Error(CacheFailure(message: 'Failed to calculate and update streak: $e'));
+    }
+  }
+
+  /// Check if user has earned any new achievements
+  Future<void> _checkAndAwardAchievements(StreakEntity streak) async {
+    final existingAchievements = await streakRepository.getAchievements(streak.userId);
+    final existingTypes = existingAchievements.dataOrNull?.map((a) => a.typeIndex).toSet() ?? {};
+
+    // Check streak milestones
+    final achievementsToAward = <AchievementType>[];
+
+    if (streak.currentStreak >= 7 && !existingTypes.contains(AchievementType.streak7.index)) {
+      achievementsToAward.add(AchievementType.streak7);
+    }
+    if (streak.currentStreak >= 30 && !existingTypes.contains(AchievementType.streak30.index)) {
+      achievementsToAward.add(AchievementType.streak30);
+    }
+    if (streak.currentStreak >= 100 && !existingTypes.contains(AchievementType.streak100.index)) {
+      achievementsToAward.add(AchievementType.streak100);
+    }
+    if (streak.currentStreak >= 365 && !existingTypes.contains(AchievementType.streak365.index)) {
+      achievementsToAward.add(AchievementType.streak365);
+    }
+
+    // First entry achievement
+    if (streak.totalActiveDays == 1 && !existingTypes.contains(AchievementType.firstEntry.index)) {
+      achievementsToAward.add(AchievementType.firstEntry);
+    }
+
+    // Award new achievements
+    for (final type in achievementsToAward) {
+      final achievement = AchievementModel.create(userId: streak.userId, type: type);
+      await streakRepository.saveAchievement(achievement);
+
+      try {
+        await streakRepository.syncStreak(streak.userId);
+      } catch (e) {
+        logger.i('Failed to sync achievement to remote: $e');
+      }
+
+      logger.i('🎉 Achievement unlocked for ${streak.userId}: ${type.name}');
+
+      // Trigger celebration callback
+      onAchievementUnlocked?.call(achievement.toEntity());
+    }
+  }
+}
+```
+
+---
+
 ### 2.2: Repository Implementation
 
 **File**: `lib/features/streak/data/repositories/streak_repository_impl.dart`
@@ -1198,7 +1314,6 @@ import 'package:kairos/core/errors/exceptions.dart';
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
-import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
 import 'package:kairos/features/streak/data/datasources/streak_local_datasource.dart';
 import 'package:kairos/features/streak/data/datasources/streak_remote_datasource.dart';
 import 'package:kairos/features/streak/data/models/achievement_model.dart';
@@ -1207,18 +1322,15 @@ import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
 import 'package:kairos/features/streak/domain/entities/daily_activity_entity.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
 import 'package:kairos/features/streak/domain/repositories/streak_repository.dart';
-import 'package:kairos/features/streak/domain/usecases/calculate_streak_usecase.dart';
 
 class StreakRepositoryImpl implements StreakRepository {
   StreakRepositoryImpl({
     required this.localDataSource,
     required this.remoteDataSource,
-    required this.journalRepository,
   });
 
   final StreakLocalDataSource localDataSource;
   final StreakRemoteDataSource remoteDataSource;
-  final JournalThreadRepository journalRepository;
 
   @override
   Stream<StreakEntity?> watchStreak(String userId) {
@@ -1236,35 +1348,13 @@ class StreakRepositoryImpl implements StreakRepository {
   }
 
   @override
-  Future<Result<StreakEntity>> calculateAndUpdateStreak(String userId) async {
-    try {
-      // Calculate new streak using use case
-      final calculateUseCase = CalculateStreakUseCase(
-        streakRepository: this,
-        journalRepository: journalRepository,
-      );
-      final updatedStreak = await calculateUseCase(userId);
+  Future<void> saveStreak(StreakModel model) async {
+    await localDataSource.saveStreak(model);
+  }
 
-      // Save to local first
-      final model = StreakModel.fromEntity(updatedStreak);
-      await localDataSource.saveStreak(model);
-
-      // Check for new achievements
-      await _checkAndAwardAchievements(updatedStreak);
-
-      // Try to sync to remote (best effort)
-      try {
-        await remoteDataSource.saveStreak(model);
-      } on NetworkException catch (e) {
-        logger.i('Network error saving streak (will sync later): ${e.message}');
-      } on ServerException catch (e) {
-        logger.i('Server error saving streak (will sync later): ${e.message}');
-      }
-
-      return Success(updatedStreak);
-    } catch (e) {
-      return Error(CacheFailure(message: 'Failed to calculate streak: $e'));
-    }
+  @override
+  Future<void> saveAchievement(AchievementModel model) async {
+    await localDataSource.saveAchievement(model);
   }
 
   @override
@@ -1329,46 +1419,6 @@ class StreakRepositoryImpl implements StreakRepository {
     }
   }
 
-  /// Check if user has earned any new achievements
-  Future<void> _checkAndAwardAchievements(StreakEntity streak) async {
-    final existingAchievements = await localDataSource.getAchievements(streak.userId);
-    final existingTypes = existingAchievements.map((a) => a.typeIndex).toSet();
-
-    // Check streak milestones
-    final achievementsToAward = <AchievementType>[];
-
-    if (streak.currentStreak >= 7 && !existingTypes.contains(AchievementType.streak7.index)) {
-      achievementsToAward.add(AchievementType.streak7);
-    }
-    if (streak.currentStreak >= 30 && !existingTypes.contains(AchievementType.streak30.index)) {
-      achievementsToAward.add(AchievementType.streak30);
-    }
-    if (streak.currentStreak >= 100 && !existingTypes.contains(AchievementType.streak100.index)) {
-      achievementsToAward.add(AchievementType.streak100);
-    }
-    if (streak.currentStreak >= 365 && !existingTypes.contains(AchievementType.streak365.index)) {
-      achievementsToAward.add(AchievementType.streak365);
-    }
-
-    // First entry achievement
-    if (streak.totalActiveDays == 1 && !existingTypes.contains(AchievementType.firstEntry.index)) {
-      achievementsToAward.add(AchievementType.firstEntry);
-    }
-
-    // Award new achievements
-    for (final type in achievementsToAward) {
-      final achievement = AchievementModel.create(userId: streak.userId, type: type);
-      await localDataSource.saveAchievement(achievement);
-
-      try {
-        await remoteDataSource.saveAchievement(achievement);
-      } catch (e) {
-        logger.i('Failed to sync achievement to remote: $e');
-      }
-
-      logger.i('🎉 Achievement unlocked for ${streak.userId}: ${type.name}');
-    }
-  }
 
   String _dateToString(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -1454,6 +1504,20 @@ final currentAchievementsProvider = StreamProvider<List<AchievementEntity>>((ref
 // ============ Action Providers ============
 
 /// Trigger streak calculation (call after journal entry created)
+final calculateAndUpdateStreakUseCaseProvider = Provider<CalculateAndUpdateStreakUseCase>((ref) {
+  final streakRepository = ref.watch(streakRepositoryProvider);
+  final journalRepository = ref.watch(journalThreadRepositoryProvider);
+  return CalculateAndUpdateStreakUseCase(
+    streakRepository: streakRepository,
+    journalRepository: journalRepository,
+    onAchievementUnlocked: (achievement) {
+      // TODO: Add achievement celebration UI logic here
+      logger.i('Achievement unlocked: ${achievement.type.name}');
+    },
+  );
+});
+
+/// Convenience provider for triggering streak calculation
 final calculateStreakProvider = Provider<Future<void> Function()>((ref) {
   return () async {
     final user = ref.read(currentUserProvider);
@@ -1464,8 +1528,8 @@ final calculateStreakProvider = Provider<Future<void> Function()>((ref) {
       return;
     }
 
-    final repository = ref.read(streakRepositoryProvider);
-    final result = await repository.calculateAndUpdateStreak(userId);
+    final useCase = ref.read(calculateAndUpdateStreakUseCaseProvider);
+    final result = await useCase(userId);
 
     result.when(
       success: (streak) {
@@ -2840,41 +2904,45 @@ void showMilestoneCelebration(BuildContext context, AchievementEntity achievemen
 
 ### 5.2: Update Repository to Trigger Celebrations
 
-**File**: `lib/features/streak/data/repositories/streak_repository_impl.dart`
+**File**: `lib/features/streak/domain/usecases/calculate_and_update_streak_usecase.dart`
 
-**Changes**: Add callback for new achievements (update `_checkAndAwardAchievements` method)
+**Changes**: Add achievement celebration callback to the use case
 
 ```dart
-// Add this field to StreakRepositoryImpl class
-final void Function(AchievementEntity)? onAchievementUnlocked;
+// Add callback field to CalculateAndUpdateStreakUseCase
+class CalculateAndUpdateStreakUseCase {
+  CalculateAndUpdateStreakUseCase({
+    required this.streakRepository,
+    required this.journalRepository,
+    this.onAchievementUnlocked, // Add this parameter
+  });
 
-// Update constructor
-StreakRepositoryImpl({
-  required this.localDataSource,
-  required this.remoteDataSource,
-  required this.journalRepository,
-  this.onAchievementUnlocked,
-});
+  final StreakRepository streakRepository;
+  final JournalThreadRepository journalRepository;
+  final void Function(AchievementEntity)? onAchievementUnlocked; // Add this field
 
-// Update _checkAndAwardAchievements method to call callback
-Future<void> _checkAndAwardAchievements(StreakEntity streak) async {
-  // ... existing code ...
+  // ... existing call method and other methods ...
 
-  // Award new achievements
-  for (final type in achievementsToAward) {
-    final achievement = AchievementModel.create(userId: streak.userId, type: type);
-    await localDataSource.saveAchievement(achievement);
+  /// Check if user has earned any new achievements
+  Future<void> _checkAndAwardAchievements(StreakEntity streak) async {
+    // ... existing achievement checking logic ...
 
-    try {
-      await remoteDataSource.saveAchievement(achievement);
-    } catch (e) {
-      logger.i('Failed to sync achievement to remote: $e');
+    // Award new achievements
+    for (final type in achievementsToAward) {
+      final achievement = AchievementModel.create(userId: streak.userId, type: type);
+      await streakRepository.saveAchievement(achievement);
+
+      try {
+        await streakRepository.syncStreak(streak.userId);
+      } catch (e) {
+        logger.i('Failed to sync achievement to remote: $e');
+      }
+
+      logger.i('🎉 Achievement unlocked for ${streak.userId}: ${type.name}');
+
+      // Trigger celebration callback (NEW)
+      onAchievementUnlocked?.call(achievement.toEntity());
     }
-
-    logger.i('🎉 Achievement unlocked for ${streak.userId}: ${type.name}');
-
-    // Trigger celebration callback (NEW)
-    onAchievementUnlocked?.call(achievement.toEntity());
   }
 }
 ```
@@ -2889,12 +2957,13 @@ Future<void> _checkAndAwardAchievements(StreakEntity streak) async {
 
 ```dart
 // After streak calculation succeeds
-final result = await repository.calculateAndUpdateStreak(userId);
+final useCase = ref.read(calculateAndUpdateStreakUseCaseProvider);
+final result = await useCase(userId);
 
 result.when(
   success: (updatedStreak) {
     // Check if new achievements were unlocked
-    // This will be handled by the repository callback
+    // This is handled by the use case internally
     logger.i('Streak updated successfully');
   },
   error: (failure) {
@@ -3229,6 +3298,7 @@ users/{userId}/achievements/{achievementId}
 
 ### Phase 2: Streak Calculation Engine
 - [ ] Implement CalculateStreakUseCase
+- [ ] Implement CalculateAndUpdateStreakUseCase
 - [ ] Implement StreakRepositoryImpl
 - [ ] Create Riverpod providers
 - [ ] Test streak calculation logic

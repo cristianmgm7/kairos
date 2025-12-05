@@ -6,6 +6,9 @@ import 'package:kairos/features/journal/data/models/journal_message_model.dart';
 import 'package:kairos/features/journal/data/models/journal_thread_model.dart';
 import 'package:kairos/features/profile/data/models/user_profile_model.dart';
 import 'package:kairos/features/settings/data/models/settings_model.dart';
+import 'package:kairos/features/streak/data/models/achievement_model.dart';
+import 'package:kairos/features/streak/data/models/daily_activity_model.dart';
+import 'package:kairos/features/streak/data/models/streak_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Provider that throws by default, will be overridden in main
@@ -23,6 +26,9 @@ Future<Isar> initializeIsar() async {
       SettingsModelSchema,
       JournalThreadModelSchema,
       JournalMessageModelSchema,
+      StreakModelSchema,           // NEW
+      DailyActivityModelSchema,    // NEW
+      AchievementModelSchema,      // NEW
     ],
     directory: dir.path,
     name: 'kairos_db',
