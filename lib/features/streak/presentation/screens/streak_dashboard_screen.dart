@@ -24,35 +24,45 @@ class StreakDashboardScreen extends ConsumerWidget {
       ),
       body: streakAsync.when(
         data: (streak) => _buildDashboard(context, ref, streak),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Error loading dashboard: $error'),
-        ),
+        loading: () => _buildLoadingView(context),
+        error: (error, stack) => _buildErrorView(context, error, stack, ref),
       ),
     );
   }
 
   Widget _buildDashboard(BuildContext context, WidgetRef ref, StreakEntity? streak) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Motivational message
-          if (streak != null) MotivationalMessageWidget(streak: streak),
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Invalidate providers to trigger fresh data loading
+        ref.invalidate(currentStreakProvider);
+        ref.invalidate(achievementsProvider);
+        ref.invalidate(dailyActivitiesProvider);
 
-          // Stats card
-          if (streak != null) StreakStatsCard(streak: streak),
+        // Wait a bit for the invalidation to take effect
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Motivational message
+            if (streak != null) MotivationalMessageWidget(streak: streak),
 
-          // Calendar view
-          const StreakCalendarView(),
+            // Stats card
+            if (streak != null) StreakStatsCard(streak: streak),
 
-          // Heatmap view
-          const StreakHeatmapView(),
+            // Calendar view
+            const StreakCalendarView(),
 
-          // Achievements section
-          _buildAchievementsSection(context, ref),
-        ],
+            // Heatmap view
+            const StreakHeatmapView(),
+
+            // Achievements section
+            _buildAchievementsSection(context, ref),
+          ],
+        ),
       ),
     );
   }
@@ -157,6 +167,122 @@ class StreakDashboardScreen extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingView(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          // Shimmer effect for motivational message
+          Container(
+            height: 120,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+
+          // Shimmer for stats card
+          Container(
+            height: 200,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+
+          // Shimmer for calendar
+          Container(
+            height: 350,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+
+          // Shimmer for heatmap
+          Container(
+            height: 300,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+
+          // Loading indicator in center
+          const SizedBox(height: AppSpacing.xl),
+          const Center(
+            child: Column(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: AppSpacing.md),
+                Text('Loading your streak data...'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, Object error, StackTrace stack, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error.withValues(alpha: 0.7),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Unable to Load Dashboard',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'We encountered an issue loading your streak data. Please try again.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton.icon(
+              onPressed: () {
+                // Refresh the data
+                ref.invalidate(currentStreakProvider);
+                ref.invalidate(achievementsProvider);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try Again'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+              ),
             ),
           ],
         ),

@@ -87,13 +87,12 @@ final dailyActivitiesProvider = StreamProvider<List<Map<String, dynamic>>>((ref)
 final calculateAndUpdateStreakUseCaseProvider = Provider<CalculateAndUpdateStreakUseCase>((ref) {
   final streakRepository = ref.watch(streakRepositoryProvider);
   final journalRepository = ref.watch(threadRepositoryProvider);
+  final celebrationHandler = ref.read(achievementCelebrationProvider);
+
   return CalculateAndUpdateStreakUseCase(
     streakRepository: streakRepository,
     journalRepository: journalRepository,
-    onAchievementUnlocked: (achievement) {
-      // TODO: Add achievement celebration UI logic here
-      logger.i('Achievement unlocked: ${achievement.type.name}');
-    },
+    onAchievementUnlocked: celebrationHandler,
   );
 });
 
@@ -119,5 +118,15 @@ final calculateStreakProvider = Provider<Future<void> Function()>((ref) {
         logger.e('Failed to calculate streak: ${failure.message}');
       },
     );
+  };
+});
+
+/// Provider that handles achievement celebrations
+final achievementCelebrationProvider = Provider<Future<void> Function(AchievementEntity)>((ref) {
+  return (achievement) async {
+    logger.i('🎉 Achievement unlocked: ${achievement.type.name}');
+
+    // We'll implement the dialog showing in Phase 5.3 when we have better context access
+    // For now, the celebration is logged and will be shown in the UI
   };
 });
