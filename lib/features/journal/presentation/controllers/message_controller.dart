@@ -9,6 +9,7 @@ import 'package:kairos/features/journal/domain/usecases/create_audio_message_use
 import 'package:kairos/features/journal/domain/usecases/create_image_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/create_text_message_usecase.dart';
 import 'package:kairos/features/journal/domain/usecases/retry_message_pipeline_usecase.dart';
+import 'package:kairos/features/streak/presentation/providers/streak_providers.dart';
 
 sealed class MessageState {}
 
@@ -31,6 +32,7 @@ class MessageController extends StateNotifier<MessageState> {
     required this.retryMessagePipelineUseCase,
     required this.imagePickerService,
     required this.audioRecorderService,
+    required this.ref,
   }) : super(MessageInitial());
 
   final CreateTextMessageUseCase createTextMessageUseCase;
@@ -39,6 +41,7 @@ class MessageController extends StateNotifier<MessageState> {
   final RetryMessagePipelineUseCase retryMessagePipelineUseCase;
   final ImagePickerService imagePickerService;
   final AudioRecorderService audioRecorderService;
+  final Ref ref;
 
   File? _selectedImage;
   File? get selectedImage => _selectedImage;
@@ -65,6 +68,9 @@ class MessageController extends StateNotifier<MessageState> {
       success: (_) {
         // Use case handles everything - status updates flow through repository stream
         state = MessageSuccess();
+
+        // Trigger streak calculation (NEW)
+        ref.read(calculateStreakProvider)();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));
@@ -92,6 +98,9 @@ class MessageController extends StateNotifier<MessageState> {
         // Use case handles upload, analysis, and remote creation
         // Status updates flow through repository stream to UI
         state = MessageSuccess();
+
+        // Trigger streak calculation (NEW)
+        ref.read(calculateStreakProvider)();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));
@@ -121,6 +130,9 @@ class MessageController extends StateNotifier<MessageState> {
         // Use case handles upload, transcription, and remote creation
         // Status updates flow through repository stream to UI
         state = MessageSuccess();
+
+        // Trigger streak calculation (NEW)
+        ref.read(calculateStreakProvider)();
       },
       error: (Failure failure) {
         state = MessageError(_getErrorMessage(failure));

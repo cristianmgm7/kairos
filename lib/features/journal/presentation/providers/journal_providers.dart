@@ -164,6 +164,7 @@ final messageControllerProvider = StateNotifierProvider<MessageController, Messa
     retryMessagePipelineUseCase: retryMessagePipelineUseCase,
     imagePickerService: imagePickerService,
     audioRecorderService: audioRecorderService,
+    ref: ref,
   );
 });
 

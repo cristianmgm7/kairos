@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/profile/presentation/providers/user_profile_providers.dart';
+import 'package:kairos/features/streak/presentation/widgets/streak_preview_card.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
 /// Home screen - displays welcome message and user profile info.
@@ -70,6 +71,9 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+
+                  // Streak preview card (NEW)
+                  const StreakPreviewCard(),
                 ],
               ),
             ),
