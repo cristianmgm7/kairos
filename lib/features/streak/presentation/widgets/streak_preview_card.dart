@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:kairos/core/routing/app_routes.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
 import 'package:kairos/features/streak/presentation/providers/streak_providers.dart';
-import 'package:kairos/features/streak/presentation/screens/streak_dashboard_screen.dart';
 
 class StreakPreviewCard extends ConsumerWidget {
   const StreakPreviewCard({super.key});
@@ -29,11 +30,7 @@ class StreakPreviewCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const StreakDashboardScreen(),
-            ),
-          );
+          context.push(AppRoutes.streakDashboard);
         },
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),

@@ -22,6 +22,9 @@ class AppRoutes {
   static const String manageData = '/settings/manage-data';
   static const String pushNotifications = '/settings/push-notifications';
 
+  // Streak route (authenticated but outside shell)
+  static const String streakDashboard = '/streak/dashboard';
+
   // Error
   static const String error = '/error';
 }

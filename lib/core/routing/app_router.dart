@@ -20,6 +20,7 @@ import 'package:kairos/features/settings/presentation/screens/manage_data_screen
 import 'package:kairos/features/settings/presentation/screens/push_notifications_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/theme_settings_screen.dart';
+import 'package:kairos/features/streak/presentation/screens/streak_dashboard_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -97,6 +98,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.pushNotifications,
         builder: (context, state) => const PushNotificationsScreen(),
+      ),
+
+      // Streak dashboard route (authenticated but outside shell)
+      GoRoute(
+        path: AppRoutes.streakDashboard,
+        builder: (context, state) => const StreakDashboardScreen(),
       ),
 
       // Shell route (persistent bottom navigation for all main app routes)

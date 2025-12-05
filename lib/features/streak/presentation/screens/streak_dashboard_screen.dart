@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
