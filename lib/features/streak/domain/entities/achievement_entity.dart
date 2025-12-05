@@ -31,6 +31,9 @@ class AchievementEntity extends Equatable {
   /// When the achievement was unlocked
   final DateTime unlockedAt;
 
+  /// Index of the achievement type (for serialization)
+  int get typeIndex => type.index;
+
   /// Display name for the achievement
   String get displayName {
     return switch (type) {

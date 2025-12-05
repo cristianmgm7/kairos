@@ -43,6 +43,16 @@ class JournalThreadRepositoryImpl implements JournalThreadRepository {
   }
 
   @override
+  Future<Result<List<JournalThreadEntity>>> getThreadsByUserId(String userId) async {
+    try {
+      final localThreads = await localDataSource.getThreadsByUserId(userId);
+      return Success(localThreads.map((m) => m.toEntity()).toList());
+    } catch (e) {
+      return Error(CacheFailure(message: 'Failed to get threads: $e'));
+    }
+  }
+
+  @override
   Future<Result<JournalThreadEntity?>> getThreadById(String threadId) async {
     try {
       final localThread = await localDataSource.getThreadById(threadId);

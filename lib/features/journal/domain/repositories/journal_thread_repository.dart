@@ -5,6 +5,7 @@ import 'package:kairos/features/journal/domain/entities/journal_thread_entity.da
 abstract class JournalThreadRepository {
   Future<Result<JournalThreadEntity>> createThread(JournalThreadEntity thread);
   Future<Result<JournalThreadEntity?>> getThreadById(String threadId);
+  Future<Result<List<JournalThreadEntity>>> getThreadsByUserId(String userId);
   Stream<List<JournalThreadEntity>> watchThreadsByUserId(String userId);
   Future<Result<void>> updateThread(JournalThreadEntity thread);
   Future<Result<void>> archiveThread(String threadId);

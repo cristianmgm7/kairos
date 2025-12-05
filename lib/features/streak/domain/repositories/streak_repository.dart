@@ -1,4 +1,6 @@
 import 'package:kairos/core/utils/result.dart';
+import 'package:kairos/features/streak/data/models/achievement_model.dart';
+import 'package:kairos/features/streak/data/models/streak_model.dart';
 import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
 import 'package:kairos/features/streak/domain/entities/daily_activity_entity.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
@@ -25,10 +27,10 @@ abstract class StreakRepository {
   Stream<List<AchievementEntity>> watchAchievements(String userId);
 
   /// Save streak data (internal use by use cases)
-  Future<void> saveStreak(dynamic model);
+  Future<void> saveStreak(StreakModel model);
 
   /// Save achievement (internal use by use cases)
-  Future<void> saveAchievement(dynamic model);
+  Future<void> saveAchievement(AchievementModel model);
 
   /// Sync local streak data to remote
   Future<Result<void>> syncStreak(String userId);
