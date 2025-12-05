@@ -26,6 +26,9 @@ abstract class StreakRepository {
   /// Watch achievements (reactive stream)
   Stream<List<AchievementEntity>> watchAchievements(String userId);
 
+  /// Watch daily activity data (reactive stream)
+  Stream<List<Map<String, dynamic>>> watchDailyActivities(String userId);
+
   /// Save streak data (internal use by use cases)
   Future<void> saveStreak(StreakModel model);
 

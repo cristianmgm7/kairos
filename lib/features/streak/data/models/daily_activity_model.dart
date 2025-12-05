@@ -53,4 +53,15 @@ class DailyActivityModel {
       lastEntryAt: DateTime.fromMillisecondsSinceEpoch(lastEntryAtMillis, isUtc: true),
     );
   }
+
+  /// Convert to JSON for external use (like repository streams)
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'date': date,
+      'entryCount': entryCount,
+      'firstEntryAt': DateTime.fromMillisecondsSinceEpoch(firstEntryAtMillis, isUtc: true),
+      'lastEntryAt': DateTime.fromMillisecondsSinceEpoch(lastEntryAtMillis, isUtc: true),
+    };
+  }
 }

@@ -16,6 +16,11 @@ abstract class StreakLocalDataSource {
   Future<void> saveAchievement(AchievementModel achievement);
   Future<List<AchievementModel>> getAchievements(String userId);
   Stream<List<AchievementModel>> watchAchievements(String userId);
+  Stream<List<DailyActivityModel>> watchDailyActivities(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
 }
 
 class StreakLocalDataSourceImpl implements StreakLocalDataSource {
@@ -88,5 +93,26 @@ class StreakLocalDataSourceImpl implements StreakLocalDataSource {
         .userIdEqualTo(userId)
         .watch(fireImmediately: true)
         .map((achievements) => achievements..sort((a, b) => b.unlockedAtMillis.compareTo(a.unlockedAtMillis)));
+  }
+
+  @override
+  Stream<List<DailyActivityModel>> watchDailyActivities(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final startDateStr = _dateToString(startDate);
+    final endDateStr = _dateToString(endDate);
+
+    return isar.dailyActivityModels
+        .filter()
+        .userIdEqualTo(userId)
+        .dateBetween(startDateStr, endDateStr)
+        .watch(fireImmediately: true)
+        .map((activities) => activities..sort((a, b) => b.date.compareTo(a.date)));
+  }
+
+  String _dateToString(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

@@ -32,6 +32,9 @@ class StreakEntity extends Equatable {
   /// Number of journal entries created this week (Monday-Sunday)
   final int currentWeekCount;
 
+  /// Alias for currentWeekCount for backwards compatibility
+  int get weeklyCount => currentWeekCount;
+
   /// When this streak record was first created
   final DateTime createdAt;
 

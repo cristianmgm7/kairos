@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kairos/core/theme/app_spacing.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
 import 'package:kairos/features/streak/presentation/providers/streak_providers.dart';
-// import 'package:kairos/features/streak/presentation/screens/streak_dashboard_screen.dart'; // TODO: Uncomment when dashboard is created
+import 'package:kairos/features/streak/presentation/screens/streak_dashboard_screen.dart';
 
 class StreakPreviewCard extends ConsumerWidget {
   const StreakPreviewCard({super.key});
@@ -29,12 +29,11 @@ class StreakPreviewCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to streak dashboard when implemented
-          // Navigator.of(context).push(
-          //   MaterialPageRoute<void>(
-          //     builder: (_) => const StreakDashboardScreen(),
-          //   ),
-          // );
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const StreakDashboardScreen(),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),

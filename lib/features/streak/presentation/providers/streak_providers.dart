@@ -53,7 +53,7 @@ final currentStreakProvider = StreamProvider<StreakEntity?>((ref) {
 });
 
 /// Watch current user's achievements
-final currentAchievementsProvider = StreamProvider<List<AchievementEntity>>((ref) {
+final achievementsProvider = StreamProvider<List<AchievementEntity>>((ref) {
   final user = ref.watch(currentUserProvider);
   final userId = user?.id;
 
@@ -63,6 +63,22 @@ final currentAchievementsProvider = StreamProvider<List<AchievementEntity>>((ref
 
   final repository = ref.watch(streakRepositoryProvider);
   return repository.watchAchievements(userId);
+});
+
+// Alias for backwards compatibility
+final currentAchievementsProvider = achievementsProvider;
+
+/// Watch current user's daily activity data for the past year
+final dailyActivitiesProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  final user = ref.watch(currentUserProvider);
+  final userId = user?.id;
+
+  if (userId == null) {
+    return Stream.value([]);
+  }
+
+  final repository = ref.watch(streakRepositoryProvider);
+  return repository.watchDailyActivities(userId);
 });
 
 // ============ Action Providers ============
