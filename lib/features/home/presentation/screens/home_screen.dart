@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final user = ref.watch(currentUserProvider);
+    ref.watch(currentUserProvider);
     final profileAsync = ref.watch(currentUserProfileProvider);
 
     return Column(
@@ -31,55 +31,10 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-        Expanded(
-          child: profileAsync.when(
-            data: (profile) => SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome section
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (profile?.avatarUrl != null)
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: NetworkImage(profile!.avatarUrl!),
-                          )
-                        else if (user?.photoUrl != null)
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: NetworkImage(user!.photoUrl!),
-                          )
-                        else
-                          const CircleAvatar(
-                            radius: 40,
-                            child: Icon(Icons.person, size: 40),
-                          ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Welcome back, ${profile?.name ?? user?.displayName ?? 'User'}!',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Your journaling companion',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Streak preview card (NEW)
-                  const StreakPreviewCard(),
-                ],
-              ),
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(child: Text('Error: $error')),
-          ),
+        profileAsync.when(
+          data: (profile) => const StreakPreviewCard(),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
         ),
       ],
     );
