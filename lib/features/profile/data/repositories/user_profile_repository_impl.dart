@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'package:kairos/core/errors/failures.dart';
 import 'package:kairos/core/providers/core_providers.dart';
+import 'package:kairos/core/utils/conflict_resolver.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_local_datasource.dart';
 import 'package:kairos/features/profile/data/datasources/user_profile_remote_datasource.dart';
@@ -143,7 +144,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   }
 
   @override
-  Future<Result<void>> syncProfile() async {
+  Future<Result<void>> syncProfile(String userId) async {
     try {
       if (!await _isOnline) {
         return const Error(
@@ -151,54 +152,49 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         );
       }
 
-      // Get all local profiles and sync them
-      final localProfiles = await localDataSource.getAllProfiles();
+      logger.i('Syncing profile for user: $userId');
 
-      for (final localProfile in localProfiles) {
-        try {
-          // Fetch remote version
-          final remoteProfile = await remoteDataSource.getProfileByUserId(localProfile.userId);
+      final local = await localDataSource.getProfileByUserId(userId);
+      final remote = await remoteDataSource.getProfileByUserId(userId);
 
-          if (remoteProfile == null) {
-            // No remote version, push local to remote
-            await remoteDataSource.saveProfile(localProfile);
-          } else {
-            // Both exist - use simple last-write-wins strategy
-            if (localProfile.modifiedAtMillis > remoteProfile.modifiedAtMillis) {
-              // Local is newer, push to remote
-              await remoteDataSource.updateProfile(localProfile);
-            } else if (remoteProfile.modifiedAtMillis > localProfile.modifiedAtMillis) {
-              // Remote is newer, pull to local
-              await localDataSource.updateProfile(remoteProfile);
-            }
-            // If equal, they're in sync - do nothing
-          }
-        } catch (profileSyncError) {
-          logger.i(
-            'Failed to sync profile ${localProfile.id}: $profileSyncError',
-          );
-          // Continue with other profiles
-        }
+      // nothing to sync
+      if (local == null && remote == null) {
+        return success();
       }
 
-      return const Success(null);
+      // just local, upsync
+      if (local != null && remote == null && !local.synced) {
+        await remoteDataSource.saveProfile(local);
+        await localDataSource.markSynced(local.id);
+        return success();
+      }
+
+      // just remote, downsync
+      if (local == null && remote != null) {
+        await localDataSource.saveProfile(remote);
+        return success();
+      }
+
+      // both exist - use last-write-wins strategy
+      final winner = ConflictResolver.resolveLatest(local: local!, remote: remote!);
+
+      await winner.fold(
+        (local) async {
+          await remoteDataSource.updateProfile(local);
+          await localDataSource.markSynced(local.id);
+        },
+        (remote) async {
+          await localDataSource.updateProfile(remote);
+        },
+      );
+
+      logger.i('Synced profile for user: $userId');
+
+      return success();
     } catch (e) {
+      logger.e('Failed to sync profile: $e');
+
       return Error(UnknownFailure(message: 'Failed to sync profile: $e'));
-    }
-  }
-
-  @override
-  Future<Result<void>> fetchProfile(String profileId) async {
-    try {
-      final profile = await remoteDataSource.getProfileByUserId(profileId);
-
-      if (profile != null) {
-        await localDataSource.updateProfile(profile);
-      }
-
-      return const Success(null);
-    } catch (e) {
-      return const Error(UnknownFailure(message: 'Failed to fetch profile'));
     }
   }
 }

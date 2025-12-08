@@ -10,7 +10,7 @@ class CheckUserProfileUseCase {
     final profile = await _profileRepository.getProfileByUserId(userId);
 
     if (profile.dataOrNull == null) {
-      await _profileRepository.fetchProfile(userId);
+      await _profileRepository.syncProfile(userId);
     }
 
     yield* _profileRepository

@@ -21,9 +21,6 @@ abstract class UserProfileRepository {
   /// Watch profile changes for a user (reactive stream)
   Stream<UserProfileEntity?> watchProfileByUserId(String userId);
 
-  /// Manually trigger profile fetch
-  Future<Result<void>> fetchProfile(String profileId);
-
   /// Manually trigger sync
-  Future<Result<void>> syncProfile();
+  Future<Result<void>> syncProfile(String userId);
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kairos/core/routing/router_provider.dart';
+import 'package:kairos/core/routing/app_router.dart';
 import 'package:kairos/core/theme/app_theme.dart';
 import 'package:kairos/core/widgets/globals.dart';
 import 'package:kairos/features/settings/presentation/providers/settings_providers.dart';
