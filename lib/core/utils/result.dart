@@ -44,3 +44,7 @@ extension ResultExtension<T> on Result<T> {
     }
   }
 }
+
+Success<T?> success<T>([T? data]) => Success<T?>(data);
+
+Error<T> error<T>(Failure failure) => Error<T>(failure);

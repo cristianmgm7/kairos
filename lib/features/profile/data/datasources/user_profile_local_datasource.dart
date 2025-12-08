@@ -24,6 +24,8 @@ abstract class UserProfileLocalDataSource {
 
   /// Get all profiles (for debugging/admin)
   Future<List<UserProfileModel>> getAllProfiles();
+
+  Future<void> markSynced(String userId);
 }
 
 class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
@@ -92,5 +94,16 @@ class UserProfileLocalDataSourceImpl implements UserProfileLocalDataSource {
   @override
   Future<List<UserProfileModel>> getAllProfiles() async {
     return isar.userProfileModels.filter().isDeletedEqualTo(false).findAll();
+  }
+
+  @override
+  Future<void> markSynced(String profileId) async {
+    final profile = await getProfileById(profileId);
+
+    if (profile == null) return;
+
+    await isar.writeTxn(() async {
+      await isar.userProfileModels.put(profile.copyWith(synced: true));
+    });
   }
 }

@@ -1,4 +1,5 @@
 import 'package:isar/isar.dart';
+import 'package:kairos/core/common/base_classes.dart';
 import 'package:kairos/features/profile/domain/entities/user_profile_entity.dart';
 import 'package:uuid/uuid.dart';
 
@@ -7,13 +8,14 @@ part 'user_profile_model.g.dart';
 /// Data model for user profile with Isar persistence
 /// Note: Does not extend DatumEntity due to Isar incompatibility with Equatable
 @collection
-class UserProfileModel {
+class UserProfileModel implements HasTimestamps {
   UserProfileModel({
     required this.id,
     required this.userId,
     required this.name,
     required this.createdAtMillis,
-    required this.modifiedAtMillis,
+    required this.updatedAtMillis,
+    required this.synced,
     this.dateOfBirthMillis,
     this.country,
     this.gender,
@@ -50,13 +52,14 @@ class UserProfileModel {
       mainGoal: mainGoal,
       experienceLevel: experienceLevel,
       interests: interests,
+      synced: false,
       createdAtMillis: now.millisecondsSinceEpoch,
-      modifiedAtMillis: now.millisecondsSinceEpoch,
+      updatedAtMillis: now.millisecondsSinceEpoch,
     );
   }
 
   /// Create from domain entity
-  factory UserProfileModel.fromEntity(UserProfileEntity entity) {
+  factory UserProfileModel.fromEntity(UserProfileEntity entity, {bool synced = false}) {
     return UserProfileModel(
       id: entity.id,
       userId: entity.userId,
@@ -68,8 +71,9 @@ class UserProfileModel {
       mainGoal: entity.mainGoal,
       experienceLevel: entity.experienceLevel,
       interests: entity.interests,
+      synced: synced,
       createdAtMillis: entity.createdAt.millisecondsSinceEpoch,
-      modifiedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
+      updatedAtMillis: entity.updatedAt.millisecondsSinceEpoch,
     );
   }
 
@@ -88,9 +92,10 @@ class UserProfileModel {
       experienceLevel: map['experienceLevel'] as String?,
       interests: map['interests'] != null ? List<String>.from(map['interests'] as List) : null,
       createdAtMillis: map['createdAtMillis'] as int,
-      modifiedAtMillis: map['modifiedAtMillis'] as int,
+      updatedAtMillis: map['modifiedAtMillis'] as int,
       isDeleted: map['isDeleted'] as bool? ?? false,
       version: map['version'] as int? ?? 1,
+      synced: true,
     );
   }
 
@@ -131,16 +136,21 @@ class UserProfileModel {
   final List<String>? interests;
 
   /// Created at timestamp (milliseconds since epoch)
+  @override
   final int createdAtMillis;
 
   /// Updated at timestamp (milliseconds since epoch)
-  final int modifiedAtMillis;
+  @override
+  final int updatedAtMillis;
 
   /// Soft delete flag (Datum requirement)
   final bool isDeleted;
 
   /// Version for optimistic locking (Datum requirement)
   final int version;
+
+  /// Synced flag
+  final bool synced;
 
   /// Isar ID (required for Isar collections)
   Id get isarId => fastHash(id);
@@ -160,7 +170,7 @@ class UserProfileModel {
       'experienceLevel': experienceLevel,
       'interests': interests,
       'createdAtMillis': createdAtMillis,
-      'modifiedAtMillis': modifiedAtMillis,
+      'modifiedAtMillis': updatedAtMillis,
       'isDeleted': isDeleted,
       'version': version,
     };
@@ -182,7 +192,7 @@ class UserProfileModel {
       experienceLevel: experienceLevel,
       interests: interests,
       createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis),
     );
   }
 
@@ -199,6 +209,7 @@ class UserProfileModel {
     String? mainGoal,
     String? experienceLevel,
     List<String>? interests,
+    bool? synced,
     int? createdAtMillis,
     int? modifiedAtMillis,
     bool? isDeleted,
@@ -216,8 +227,9 @@ class UserProfileModel {
       mainGoal: mainGoal ?? this.mainGoal,
       experienceLevel: experienceLevel ?? this.experienceLevel,
       interests: interests ?? this.interests,
+      synced: synced ?? this.synced,
       createdAtMillis: createdAtMillis ?? this.createdAtMillis,
-      modifiedAtMillis: modifiedAtMillis ?? this.modifiedAtMillis,
+      updatedAtMillis: modifiedAtMillis ?? updatedAtMillis,
       isDeleted: isDeleted ?? this.isDeleted,
       version: version ?? this.version,
     );
@@ -239,5 +251,5 @@ class UserProfileModel {
 
   DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
 
-  DateTime get modifiedAt => DateTime.fromMillisecondsSinceEpoch(modifiedAtMillis);
+  DateTime get modifiedAt => DateTime.fromMillisecondsSinceEpoch(updatedAtMillis);
 }
