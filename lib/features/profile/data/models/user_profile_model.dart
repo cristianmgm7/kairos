@@ -178,12 +178,19 @@ class UserProfileModel implements HasTimestamps {
 
   /// Convert to domain entity
   UserProfileEntity toEntity() {
+    // Validate timestamps to prevent invalid DateTime conversion
+    final validCreatedAt = _isValidTimestamp(createdAtMillis)
+        ? createdAtMillis
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    final validUpdatedAt = _isValidTimestamp(updatedAtMillis) ? updatedAtMillis : validCreatedAt;
+
     return UserProfileEntity(
       id: id,
       userId: userId,
       name: name,
-      dateOfBirth: dateOfBirthMillis != null
-          ? DateTime.fromMillisecondsSinceEpoch(dateOfBirthMillis!)
+      dateOfBirth: dateOfBirthMillis != null && _isValidTimestamp(dateOfBirthMillis!)
+          ? DateTime.fromMillisecondsSinceEpoch(dateOfBirthMillis!, isUtc: true)
           : null,
       country: country,
       gender: gender,
@@ -191,8 +198,8 @@ class UserProfileModel implements HasTimestamps {
       mainGoal: mainGoal,
       experienceLevel: experienceLevel,
       interests: interests,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
     );
   }
 
@@ -249,7 +256,28 @@ class UserProfileModel implements HasTimestamps {
     return hash;
   }
 
-  DateTime get createdAt => DateTime.fromMillisecondsSinceEpoch(createdAtMillis);
+  /// Validates that a timestamp is within the valid range for DateTime
+  bool _isValidTimestamp(int millis) {
+    // DateTime.fromMillisecondsSinceEpoch valid range
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+    return millis >= minValid && millis <= maxValid;
+  }
 
-  DateTime get modifiedAt => DateTime.fromMillisecondsSinceEpoch(updatedAtMillis);
+  DateTime get createdAt {
+    final validTimestamp = _isValidTimestamp(createdAtMillis)
+        ? createdAtMillis
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+    return DateTime.fromMillisecondsSinceEpoch(validTimestamp, isUtc: true);
+  }
+
+  DateTime get modifiedAt {
+    final validCreatedAt = _isValidTimestamp(createdAtMillis)
+        ? createdAtMillis
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+    final validTimestamp = _isValidTimestamp(updatedAtMillis)
+        ? updatedAtMillis
+        : validCreatedAt;
+    return DateTime.fromMillisecondsSinceEpoch(validTimestamp, isUtc: true);
+  }
 }

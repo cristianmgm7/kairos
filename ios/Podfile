@@ -44,6 +44,12 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       config.build_settings['SWIFT_VERSION'] ||= '5.0'
       
+      # Set Swift optimization level based on build configuration
+      # Debug builds should use -Onone to enable previews and faster builds
+      if config.name == 'Debug'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+      end
+      
       # Ensure isar_flutter_libs symbols are not stripped
       if target.name == 'isar_flutter_libs'
         config.build_settings['STRIP_STYLE'] = 'non-global'

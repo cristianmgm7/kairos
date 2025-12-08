@@ -118,13 +118,20 @@ class JournalThreadModel {
   }
 
   JournalThreadEntity toEntity() {
+    // Validate timestamps to prevent invalid DateTime conversion
+    final validCreatedAt = _isValidTimestamp(createdAtMillis)
+        ? createdAtMillis
+        : DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    final validUpdatedAt = _isValidTimestamp(updatedAtMillis) ? updatedAtMillis : validCreatedAt;
+
     return JournalThreadEntity(
       id: id,
       userId: userId,
       title: title,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMillis, isUtc: true),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(updatedAtMillis, isUtc: true),
-      lastMessageAt: lastMessageAtMillis != null
+      createdAt: DateTime.fromMillisecondsSinceEpoch(validCreatedAt, isUtc: true),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(validUpdatedAt, isUtc: true),
+      lastMessageAt: lastMessageAtMillis != null && _isValidTimestamp(lastMessageAtMillis!)
           ? DateTime.fromMillisecondsSinceEpoch(lastMessageAtMillis!, isUtc: true)
           : null,
       messageCount: messageCount,
@@ -132,6 +139,14 @@ class JournalThreadModel {
       latestInsightId: latestInsightId,
       latestInsightSummary: latestInsightSummary,
     );
+  }
+
+  /// Validates that a timestamp is within the valid range for DateTime
+  bool _isValidTimestamp(int millis) {
+    // DateTime.fromMillisecondsSinceEpoch valid range
+    const minValid = -8640000000000000;
+    const maxValid = 8640000000000000;
+    return millis >= minValid && millis <= maxValid;
   }
 
   JournalThreadModel copyWith({
