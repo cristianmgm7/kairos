@@ -1,42 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kairos/core/routing/app_routes.dart';
 import 'package:kairos/l10n/app_localizations.dart';
 
 /// MainScaffold provides a persistent bottom navigation bar for the main app.
 /// This widget wraps all tab screens via GoRouter's ShellRoute.
 ///
-/// TODO: If you need nested navigation within tabs (e.g., deep stacks per tab),
 /// consider using StatefulShellRoute and passing navigatorKeys to each tab's Navigator.
 class MainScaffold extends StatelessWidget {
   const MainScaffold({
-    required this.child,
+    required this.navigationShell,
     super.key,
   });
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: _MainBottomNavigationBar(),
+      body: navigationShell,
+      bottomNavigationBar: _MainBottomNavigationBar(navigationShell: navigationShell),
     );
   }
 }
 
 class _MainBottomNavigationBar extends StatelessWidget {
+  const _MainBottomNavigationBar({
+    required this.navigationShell,
+  });
+
+  final StatefulNavigationShell navigationShell;
+
+  void _onDestinationSelected(int index) {
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final location = GoRouterState.of(context).matchedLocation;
-
-    // Map routes to tab indices
-    final currentIndex = _getSelectedIndex(location);
 
     return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: (int index) => _onItemTapped(index, context),
+      selectedIndex: navigationShell.currentIndex,
+      onDestinationSelected: _onDestinationSelected,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
       destinations: [
         NavigationDestination(
@@ -61,26 +68,5 @@ class _MainBottomNavigationBar extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  int _getSelectedIndex(String location) {
-    if (location.startsWith(AppRoutes.home)) return 0;
-    if (location.startsWith(AppRoutes.journal)) return 1;
-    if (location.startsWith(AppRoutes.insights)) return 2;
-    if (location.startsWith(AppRoutes.settings)) return 3;
-    return 0; // Default to home
-  }
-
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go(AppRoutes.home);
-      case 1:
-        context.go(AppRoutes.journal);
-      case 2:
-        context.go(AppRoutes.insights);
-      case 3:
-        context.go(AppRoutes.settings);
-    }
   }
 }

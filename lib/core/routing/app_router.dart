@@ -4,26 +4,21 @@ import 'package:go_router/go_router.dart';
 
 import 'package:kairos/core/routing/app_routes.dart';
 import 'package:kairos/core/routing/auth_redirect.dart';
+import 'package:kairos/core/routing/main_app_shell.dart';
 import 'package:kairos/core/routing/pages/error_page.dart';
 import 'package:kairos/core/routing/pages/splash_screen.dart';
-import 'package:kairos/core/widgets/main_scaffold.dart';
 import 'package:kairos/features/auth/presentation/providers/auth_providers.dart';
 import 'package:kairos/features/auth/presentation/screens/login_screen.dart';
 import 'package:kairos/features/auth/presentation/screens/register_screen.dart';
-import 'package:kairos/features/category_insights/presentation/screens/category_insights_screen.dart';
-import 'package:kairos/features/home/presentation/screens/home_screen.dart';
 import 'package:kairos/features/journal/presentation/screens/thread_detail_screen.dart';
-import 'package:kairos/features/journal/presentation/screens/thread_list_screen.dart';
 import 'package:kairos/features/profile/presentation/screens/create_profile_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/language_settings_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/manage_data_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/push_notifications_screen.dart';
-import 'package:kairos/features/settings/presentation/screens/settings_screen.dart';
 import 'package:kairos/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:kairos/features/streak/presentation/screens/streak_dashboard_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   final currentStatus = ref.watch(userStatusProvider);
@@ -107,38 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Shell route (persistent bottom navigation for all main app routes)
-      ShellRoute(
-        navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) {
-          return MainScaffold(child: child);
-        },
-        routes: [
-          GoRoute(
-            path: AppRoutes.home,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: HomeScreen(),
-            ),
-          ),
-          GoRoute(
-            path: AppRoutes.journal,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ThreadListScreen(),
-            ),
-          ),
-          GoRoute(
-            path: AppRoutes.insights,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: CategoryInsightsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: AppRoutes.settings,
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: SettingsScreen(),
-            ),
-          ),
-        ],
-      ),
+      MainAppShell.create(),
     ],
     errorBuilder: (context, state) => ErrorPage(
       error: state.error?.toString(),

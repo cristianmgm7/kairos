@@ -11,7 +11,12 @@ class AppRoutes {
   static const String createProfile = '/create-profile';
 
   // Main app routes (inside shell)
-  static const String home = '/home';
+
+  static const String homeRelative = 'home';
+  static const String home = '/$homeRelative';
+  static const String insightDetailsRelative = 'insights';
+  static const String insightDetails = '/$homeRelative/$insightDetailsRelative';
+
   static const String journal = '/journal';
   static const String insights = '/insights';
   static const String settings = '/settings';
