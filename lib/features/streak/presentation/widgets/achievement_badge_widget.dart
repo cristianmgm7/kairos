@@ -146,7 +146,7 @@ class AchievementBadgeWidget extends StatelessWidget {
       case AchievementType.streak7:
         return '7 days of consistent journaling. Habits are forming!';
       case AchievementType.streak30:
-        return '30 days of dedication. You\'re building a powerful habit.';
+        return "30 days of dedication. You're building a powerful habit.";
       case AchievementType.streak100:
         return '100 days of transformation. Your future self is grateful.';
       case AchievementType.streak365:
@@ -169,7 +169,7 @@ class AchievementBadgeWidget extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

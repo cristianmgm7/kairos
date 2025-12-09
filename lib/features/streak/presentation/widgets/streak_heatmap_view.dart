@@ -173,7 +173,7 @@ class StreakHeatmapView extends ConsumerWidget {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

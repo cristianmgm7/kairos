@@ -30,19 +30,19 @@ class _MilestoneCelebrationDialogState extends State<MilestoneCelebrationDialog>
 
     _scaleAnimation = Tween<double>(
       begin: 0.3,
-      end: 1.0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.elasticOut,
-    ));
+    ),);
 
     _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
+      begin: 0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeIn,
-    ));
+    ),);
 
     _animationController.forward();
   }
@@ -294,15 +294,15 @@ class _MilestoneCelebrationDialogState extends State<MilestoneCelebrationDialog>
       case AchievementType.firstEntry:
         return 'Your journaling journey has officially begun! Every great story starts with a single word.';
       case AchievementType.streak7:
-        return 'Seven days of dedication! You\'ve turned journaling into a habit that will serve you for life.';
+        return "Seven days of dedication! You've turned journaling into a habit that will serve you for life.";
       case AchievementType.streak30:
-        return 'A full month of self-reflection! You\'re building wisdom that compounds over time.';
+        return "A full month of self-reflection! You're building wisdom that compounds over time.";
       case AchievementType.streak100:
         return '100 days of transformation! Your commitment is inspiring and your future self will thank you.';
       case AchievementType.streak365:
-        return 'A year of daily wisdom! You\'ve given yourself the gift of self-discovery and growth.';
+        return "A year of daily wisdom! You've given yourself the gift of self-discovery and growth.";
       case AchievementType.weekGoal:
-        return 'Perfect week completed! You\'re mastering the art of consistency.';
+        return "Perfect week completed! You're mastering the art of consistency.";
     }
   }
 
@@ -319,7 +319,7 @@ class _MilestoneCelebrationDialogState extends State<MilestoneCelebrationDialog>
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
 
     final now = DateTime.now();

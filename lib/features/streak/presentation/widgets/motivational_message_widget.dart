@@ -80,7 +80,7 @@ class MotivationalMessageWidget extends StatelessWidget {
     // Active streak - hasn't journaled today
     if (currentStreak > 0 && !hasJournaledToday) {
       if (currentStreak == 1) {
-        return "Great start! Keep the momentum going tomorrow. One day at a time creates extraordinary results. 🌟";
+        return 'Great start! Keep the momentum going tomorrow. One day at a time creates extraordinary results. 🌟';
       } else if (currentStreak < 7) {
         return "You're building something special! $currentStreak days in a row shows real dedication. Keep going! 🚀";
       } else if (currentStreak < 30) {
@@ -105,7 +105,7 @@ class MotivationalMessageWidget extends StatelessWidget {
       } else if (currentStreak < 7) {
         return "$currentStreak days strong and today's entry is in the books! The compound effect is working. 🌱";
       } else if (currentStreak < 30) {
-        return "Week ${currentStreak ~/ 7 + 1} complete! Your commitment is inspiring. The next chapter awaits! 📚";
+        return 'Week ${currentStreak ~/ 7 + 1} complete! Your commitment is inspiring. The next chapter awaits! 📚';
       } else if (currentStreak < 100) {
         return "$currentStreak days of wisdom collected! You're building a treasure trove of self-knowledge. 🏆";
       } else {

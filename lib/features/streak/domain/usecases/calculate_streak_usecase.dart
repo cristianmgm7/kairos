@@ -158,7 +158,7 @@ class CalculateStreakUseCase {
     );
 
     logger.i(
-        'Calculated streak for $userId: current=$currentStreak, longest=$longestStreak, total=${activityDates.length}');
+        'Calculated streak for $userId: current=$currentStreak, longest=$longestStreak, total=${activityDates.length}',);
 
     return updatedStreak;
   }

@@ -67,7 +67,6 @@ class _StreakCalendarViewState extends ConsumerState<StreakCalendarView> {
       lastDay: DateTime.now().add(const Duration(days: 30)),
       focusedDay: _focusedDay,
       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-      calendarFormat: CalendarFormat.month,
       availableCalendarFormats: const {
         CalendarFormat.month: 'Month',
       },

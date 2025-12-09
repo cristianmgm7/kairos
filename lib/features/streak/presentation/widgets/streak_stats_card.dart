@@ -184,14 +184,14 @@ class StreakStatsCard extends StatelessWidget {
         return 'Great start! Keep the momentum going.';
       case 2:
       case 3:
-        return 'Building momentum - you\'re doing well!';
+        return "Building momentum - you're doing well!";
       case 4:
       case 5:
         return 'Halfway there! Stay consistent.';
       case 6:
         return 'Almost there! One more day to complete the week!';
       case 7:
-        return 'Perfect week! You\'re unstoppable!';
+        return "Perfect week! You're unstoppable!";
       default:
         return 'Keep up the amazing work!';
     }
