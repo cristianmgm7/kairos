@@ -98,15 +98,17 @@ class _StreakCalendarViewState extends ConsumerState<StreakCalendarView> {
         weekendTextStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
         defaultTextStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
         outsideTextStyle: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-        ) ?? const TextStyle(),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ) ??
+            const TextStyle(),
       ),
       headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
         titleTextStyle: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-        ) ?? const TextStyle(),
+              fontWeight: FontWeight.bold,
+            ) ??
+            const TextStyle(),
         leftChevronIcon: Icon(
           Icons.chevron_left,
           color: theme.colorScheme.onSurface,

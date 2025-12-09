@@ -2,12 +2,12 @@ import 'package:equatable/equatable.dart';
 
 /// Types of achievements users can earn
 enum AchievementType {
-  streak7,    // 7-day streak
-  streak30,   // 30-day streak
-  streak100,  // 100-day streak
-  streak365,  // 365-day streak (1 year!)
+  streak7, // 7-day streak
+  streak30, // 30-day streak
+  streak100, // 100-day streak
+  streak365, // 365-day streak (1 year!)
   firstEntry, // First journal entry ever
-  weekGoal,   // Completed weekly goal
+  weekGoal, // Completed weekly goal
 }
 
 /// Represents a user achievement/milestone

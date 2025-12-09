@@ -42,11 +42,11 @@ class AchievementBadgeWidget extends StatelessWidget {
                 width: 2,
               ),
             ),
-      child: Icon(
-            _getAchievementIcon(achievement.type),
-            color: _getAchievementColor(achievement.type),
-            size: 32,
-          ),
+            child: Icon(
+              _getAchievementIcon(achievement.type),
+              color: _getAchievementColor(achievement.type),
+              size: 32,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
 
@@ -158,8 +158,18 @@ class AchievementBadgeWidget extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

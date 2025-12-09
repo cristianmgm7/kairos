@@ -101,9 +101,7 @@ class JournalThreadRemoteDataSourceImpl implements JournalThreadRemoteDataSource
           .orderBy('updatedAtMillis', descending: false)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => JournalThreadModel.fromMap(doc.data()))
-          .toList();
+      return querySnapshot.docs.map((doc) => JournalThreadModel.fromMap(doc.data())).toList();
     } catch (e) {
       mapFirestoreException(e, context: 'Failed to get updated threads');
     }

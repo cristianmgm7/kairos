@@ -33,15 +33,16 @@ class CalculateStreakUseCase {
 
     if (threads.isEmpty) {
       // No journal activity yet
-      return existingStreak ?? StreakEntity(
-        userId: userId,
-        currentStreak: 0,
-        longestStreak: 0,
-        totalActiveDays: 0,
-        lastActivityDate: '',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      return existingStreak ??
+          StreakEntity(
+            userId: userId,
+            currentStreak: 0,
+            longestStreak: 0,
+            totalActiveDays: 0,
+            lastActivityDate: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
     }
 
     // Extract all activity dates from threads and build daily activity records
@@ -69,12 +70,10 @@ class CalculateStreakUseCase {
         } else {
           final existing = dailyActivityMap[dateString]!;
           dailyActivityMap[dateString] = _DailyActivityData(
-            firstEntryAt: existing.firstEntryAt.isBefore(messageDate)
-                ? existing.firstEntryAt
-                : messageDate,
-            lastEntryAt: existing.lastEntryAt.isAfter(messageDate)
-                ? existing.lastEntryAt
-                : messageDate,
+            firstEntryAt:
+                existing.firstEntryAt.isBefore(messageDate) ? existing.firstEntryAt : messageDate,
+            lastEntryAt:
+                existing.lastEntryAt.isAfter(messageDate) ? existing.lastEntryAt : messageDate,
             count: existing.count + 1,
           );
         }
@@ -131,7 +130,9 @@ class CalculateStreakUseCase {
 
     // Calculate longest streak (preserve if current is lower)
     final longestStreak = existingStreak != null
-        ? (currentStreak > existingStreak.longestStreak ? currentStreak : existingStreak.longestStreak)
+        ? (currentStreak > existingStreak.longestStreak
+            ? currentStreak
+            : existingStreak.longestStreak)
         : currentStreak;
 
     // Calculate current week count (Monday-Sunday)
@@ -156,7 +157,8 @@ class CalculateStreakUseCase {
       updatedAt: DateTime.now(),
     );
 
-    logger.i('Calculated streak for $userId: current=$currentStreak, longest=$longestStreak, total=${activityDates.length}');
+    logger.i(
+        'Calculated streak for $userId: current=$currentStreak, longest=$longestStreak, total=${activityDates.length}');
 
     return updatedStreak;
   }

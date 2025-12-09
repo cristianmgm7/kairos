@@ -88,11 +88,9 @@ class StreakLocalDataSourceImpl implements StreakLocalDataSource {
 
   @override
   Stream<List<AchievementModel>> watchAchievements(String userId) {
-    return isar.achievementModels
-        .filter()
-        .userIdEqualTo(userId)
-        .watch(fireImmediately: true)
-        .map((achievements) => achievements..sort((a, b) => b.unlockedAtMillis.compareTo(a.unlockedAtMillis)));
+    return isar.achievementModels.filter().userIdEqualTo(userId).watch(fireImmediately: true).map(
+        (achievements) =>
+            achievements..sort((a, b) => b.unlockedAtMillis.compareTo(a.unlockedAtMillis)));
   }
 
   @override

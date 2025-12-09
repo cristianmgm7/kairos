@@ -26,9 +26,9 @@ Future<Isar> initializeIsar() async {
       SettingsModelSchema,
       JournalThreadModelSchema,
       JournalMessageModelSchema,
-      StreakModelSchema,           // NEW
-      DailyActivityModelSchema,    // NEW
-      AchievementModelSchema,      // NEW
+      StreakModelSchema, // NEW
+      DailyActivityModelSchema, // NEW
+      AchievementModelSchema, // NEW
     ],
     directory: dir.path,
     name: 'kairos_db',

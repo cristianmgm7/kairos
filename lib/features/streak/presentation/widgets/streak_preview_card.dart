@@ -91,8 +91,8 @@ class StreakPreviewCard extends ConsumerWidget {
       final date = weekStart.add(Duration(days: index));
       final dateStr = _dateToString(date);
       final isToday = dateStr == _dateToString(now);
-      final hasActivity = streak.lastActivityDate == dateStr ||
-                         (streak.hasJournaledToday && isToday);
+      final hasActivity =
+          streak.lastActivityDate == dateStr || (streak.hasJournaledToday && isToday);
 
       return (isToday: isToday, hasActivity: hasActivity);
     });

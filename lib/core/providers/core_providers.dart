@@ -37,14 +37,14 @@ final loggerProvider = Provider<Logger>((ref) {
 Logger? _logger;
 Logger get logger {
   _logger ??= Logger(
-      printer: PrettyPrinter(
-        methodCount: 0,
-        errorMethodCount: 5,
-        lineLength: 50,
-        colors: false,
-      ),
-      level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
-    );
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: false,
+    ),
+    level: FlavorConfig.instance.enableLogging ? Level.debug : Level.error,
+  );
   return _logger!;
 }
 

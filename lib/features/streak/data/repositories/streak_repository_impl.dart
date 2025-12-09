@@ -93,10 +93,8 @@ class StreakRepositoryImpl implements StreakRepository {
   Stream<List<Map<String, dynamic>>> watchDailyActivities(String userId) {
     final oneYearAgo = DateTime.now().subtract(const Duration(days: 365));
 
-    return localDataSource
-        .watchDailyActivities(userId, oneYearAgo, DateTime.now())
-        .map((activities) =>
-            activities.map((activity) => activity.toJson()).toList(),
+    return localDataSource.watchDailyActivities(userId, oneYearAgo, DateTime.now()).map(
+          (activities) => activities.map((activity) => activity.toJson()).toList(),
         );
   }
 

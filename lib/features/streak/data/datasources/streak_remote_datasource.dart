@@ -55,13 +55,10 @@ class StreakRemoteDataSourceImpl implements StreakRemoteDataSource {
   @override
   Future<List<AchievementModel>> getAchievements(String userId) async {
     try {
-      final querySnapshot = await _achievementsCollection(userId)
-          .orderBy('unlockedAtMillis', descending: true)
-          .get();
+      final querySnapshot =
+          await _achievementsCollection(userId).orderBy('unlockedAtMillis', descending: true).get();
 
-      return querySnapshot.docs
-          .map((doc) => AchievementModel.fromMap(doc.data()))
-          .toList();
+      return querySnapshot.docs.map((doc) => AchievementModel.fromMap(doc.data())).toList();
     } catch (e) {
       mapFirestoreException(e, context: 'Failed to get achievements');
     }
@@ -72,9 +69,8 @@ class StreakRemoteDataSourceImpl implements StreakRemoteDataSource {
     return _achievementsCollection(userId)
         .orderBy('unlockedAtMillis', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => AchievementModel.fromMap(doc.data()))
-            .toList(),
+        .map(
+          (snapshot) => snapshot.docs.map((doc) => AchievementModel.fromMap(doc.data())).toList(),
         );
   }
 }
