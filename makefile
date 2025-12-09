@@ -71,3 +71,10 @@ flutterfire-dev:
 launcher_icons:
 	@echo "Generating launcher icons..."
 	@dart run flutter_launcher_icons
+
+format:
+	@echo "Formatting code..."
+	@find lib/* -name "*.dart" ! -name "*.mocks.dart" ! -name "firebase_options*.dart" ! -name "*.freezed.dart" ! -name "*.g.dart" ! -name "*.gr.dart" ! -name "*.config.dart" ! -path '*/generated/*' | xargs dart --disable-analytics format  $(PARAMS)
+
+fix:
+	@dart fix --apply
