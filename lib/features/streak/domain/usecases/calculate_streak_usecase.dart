@@ -1,6 +1,7 @@
 import 'package:kairos/core/providers/core_providers.dart';
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/journal/domain/repositories/journal_thread_repository.dart';
+import 'package:kairos/features/streak/data/models/daily_activity_model.dart';
 import 'package:kairos/features/streak/domain/entities/streak_entity.dart';
 import 'package:kairos/features/streak/domain/repositories/streak_repository.dart';
 
@@ -43,8 +44,9 @@ class CalculateStreakUseCase {
       );
     }
 
-    // Extract all activity dates from threads
+    // Extract all activity dates from threads and build daily activity records
     final activityDates = <String>{};
+    final dailyActivityMap = <String, _DailyActivityData>{};
     DateTime? mostRecentActivity;
 
     for (final thread in threads) {
@@ -56,7 +58,41 @@ class CalculateStreakUseCase {
         if (mostRecentActivity == null || messageDate.isAfter(mostRecentActivity)) {
           mostRecentActivity = messageDate;
         }
+
+        // Track daily activity data for this date
+        if (!dailyActivityMap.containsKey(dateString)) {
+          dailyActivityMap[dateString] = _DailyActivityData(
+            firstEntryAt: messageDate,
+            lastEntryAt: messageDate,
+            count: 1,
+          );
+        } else {
+          final existing = dailyActivityMap[dateString]!;
+          dailyActivityMap[dateString] = _DailyActivityData(
+            firstEntryAt: existing.firstEntryAt.isBefore(messageDate)
+                ? existing.firstEntryAt
+                : messageDate,
+            lastEntryAt: existing.lastEntryAt.isAfter(messageDate)
+                ? existing.lastEntryAt
+                : messageDate,
+            count: existing.count + 1,
+          );
+        }
       }
+    }
+
+    // Save daily activity records to database
+    for (final entry in dailyActivityMap.entries) {
+      final dailyActivity = DailyActivityModel(
+        userId: userId,
+        date: entry.key,
+        entryCount: entry.value.count,
+        firstEntryAtMillis: entry.value.firstEntryAt.millisecondsSinceEpoch,
+        lastEntryAtMillis: entry.value.lastEntryAt.millisecondsSinceEpoch,
+      );
+
+      // Save to local datasource via repository
+      await streakRepository.saveDailyActivity(dailyActivity);
     }
 
     // Calculate current streak
@@ -135,4 +171,17 @@ class CalculateStreakUseCase {
     final weekday = date.weekday; // Monday = 1
     return date.subtract(Duration(days: weekday - 1));
   }
+}
+
+/// Helper class to track daily activity data during calculation
+class _DailyActivityData {
+  _DailyActivityData({
+    required this.firstEntryAt,
+    required this.lastEntryAt,
+    required this.count,
+  });
+
+  final DateTime firstEntryAt;
+  final DateTime lastEntryAt;
+  final int count;
 }

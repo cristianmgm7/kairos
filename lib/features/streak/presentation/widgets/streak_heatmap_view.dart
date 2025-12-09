@@ -62,6 +62,7 @@ class StreakHeatmapView extends ConsumerWidget {
     }
 
     return HeatMapCalendar(
+      flexible: true,
       datasets: heatmapData,
       colorMode: ColorMode.color,
       colorsets: {
@@ -74,7 +75,7 @@ class StreakHeatmapView extends ConsumerWidget {
       textColor: theme.colorScheme.onSurface,
       showColorTip: false, // Hide day numbers to keep it clean
       size: 16,
-      margin: const EdgeInsets.all(2),
+      margin: const EdgeInsets.all(AppSpacing.xs),
       onClick: (date) {
         // Could show a tooltip with activity details
         final count = heatmapData[date];
@@ -146,9 +147,7 @@ class StreakHeatmapView extends ConsumerWidget {
           style: theme.textTheme.titleMedium,
         ),
         content: Text(
-          count == 1
-              ? '1 journal entry'
-              : '$count journal entries',
+          count == 1 ? '1 journal entry' : '$count journal entries',
           style: theme.textTheme.bodyMedium,
         ),
         actions: [
@@ -163,8 +162,18 @@ class StreakHeatmapView extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
 
     return '${months[date.month - 1]} ${date.day}, ${date.year}';

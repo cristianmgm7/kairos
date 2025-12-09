@@ -1,5 +1,6 @@
 import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/streak/data/models/achievement_model.dart';
+import 'package:kairos/features/streak/data/models/daily_activity_model.dart';
 import 'package:kairos/features/streak/data/models/streak_model.dart';
 import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
 import 'package:kairos/features/streak/domain/entities/daily_activity_entity.dart';
@@ -31,6 +32,9 @@ abstract class StreakRepository {
 
   /// Save streak data (internal use by use cases)
   Future<void> saveStreak(StreakModel model);
+
+  /// Save daily activity data (internal use by use cases)
+  Future<void> saveDailyActivity(DailyActivityModel model);
 
   /// Save achievement (internal use by use cases)
   Future<void> saveAchievement(AchievementModel model);

@@ -4,6 +4,7 @@ import 'package:kairos/core/utils/result.dart';
 import 'package:kairos/features/streak/data/datasources/streak_local_datasource.dart';
 import 'package:kairos/features/streak/data/datasources/streak_remote_datasource.dart';
 import 'package:kairos/features/streak/data/models/achievement_model.dart';
+import 'package:kairos/features/streak/data/models/daily_activity_model.dart';
 import 'package:kairos/features/streak/data/models/streak_model.dart';
 import 'package:kairos/features/streak/domain/entities/achievement_entity.dart';
 import 'package:kairos/features/streak/domain/entities/daily_activity_entity.dart';
@@ -37,6 +38,11 @@ class StreakRepositoryImpl implements StreakRepository {
   @override
   Future<void> saveStreak(StreakModel model) async {
     await localDataSource.saveStreak(model);
+  }
+
+  @override
+  Future<void> saveDailyActivity(DailyActivityModel model) async {
+    await localDataSource.saveDailyActivity(model);
   }
 
   @override
