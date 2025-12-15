@@ -1,0 +1,26 @@
+# Environment variables
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log
+
+# Backup files
+*.bak
+*~
+
+# Build artifacts (if using build tools later)
+dist/
+build/
+
+# Node modules (if adding npm packages later)
+node_modules/
+package-lock.json

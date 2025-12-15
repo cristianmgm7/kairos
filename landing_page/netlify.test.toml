@@ -1,0 +1,49 @@
+# Netlify configuration for Kairos landing page
+
+[build]
+  # No build command needed for static HTML
+  publish = "."
+
+# Redirect rules
+[[redirects]]
+  # Redirect www to non-www (optional - update kairos-app.com to your domain)
+  from = "https://www.kairos-app.com/*"
+  to = "https://kairos-app.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  # SPA fallback - redirect all 404s to index.html (not needed for multi-page static site)
+  # from = "/*"
+  # to = "/index.html"
+  # status = 200
+
+# Custom headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Cache static assets
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Plugin configuration (optional)
+# [[plugins]]
+#   package = "@netlify/plugin-lighthouse"
