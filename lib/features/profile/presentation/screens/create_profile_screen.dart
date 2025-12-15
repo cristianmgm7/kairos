@@ -10,6 +10,7 @@ import 'package:kairos/core/widgets/app_button.dart';
 import 'package:kairos/core/widgets/app_error_view.dart';
 import 'package:kairos/core/widgets/app_text.dart';
 import 'package:kairos/core/widgets/app_text_field.dart';
+import 'package:kairos/features/auth/presentation/providers/auth_controller.dart';
 import 'package:kairos/features/profile/presentation/controllers/profile_controller.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
@@ -62,6 +63,12 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
           style: AppTextStyle.headlineSmall,
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: ref.read(authControllerProvider.notifier).signOut,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
