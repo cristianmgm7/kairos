@@ -18,6 +18,7 @@ export const generateCategoryInsight = onCall(
     region: 'us-central1',
     memory: '512MiB',
     timeoutSeconds: 60,
+    invoker: 'public',
   },
   async (request) => {
     // Verify authentication

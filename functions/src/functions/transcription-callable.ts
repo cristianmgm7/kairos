@@ -19,6 +19,7 @@ export const transcribeAudioMessage = onCall(
     region: 'us-central1',
     memory: '1GiB',
     timeoutSeconds: 120,
+    invoker: 'public',
   },
   async (request) => {
     // 1. Authentication

@@ -26,6 +26,7 @@ export const generateMessageResponse = onCall(
     region: 'us-central1',
     memory: '512MiB',
     timeoutSeconds: 60,
+    invoker: 'public',
   },
   async function (request) {
     // 1. Authentication
